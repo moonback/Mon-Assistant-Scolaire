@@ -41,7 +41,12 @@ Donne une anecdote ou un fait surprenant ("Le saviez-vous ?") adapté aux enfant
 Sois bref et amusant.`
 };
 
-export async function askGemini(prompt: string, mode: Mode = 'assistant', gradeLevel: string = 'CM1'): Promise<string> {
+export async function askGemini(
+  prompt: string,
+  mode: Mode = 'assistant',
+  gradeLevel: string = 'CM1',
+  image?: string // Base64 image string
+): Promise<string> {
   try {
     const systemInstruction = `${SYSTEM_INSTRUCTIONS[mode]}
     
@@ -50,12 +55,27 @@ export async function askGemini(prompt: string, mode: Mode = 'assistant', gradeL
     ${gradeLevel === 'CM2' || gradeLevel === '6ème' ? 'Tu peux aller un peu plus loin dans les explications, mais reste clair.' : ''}
     `;
 
+    let contents: any = prompt;
+
+    if (image) {
+      contents = {
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: image.split(',')[1] // Remove data:image/jpeg;base64, prefix
+            }
+          }
+        ]
+      };
+    }
+
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
+      model: image ? "gemini-2.5-flash-image" : "gemini-3-flash-preview", // Use vision model if image provided
+      contents: contents,
       config: {
         systemInstruction: systemInstruction,
-        // Force JSON for quiz mode to make parsing easier
         responseMimeType: mode === 'quiz' ? 'application/json' : 'text/plain',
       },
     });

@@ -1,12 +1,14 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 import { askGemini } from '../services/gemini';
-import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2 } from 'lucide-react';
+import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2, Mic, Volume2, StopCircle, Image as ImageIcon, X } from 'lucide-react';
+import { useSpeechRecognition, useSpeechSynthesis } from '../hooks/useSpeech';
 
 interface HistoryItem {
   id: string;
   question: string;
   response: string;
   date: number;
+  image?: string;
 }
 
 interface AssistantProps {
@@ -19,11 +21,16 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [verificationAnswer, setVerificationAnswer] = useState('');
   const [verificationFeedback, setVerificationFeedback] = useState('');
   const [checkingVerification, setCheckingVerification] = useState(false);
   
+  const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechRecognition();
+  const { isSpeaking, speak, stop: stopSpeaking } = useSpeechSynthesis();
+
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     const saved = localStorage.getItem('school_assistant_history');
     return saved ? JSON.parse(saved) : [];
@@ -33,10 +40,28 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     localStorage.setItem('school_assistant_history', JSON.stringify(history));
   }, [history]);
 
+  useEffect(() => {
+    if (transcript) {
+      setQuestion(prev => prev ? prev + ' ' + transcript : transcript);
+      resetTranscript();
+    }
+  }, [transcript, resetTranscript]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!question.trim()) {
-      setError('Tu dois écrire une question !');
+    if (!question.trim() && !selectedImage) {
+      setError('Tu dois écrire une question ou envoyer une image !');
       return;
     }
     
@@ -45,22 +70,28 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     setResponse('');
     setVerificationAnswer('');
     setVerificationFeedback('');
+    stopSpeaking();
 
     try {
-      const answer = await askGemini(question, 'assistant', gradeLevel);
+      const answer = await askGemini(question, 'assistant', gradeLevel, selectedImage || undefined);
       setResponse(answer);
       
       const newItem: HistoryItem = {
         id: Date.now().toString(),
         question: question,
         response: answer,
-        date: Date.now()
+        date: Date.now(),
+        image: selectedImage || undefined
       };
       setHistory(prev => [newItem, ...prev]);
+      
+      // Auto-speak response if it was a voice query (optional, but nice)
+      // speak(answer); 
     } catch (err) {
       setError("Je n'ai pas réussi à trouver la réponse. Réessaie !");
     } finally {
       setLoading(false);
+      setSelectedImage(null);
     }
   };
 
@@ -104,11 +135,14 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     setError('');
     setVerificationAnswer('');
     setVerificationFeedback('');
+    setSelectedImage(null);
+    stopSpeaking();
   };
 
   const loadHistoryItem = (item: HistoryItem) => {
     setQuestion(item.question);
     setResponse(item.response);
+    setSelectedImage(item.image || null);
     setError('');
     setVerificationAnswer('');
     setVerificationFeedback('');
@@ -129,13 +163,40 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
           <label htmlFor="question" className="block text-lg font-medium text-slate-700">
             Quelle est ta question aujourd'hui ?
           </label>
-          <textarea
-            id="question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Exemple : Comment on fait une division ? Qui est Louis XIV ?"
-            className="w-full h-32 p-4 rounded-xl border-2 border-slate-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 outline-none transition-all resize-none text-lg"
-          />
+          
+          <div className="relative">
+            <textarea
+              id="question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Exemple : Comment on fait une division ? Qui est Louis XIV ?"
+              className="w-full h-32 p-4 rounded-xl border-2 border-slate-200 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 outline-none transition-all resize-none text-lg pr-12"
+            />
+            <button
+              type="button"
+              onClick={isListening ? stopListening : startListening}
+              className={`absolute right-3 bottom-3 p-2 rounded-full transition-all ${
+                isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-500 hover:bg-sky-100 hover:text-sky-600'
+              }`}
+              title="Parler"
+            >
+              {isListening ? <StopCircle className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {/* Image Preview */}
+          {selectedImage && (
+            <div className="relative inline-block">
+              <img src={selectedImage} alt="Aperçu" className="h-24 w-auto rounded-lg border-2 border-sky-200" />
+              <button
+                type="button"
+                onClick={() => setSelectedImage(null)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           
           {error && (
             <p className="text-red-500 bg-red-50 p-3 rounded-lg text-sm font-medium animate-pulse">
@@ -143,7 +204,24 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
             </p>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-3 px-4 rounded-xl transition-colors flex items-center gap-2"
+              title="Ajouter une image"
+            >
+              <ImageIcon className="w-5 h-5" />
+              <span className="hidden sm:inline">Photo</span>
+            </button>
+
             <button
               type="submit"
               disabled={loading}
@@ -157,12 +235,12 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  Envoyer ma question
+                  Envoyer
                 </>
               )}
             </button>
             
-            {question && (
+            {(question || selectedImage) && (
               <button
                 type="button"
                 onClick={handleClear}
@@ -180,10 +258,21 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
       {response && (
         <section className="bg-white rounded-3xl shadow-md p-6 border-l-8 border-emerald-400 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
           <div>
-            <h2 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
-              <Sparkles className="w-6 h-6" />
-              Voici la réponse :
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-emerald-700 flex items-center gap-2">
+                <Sparkles className="w-6 h-6" />
+                Voici la réponse :
+              </h2>
+              <button
+                onClick={() => isSpeaking ? stopSpeaking() : speak(response)}
+                className={`p-2 rounded-full transition-colors ${
+                  isSpeaking ? 'bg-emerald-200 text-emerald-800 animate-pulse' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                }`}
+                title={isSpeaking ? "Arrêter la lecture" : "Lire la réponse"}
+              >
+                {isSpeaking ? <StopCircle className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+              </button>
+            </div>
             <div className="prose prose-lg prose-slate max-w-none whitespace-pre-wrap leading-relaxed">
               {response}
             </div>
@@ -253,9 +342,10 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
               >
                 <div className="flex items-start gap-3">
                   <Clock className="w-4 h-4 text-slate-400 mt-1 shrink-0" />
-                  <div>
-                    <p className="font-medium text-slate-700 group-hover:text-sky-700 line-clamp-1">
-                      {item.question}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-700 group-hover:text-sky-700 line-clamp-1 flex items-center gap-2">
+                      {item.image && <ImageIcon className="w-4 h-4 text-sky-500" />}
+                      {item.question || "Question avec image"}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
                       {new Date(item.date).toLocaleDateString('fr-FR', {

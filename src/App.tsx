@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { MessageCircle, Brain, Book, BookA, Calculator, Lightbulb, Star, Home, Trophy, LogOut } from 'lucide-react';
+import { MessageCircle, Brain, Book, BookA, Calculator, Lightbulb, Star, Home, Trophy, LogOut, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
@@ -18,8 +18,9 @@ import MathGame from './components/MathGame';
 import DidYouKnow from './components/DidYouKnow';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
+import DrawingBoard from './components/DrawingBoard';
 
-type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard';
+type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing';
 
 function AppContent() {
   const { session, profile, signOut, refreshProfile } = useAuth();
@@ -64,6 +65,7 @@ function AppContent() {
     { id: 'quiz', label: 'Quiz', icon: Brain, color: 'bg-violet-500', desc: 'Teste tes connaissances' },
     { id: 'math', label: 'Calcul', icon: Calculator, color: 'bg-emerald-500', desc: 'Entraîne-toi en maths' },
     { id: 'story', label: 'Histoires', icon: Book, color: 'bg-pink-500', desc: 'Crée des histoires' },
+    { id: 'drawing', label: 'Dessin', icon: Palette, color: 'bg-indigo-500', desc: 'Dessine librement' },
     { id: 'dictionary', label: 'Dico', icon: BookA, color: 'bg-orange-500', desc: 'Cherche un mot' },
     { id: 'fact', label: 'Infos', icon: Lightbulb, color: 'bg-yellow-500', desc: 'Découvre des faits' },
   ];
@@ -112,6 +114,7 @@ function AppContent() {
       case 'quiz': return <Quiz onEarnPoints={(pts) => addStars(pts, 'quiz')} gradeLevel={profile?.grade_level} />;
       case 'math': return <MathGame onEarnPoints={(pts) => addStars(pts, 'math')} />;
       case 'story': return <Story />;
+      case 'drawing': return <DrawingBoard />;
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
       default: return null;
@@ -177,7 +180,7 @@ function AppContent() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:top-20 md:bottom-auto md:left-4 md:right-auto md:w-20 md:h-[calc(100vh-6rem)] md:bg-transparent md:border-none md:flex md:flex-col md:gap-4 z-20">
-        <div className="flex justify-around items-center h-20 md:h-auto md:flex-col md:gap-4 md:justify-start">
+        <div className="flex justify-around items-center h-20 md:h-auto md:flex-col md:gap-4 md:justify-start overflow-x-auto px-4 md:px-0">
           {tabs.filter(t => t.id !== 'home').map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -185,7 +188,7 @@ function AppContent() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as Tab)}
-                className={`relative flex flex-col items-center justify-center w-full h-full md:w-14 md:h-14 md:rounded-2xl transition-all ${
+                className={`relative flex flex-col items-center justify-center min-w-[3.5rem] h-full md:w-14 md:h-14 md:rounded-2xl transition-all ${
                   isActive ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
                 } md:bg-white md:shadow-sm md:hover:scale-110`}
               >
