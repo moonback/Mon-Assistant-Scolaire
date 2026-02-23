@@ -25,6 +25,27 @@ export default function DrawingBoard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGenModal, setShowGenModal] = useState(false);
   const [genPrompt, setGenPrompt] = useState('');
+  const [generationsLeft, setGenerationsLeft] = useState(5);
+
+  // Initialize and check generation limit
+  useEffect(() => {
+    const checkLimit = () => {
+      const today = new Date().toDateString();
+      const savedDate = localStorage.getItem('last_gen_date');
+      const savedCount = localStorage.getItem('gen_count');
+
+      if (savedDate !== today) {
+        // Reset for a new day
+        localStorage.setItem('last_gen_date', today);
+        localStorage.setItem('gen_count', '5');
+        setGenerationsLeft(5);
+      } else if (savedCount) {
+        setGenerationsLeft(parseInt(savedCount));
+      }
+    };
+
+    checkLimit();
+  }, [showGenModal]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -237,6 +258,14 @@ export default function DrawingBoard() {
 
   const generateColoringPage = async () => {
     if (!genPrompt) return;
+
+    // Check limit
+    if (generationsLeft <= 0) {
+      alert("Oups ! Tu as atteint ton quota de 5 dessins magiques pour aujourd'hui. Reviens demain ! ✨");
+      setShowGenModal(false);
+      return;
+    }
+
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
     if (!apiKey || apiKey === 'your_openrouter_key_here') {
       alert("S'il te plaît, ajoute ta clé API OpenRouter dans le fichier .env ! (VITE_OPENROUTER_API_KEY)");
@@ -304,6 +333,11 @@ export default function DrawingBoard() {
 
           ctx.drawImage(img, x, y, 1024 * scale, 1024 * scale);
           saveToHistory();
+
+          // Update limit
+          const newCount = generationsLeft - 1;
+          setGenerationsLeft(newCount);
+          localStorage.setItem('gen_count', newCount.toString());
         }
         setIsGenerating(false);
         setGenPrompt('');
@@ -570,17 +604,24 @@ export default function DrawingBoard() {
                 </div>
                 <h3 className="text-2xl font-black text-slate-800">Générateur Magique</h3>
                 <p className="text-slate-500 font-medium text-sm">Que veux-tu colorier aujourd'hui ?</p>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 rounded-full text-[10px] font-bold text-indigo-600 uppercase tracking-wider mt-2">
+                  <Sparkles className="w-3 h-3" />
+                  {generationsLeft} Générations Libres Restantes
+                </div>
               </div>
 
-              <input
-                autoFocus
-                type="text"
-                value={genPrompt}
-                onChange={(e) => setGenPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && generateColoringPage()}
-                placeholder="Ex: Un dragon gentil, une fée, un chat..."
-                className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
-              />
+              <div className="relative">
+                <input
+                  autoFocus
+                  type="text"
+                  value={genPrompt}
+                  onChange={(e) => setGenPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && generateColoringPage()}
+                  disabled={generationsLeft <= 0}
+                  placeholder={generationsLeft > 0 ? "Ex: Un dragon gentil, une fée, un chat..." : "Quota atteint ! Reviens demain"}
+                  className={`w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 ${generationsLeft <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <button
