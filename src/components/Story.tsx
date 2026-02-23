@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import { askGemini } from '../services/gemini';
-import { Book, Wand2, RefreshCw, Sparkles, MapPin, User, Star } from 'lucide-react';
+import { Book, Wand2, RefreshCw, Sparkles, MapPin, User, Star, Volume2, StopCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSpeechSynthesis } from '../hooks/useSpeech';
 
 export default function Story() {
   const [hero, setHero] = useState('');
   const [place, setPlace] = useState('');
   const [story, setStory] = useState('');
   const [loading, setLoading] = useState(false);
+  const { speak, stop, isSpeaking } = useSpeechSynthesis();
 
   const generateStory = async () => {
     if (!hero.trim()) return;
     setLoading(true);
     setStory('');
+    stop();
 
     const prompt = `Héros: ${hero}, Lieu: ${place || 'un endroit mystérieux'}`;
     try {
@@ -114,10 +117,20 @@ export default function Story() {
             </div>
 
             <div className="relative z-10 max-w-2xl mx-auto">
-              <div className="flex justify-center mb-10">
+              <div className="flex justify-between items-center mb-10">
                 <div className="px-6 py-2 bg-rose-50 text-rose-600 rounded-full font-black text-xs uppercase tracking-[0.3em]">
                   Ton Conte Magique
                 </div>
+                <button
+                  onClick={() => isSpeaking ? stop() : speak(story)}
+                  className={`p-4 rounded-2xl transition-all shadow-lg ${isSpeaking
+                      ? 'bg-rose-500 text-white animate-pulse'
+                      : 'bg-white text-rose-500 hover:bg-rose-50 border border-rose-100'
+                    }`}
+                  title={isSpeaking ? "Arrêter" : "Écouter l'histoire"}
+                >
+                  {isSpeaking ? <StopCircle className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+                </button>
               </div>
               <div className="prose prose-lg prose-rose max-w-none">
                 <div className="whitespace-pre-wrap font-medium leading-[2.2] text-slate-700 text-xl text-center italic font-serif">
@@ -127,7 +140,7 @@ export default function Story() {
 
               <div className="mt-12 flex justify-center pt-8 border-t border-rose-50">
                 <button
-                  onClick={() => { setStory(''); setHero(''); setPlace(''); }}
+                  onClick={() => { setStory(''); setHero(''); setPlace(''); stop(); }}
                   className="text-slate-400 font-black hover:text-rose-500 transition-colors uppercase tracking-widest text-xs flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />

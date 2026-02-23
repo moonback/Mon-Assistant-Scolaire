@@ -52,7 +52,19 @@
   }
 
   .premium-input {
-    @apply w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-400 focus:bg-white focus:ring-8 focus:ring-indigo-50 outline-none transition-all;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 1rem;
+    background-color: #f8fafc;
+    border: 2px solid transparent;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .premium-input:focus {
+    border-color: #818cf8;
+    background-color: white;
+    box-shadow: 0 0 0 8px #e0e7ff;
   }
 }
 

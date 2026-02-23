@@ -1,12 +1,14 @@
 import { useState, FormEvent } from 'react';
 import { askGemini } from '../services/gemini';
-import { Search, BookA, RefreshCw, Sparkles, Languages, ArrowRight } from 'lucide-react';
+import { Search, BookA, RefreshCw, Sparkles, Languages, ArrowRight, Volume2, StopCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSpeechSynthesis } from '../hooks/useSpeech';
 
 export default function Dictionary() {
   const [word, setWord] = useState('');
   const [definition, setDefinition] = useState('');
   const [loading, setLoading] = useState(false);
+  const { speak, stop, isSpeaking } = useSpeechSynthesis();
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -14,6 +16,7 @@ export default function Dictionary() {
 
     setLoading(true);
     setDefinition('');
+    stop();
 
     try {
       const result = await askGemini(word, 'definition');
@@ -104,9 +107,21 @@ export default function Dictionary() {
             </div>
 
             <div className="max-w-3xl">
-              <div className="flex items-center gap-4 mb-8">
-                <Sparkles className="w-8 h-8 text-orange-500 fill-orange-500" />
-                <h3 className="text-4xl font-black text-slate-800 capitalize tracking-tight">{word}</h3>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <Sparkles className="w-8 h-8 text-orange-500 fill-orange-500" />
+                  <h3 className="text-4xl font-black text-slate-800 capitalize tracking-tight">{word}</h3>
+                </div>
+                <button
+                  onClick={() => isSpeaking ? stop() : speak(`${word}. ${definition}`)}
+                  className={`p-4 rounded-2xl transition-all shadow-lg ${isSpeaking
+                      ? 'bg-orange-500 text-white animate-pulse'
+                      : 'bg-white text-orange-500 hover:bg-orange-50 border border-orange-100'
+                    }`}
+                  title={isSpeaking ? "Arrêter" : "Écouter la définition"}
+                >
+                  {isSpeaking ? <StopCircle className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+                </button>
               </div>
 
               <div className="bg-orange-50/50 p-8 rounded-[2.5rem] border border-orange-100">

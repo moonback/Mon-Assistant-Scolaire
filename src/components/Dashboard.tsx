@@ -91,6 +91,14 @@ export default function Dashboard() {
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <defs>
+                  {chartData.map((item, i) => (
+                    <linearGradient key={`grad-${i}`} id={`barGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={item.color} stopOpacity={1} />
+                      <stop offset="100%" stopColor={item.color} stopOpacity={0.6} />
+                    </linearGradient>
+                  ))}
+                </defs>
                 <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
                 <XAxis
                   dataKey="name"
@@ -106,17 +114,21 @@ export default function Dashboard() {
                 />
                 <Tooltip
                   cursor={{ fill: '#f8fafc', radius: 12 }}
-                  contentStyle={{
-                    borderRadius: '24px',
-                    border: 'none',
-                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                    padding: '16px'
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-slate-100 min-w-[120px]">
+                          <p className="text-[10px] uppercase font-black text-slate-400 mb-1">{payload[0].payload.name}</p>
+                          <p className="text-xl font-black text-slate-800">{payload[0].value} <span className="text-xs font-bold text-slate-400">pts</span></p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  itemStyle={{ fontWeight: 800, fontSize: '14px' }}
                 />
                 <Bar dataKey="score" radius={[12, 12, 12, 12]} barSize={40}>
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={`url(#barGrad-${index})`} />
                   ))}
                 </Bar>
               </BarChart>
@@ -125,8 +137,8 @@ export default function Dashboard() {
 
           <div className="mt-8 grid grid-cols-3 gap-4">
             {chartData.map((item, i) => (
-              <div key={i} className="flex flex-col items-center">
-                <div className={`w-3 h-3 rounded-full bg-[${item.color}] mb-2`} style={{ backgroundColor: item.color }} />
+              <div key={i} className="flex flex-col items-center p-3 rounded-2xl bg-slate-50/50 border border-slate-100/50">
+                <div className="w-3 h-3 rounded-full mb-2 shadow-sm" style={{ backgroundColor: item.color }} />
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.name}</span>
                 <span className="text-sm font-black text-slate-700">{item.score}</span>
               </div>
@@ -159,7 +171,7 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center font-black text-lg ${stat.activity_type === 'quiz' ? 'text-violet-500' :
-                      stat.activity_type === 'math' ? 'text-emerald-500' : 'text-sky-500'
+                    stat.activity_type === 'math' ? 'text-emerald-500' : 'text-sky-500'
                     }`}>
                     {stat.activity_type.charAt(0).toUpperCase()}
                   </div>

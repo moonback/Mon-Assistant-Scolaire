@@ -7,7 +7,7 @@ import { useState } from 'react';
 import {
   MessageCircle, Brain, Book, BookA, Calculator,
   Lightbulb, Star, Home, Trophy, LogOut, Palette,
-  Menu, X, ChevronRight, Settings, Bell, GraduationCap
+  Menu, X, ChevronRight, Settings, Bell, GraduationCap, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -364,6 +364,23 @@ function AppContent() {
         </nav>
 
         <div className="p-6 border-t border-slate-50">
+          <div className="bg-indigo-600 rounded-3xl p-6 mb-6 text-white relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Trophy className="w-20 h-20" />
+            </div>
+            <div className="relative z-10">
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">Prochain Rang</p>
+              <h4 className="text-lg font-black mb-4">Génie Magique</h4>
+              <div className="h-2 bg-white/20 rounded-full mb-2">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min((profile?.stars || 0) / 10, 100)}%` }}
+                  className="h-full bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                />
+              </div>
+              <p className="text-[9px] font-bold opacity-70">{profile?.stars || 0} / 1000 étoiles</p>
+            </div>
+          </div>
           <div className="bg-slate-50 rounded-2xl p-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
@@ -371,7 +388,10 @@ function AppContent() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-800 truncate">{profile?.username}</p>
-                <p className="text-xs text-slate-500">{profile?.grade_level}</p>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.grade_level}</p>
+                </div>
               </div>
             </div>
           </div>
