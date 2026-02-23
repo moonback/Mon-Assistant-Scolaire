@@ -44,23 +44,42 @@ function AppContent() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Time Limit Enforcement
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  // Time Limit Enforcement & Tracking
   useEffect(() => {
-    if (!selectedChild?.daily_time_limit) return;
-
-    const childId = selectedChild.id;
-    const sessionStart = sessionStorage.getItem(`session_start_${childId}`) || Date.now().toString();
-
-    if (!sessionStorage.getItem(`session_start_${childId}`)) {
-      sessionStorage.setItem(`session_start_${childId}`, sessionStart);
+    if (!selectedChild) {
+      setTimeLeft(null);
+      return;
     }
 
-    const interval = setInterval(() => {
-      const elapsedMinutes = (Date.now() - parseInt(sessionStart)) / (60000);
-      if (elapsedMinutes > selectedChild.daily_time_limit) {
-        alert("🛑 C'est l'heure de faire une pause ! Ton temps d'écran est terminé pour aujourd'hui.");
-        setSelectedChild(null);
+    const childId = selectedChild.id;
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `time_spent_${childId}_${today}`;
+
+    // Get time spent today (in minutes)
+    let timeSpent = parseInt(localStorage.getItem(storageKey) || '0');
+
+    const updateTime = () => {
+      if (selectedChild.daily_time_limit > 0) {
+        const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
+        setTimeLeft(remaining);
+
+        if (remaining <= 0) {
+          alert("🛑 C'est l'heure de faire une pause ! Ton temps d'écran est terminé pour aujourd'hui.");
+          setSelectedChild(null);
+        }
+      } else {
+        setTimeLeft(null); // Unlimited
       }
+    };
+
+    updateTime();
+
+    const interval = setInterval(() => {
+      timeSpent += 1;
+      localStorage.setItem(storageKey, timeSpent.toString());
+      updateTime();
     }, 60000);
 
     return () => clearInterval(interval);
@@ -105,6 +124,7 @@ function AppContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {tabs
                 .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
+                .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
                 .map((tab, idx) => (
                   <motion.button
                     key={tab.id}
@@ -172,7 +192,7 @@ function AppContent() {
       </AnimatePresence>
 
       <Sidebar
-        tabs={tabs}
+        tabs={tabs.filter(t => !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id))}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         isCollapsed={isSidebarCollapsed}
@@ -186,6 +206,7 @@ function AppContent() {
           activeTab={activeTab}
           tabs={tabs}
           selectedChild={selectedChild}
+          timeLeft={timeLeft}
           setIsMobileNavOpen={setIsMobileNavOpen}
         />
 
@@ -207,7 +228,7 @@ function AppContent() {
       <MobileNav
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
-        tabs={tabs}
+        tabs={tabs.filter(t => !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id))}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />

@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-    ShieldCheck, Lock, Unlock, Clock, Ban,
-    TrendingUp, Calendar, ChevronRight, Save,
-    Settings, Activity, AlertCircle, CheckCircle2,
-    Plus, User, Trash2, Edit2, X, Star
+    ShieldCheck, Lock, Clock, Ban,
+    TrendingUp, Plus, User, Trash2, Edit2, X, Star,
+    LayoutDashboard, Users, Gift, Settings as SettingsIcon,
+    Moon, Zap, BookOpen, ChevronRight, Award, History
 } from 'lucide-react';
 import { supabase, Progress, Child } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
+type Tab = 'overview' | 'children' | 'rewards' | 'security';
+
 export default function ParentalSpace() {
     const { profile, children, session, refreshProfile, refreshChildren } = useAuth();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -31,11 +34,11 @@ export default function ParentalSpace() {
 
     useEffect(() => {
         if (isAuthenticated && session) {
-            fetchGlobalStats();
+            fetchStats();
         }
     }, [isAuthenticated, session]);
 
-    const fetchGlobalStats = async () => {
+    const fetchStats = async () => {
         if (!session) return;
         const { data } = await supabase
             .from('progress')
@@ -60,37 +63,16 @@ export default function ParentalSpace() {
     };
 
     const saveParentSettings = async () => {
-        if (!profile) {
-            setError("Profil non trouvé. Réessaie.");
-            return;
-        }
+        if (!profile) return;
         setLoading(true);
-        setSuccess('');
-        setError('');
-
-        console.log('Tentative de sauvegarde du PIN:', newPin, 'pour user:', profile.id);
-
         try {
-            const { error: supabaseError } = await supabase
-                .from('profiles')
-                .update({ parent_pin: newPin })
-                .eq('id', profile.id);
-
-            if (supabaseError) {
-                console.error('Erreur Supabase:', supabaseError);
-                throw supabaseError;
-            }
-
-            setSuccess('Code PIN mis à jour ! 🔐');
+            const { error: err } = await supabase.from('profiles').update({ parent_pin: newPin }).eq('id', profile.id);
+            if (err) throw err;
+            setSuccess('PIN mis à jour ! 🔐');
             await refreshProfile();
             setNewPin('');
-            // Petite pause pour laisser l'utilisateur voir le succès
-            setTimeout(() => {
-                setIsAuthenticated(false); // Verrouille pour tester le nouveau PIN
-            }, 1500);
         } catch (err: any) {
-            console.error('Erreur complète:', err);
-            setError(`Erreur : ${err.message || 'Impossible de sauvegarder'}`);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -99,7 +81,6 @@ export default function ParentalSpace() {
     const saveChild = async () => {
         if (!session) return;
         setLoading(true);
-        setError('');
         try {
             const payload = {
                 parent_id: session.user.id,
@@ -109,36 +90,25 @@ export default function ParentalSpace() {
                 blocked_topics: childBlockedTopics,
                 avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${childName}`
             };
-
-            let err;
             if (editingChild) {
-                const { error } = await supabase.from('children').update(payload).eq('id', editingChild.id);
-                err = error;
+                await supabase.from('children').update(payload).eq('id', editingChild.id);
             } else {
-                const { error } = await supabase.from('children').insert([payload]);
-                err = error;
+                await supabase.from('children').insert([payload]);
             }
-
-            if (err) throw err;
-
-            setSuccess(editingChild ? 'Profil mis à jour ! ✨' : 'Nouvel enfant ajouté ! 🎨');
+            setSuccess('Modifications enregistrées ! ✨');
             await refreshChildren();
             resetChildForm();
         } catch (err: any) {
-            setError(err.message || 'Erreur lors de la sauvegarde...');
+            setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
     const deleteChild = async (id: string) => {
-        if (!window.confirm('Es-tu sûr de vouloir supprimer ce profil ? Toutes les étoiles seront perdues ! 😱')) return;
-        try {
-            await supabase.from('children').delete().eq('id', id);
-            await refreshChildren();
-        } catch (err) {
-            setError('Erreur lors de la suppression');
-        }
+        if (!window.confirm('Supprimer ce profil ?')) return;
+        await supabase.from('children').delete().eq('id', id);
+        await refreshChildren();
     };
 
     const resetChildForm = () => {
@@ -155,7 +125,7 @@ export default function ParentalSpace() {
         setChildName(child.name);
         setChildGrade(child.grade_level);
         setChildTimeLimit(child.daily_time_limit);
-        setChildBlockedTopics(child.blocked_topics);
+        setChildBlockedTopics(child.blocked_topics || []);
         setShowAddChild(true);
     };
 
@@ -168,142 +138,262 @@ export default function ParentalSpace() {
     if (!isAuthenticated) {
         return (
             <div className="max-w-md mx-auto mt-20 p-10 bg-white rounded-[3rem] shadow-2xl border border-slate-100 text-center">
-                <div className="w-24 h-24 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mx-auto mb-8 shadow-inner">
-                    <Lock className="w-12 h-12" />
+                <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mx-auto mb-6">
+                    <Lock className="w-10 h-10" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-800 mb-2">Espace Parents</h2>
-                <p className="text-slate-500 font-bold mb-10 italic">
-                    {profile?.parent_pin ? "Entre le code PIN de la famille" : "Crée ton code PIN de sécurité"}
-                </p>
-
+                <p className="text-slate-500 font-bold mb-8 text-sm uppercase tracking-widest">Zone Sécurisée</p>
                 <div className="space-y-6">
                     <input
                         type="password"
                         maxLength={4}
                         value={pin}
                         onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                        placeholder="XXXX"
-                        className="w-full text-center text-5xl tracking-[0.8em] font-black p-6 rounded-3xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none transition-all placeholder:tracking-normal placeholder:text-xl"
+                        placeholder="PIN"
+                        className="w-full text-center text-4xl tracking-widest font-black p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none transition-all"
                     />
-                    {error && <p className="text-red-500 font-bold text-sm bg-red-50 py-2 rounded-xl">{error}</p>}
-                    <button onClick={handleAuth} className="w-full magical-gradient text-white font-black py-5 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-lg">
-                        Déverrouiller
+                    {error && <p className="text-red-500 font-bold text-xs">{error}</p>}
+                    <button onClick={handleAuth} className="w-full magical-gradient text-white font-black py-4 rounded-xl shadow-lg hover:scale-105 transition-all outline-none">
+                        Accéder au Tableau de Bord
                     </button>
+                    <button onClick={() => window.history.back()} className="text-slate-400 text-xs font-bold uppercase hover:text-indigo-600 transition-colors">Retour à l'accueil</button>
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-20">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-800 flex items-center gap-4">
-                        <ShieldCheck className="w-10 h-10 text-indigo-600" />
-                        Gestion de la Famille
-                    </h1>
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">Gérez vos enfants et la sécurité</p>
-                </div>
-                <button onClick={() => setIsAuthenticated(false)} className="px-8 py-3 bg-slate-100 rounded-2xl text-slate-500 font-black hover:bg-slate-200 transition-all">Verrouiller</button>
-            </header>
+    const menuItems = [
+        { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
+        { id: 'children', label: 'Mes Enfants', icon: Users },
+        { id: 'rewards', label: 'Récompenses', icon: Gift },
+        { id: 'security', label: 'Sécurité', icon: SettingsIcon },
+    ];
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Children Management */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
-                        <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-2xl font-black text-slate-800">Mes Enfants</h3>
-                            <button onClick={() => setShowAddChild(true)} className="magical-gradient text-white p-3 rounded-2xl shadow-lg hover:rotate-90 transition-all">
-                                <Plus className="w-6 h-6" />
+    return (
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 pb-20">
+            {/* Sidebar Navigation */}
+            <aside className="lg:w-64 flex-shrink-0">
+                <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 sticky top-24">
+                    <div className="flex items-center gap-3 mb-8 px-2">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                            <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <span className="font-black text-slate-800 text-lg">Famille</span>
+                    </div>
+                    <nav className="space-y-1">
+                        {menuItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id as Tab)}
+                                className={`w-full flex items-center gap-3 p-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                            >
+                                <item.icon className="w-5 h-5" />
+                                {item.label}
+                            </button>
+                        ))}
+                        <div className="pt-4 mt-4 border-t border-slate-100">
+                            <button onClick={() => setIsAuthenticated(false)} className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-xs uppercase tracking-wider text-red-400 hover:bg-red-50 hover:text-red-600 transition-all">
+                                <Lock className="w-5 h-5" /> Quitter
                             </button>
                         </div>
+                    </nav>
+                </div>
+            </aside>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {children.map(child => (
-                                <div key={child.id} className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-indigo-600 font-black text-xl shadow-sm">
-                                            {child.name.charAt(0).toUpperCase()}
+            {/* Main Content Area */}
+            <main className="flex-1 space-y-8">
+                {activeTab === 'overview' && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden group">
+                                <Zap className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 group-hover:scale-110 transition-transform duration-700" />
+                                <h3 className="text-indigo-100 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Total Stars</h3>
+                                <div className="flex items-end gap-2">
+                                    <span className="text-4xl font-black">{children.reduce((acc, c) => acc + c.stars, 0)}</span>
+                                    <span className="text-indigo-200 text-lg font-bold mb-1">⭐</span>
+                                </div>
+                            </div>
+                            <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
+                                <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Moyenne d'Étude</h3>
+                                <div className="flex items-end gap-2 text-slate-800">
+                                    <span className="text-4xl font-black">{Math.round(stats.length / (children.length || 1))}</span>
+                                    <span className="text-slate-500 text-sm font-bold mb-1">ACT/KID</span>
+                                </div>
+                            </div>
+                            <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
+                                <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Matière Favorite</h3>
+                                <div className="flex items-end gap-2 text-slate-800">
+                                    <span className="text-2xl font-black uppercase">{stats[0]?.subject || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                                    <History className="w-6 h-6 text-indigo-600" /> Historique Récent
+                                </h3>
+                            </div>
+                            <div className="space-y-4">
+                                {stats.length > 0 ? stats.slice(0, 5).map(s => (
+                                    <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                                                <BookOpen className="w-5 h-5 text-indigo-500" />
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-slate-800 text-sm">{s.subject}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase">{children.find(c => c.id === s.child_id)?.name || 'Anonyme'}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-black text-slate-800 text-lg">{child.name}</h4>
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{child.grade_level}</p>
+                                        <div className="text-right">
+                                            <p className="font-black text-indigo-600">+{s.score} PTS</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase">{new Date(s.date).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => openEditChild(child)} className="p-2 bg-white rounded-xl text-slate-400 hover:text-indigo-600 shadow-sm"><Edit2 className="w-4 h-4" /></button>
-                                        <button onClick={() => deleteChild(child.id)} className="p-2 bg-white rounded-xl text-slate-400 hover:text-red-500 shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                                )) : (
+                                    <div className="py-10 text-center text-slate-400 font-bold italic">Aucune activité pour le moment...</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'children' && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-black text-slate-800">Gestion des Profils</h2>
+                            <button onClick={() => setShowAddChild(true)} className="magical-gradient text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 shadow-lg hover:scale-105 transition-all">
+                                <Plus className="w-5 h-5" /> Ajouter un enfant
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {children.map(child => (
+                                <div key={child.id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 group relative">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-20 h-20 rounded-3xl bg-indigo-50 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl group-hover:rotate-3 transition-transform">
+                                            {child.avatar_url ? (
+                                                <img src={child.avatar_url} alt="" className="w-full h-full object-cover" />
+                                            ) : <User className="w-8 h-8 text-indigo-300" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-xl font-black text-slate-800">{child.name}</h3>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{child.grade_level}</span>
+                                                <span className="bg-yellow-50 text-yellow-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{child.stars} ⭐</span>
+                                                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{child.daily_time_limit} MIN</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 flex gap-3">
+                                        <button onClick={() => openEditChild(child)} className="flex-1 p-4 bg-slate-50 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-2">
+                                            <Edit2 className="w-4 h-4" /> Configurer
+                                        </button>
+                                        <button onClick={() => deleteChild(child.id)} className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             ))}
-                            {children.length === 0 && (
-                                <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem]">
-                                    <p className="text-slate-400 font-bold">Aucun enfant enregistré. Ajoutez le premier ! 🚀</p>
-                                </div>
-                            )}
                         </div>
                     </div>
+                )}
 
-                    <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
-                        <h3 className="text-2xl font-black text-slate-800 mb-8">Sécurité Famille</h3>
-                        <div className="space-y-6">
-                            <div className="flex flex-col md:flex-row gap-6 items-end">
-                                <div className="flex-1 space-y-3">
-                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Changer le code PIN Parents</label>
+                {activeTab === 'rewards' && (
+                    <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 text-center animate-in fade-in slide-in-from-bottom-4">
+                        <div className="w-20 h-20 bg-yellow-50 rounded-3xl flex items-center justify-center text-yellow-500 mx-auto mb-6">
+                            <Gift className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-800 mb-2">Système de Récompenses</h2>
+                        <p className="text-slate-500 font-bold mb-10 max-w-md mx-auto">Créez des objectifs pour motiver vos enfants à apprendre !</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                            <div className="p-6 rounded-3xl border-2 border-dashed border-slate-100 flex flex-col items-center justify-center gap-4 text-center group cursor-pointer hover:border-indigo-200 transition-all">
+                                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 group-hover:text-indigo-400 group-hover:bg-indigo-50 transition-all">
+                                    <Plus className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-slate-400 group-hover:text-indigo-600 transition-colors uppercase text-xs">Nouvel Objectif</p>
+                                    <p className="text-[10px] text-slate-300 font-bold uppercase mt-1">Bientôt disponible</p>
+                                </div>
+                            </div>
+                            <div className="p-8 bg-indigo-50 rounded-[2.5rem] border border-indigo-100 relative overflow-hidden group">
+                                <TrendingUp className="absolute -right-2 -bottom-2 w-20 h-20 text-indigo-100 group-hover:scale-110 transition-transform" />
+                                <div className="relative z-10">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <span className="bg-white p-2 rounded-xl text-indigo-600 shadow-sm"><Zap className="w-5 h-5" /></span>
+                                        <span className="bg-white px-3 py-1 rounded-lg text-[10px] font-black text-indigo-600 uppercase">En cours</span>
+                                    </div>
+                                    <h4 className="font-black text-slate-800 text-lg">Super Savant</h4>
+                                    <p className="text-xs font-bold text-slate-500 mb-4">Atteindre 500 étoiles pour une surprise !</p>
+                                    <div className="h-3 bg-white rounded-full overflow-hidden border border-indigo-100">
+                                        <div className="h-full bg-indigo-600 w-2/3 rounded-full" />
+                                    </div>
+                                    <p className="text-[10px] font-black text-indigo-600 mt-2 text-right uppercase">334 / 500 ⭐</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'security' && (
+                    <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-in fade-in slide-in-from-bottom-4">
+                        <h2 className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
+                            <ShieldCheck className="w-7 h-7 text-indigo-600" /> Sécurité & Contrôles
+                        </h2>
+                        <div className="space-y-10">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h4 className="font-black text-slate-800">Code PIN Parent</h4>
+                                        <p className="text-xs text-slate-400 font-bold uppercase mt-1">Requis pour accéder à cet espace</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col md:flex-row gap-4">
                                     <input
                                         type="password"
                                         maxLength={4}
                                         value={newPin}
                                         onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                                        placeholder="Nouveau code (4 chiffres)"
-                                        className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-black text-xl"
+                                        placeholder="0000"
+                                        className="flex-1 p-5 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-black text-2xl tracking-widest text-center"
                                     />
+                                    <button onClick={saveParentSettings} className="px-10 py-5 magical-gradient text-white font-black rounded-2xl shadow-lg hover:scale-105 transition-all">
+                                        Sauvegarder
+                                    </button>
                                 </div>
-                                <button onClick={saveParentSettings} className="px-8 py-5 magical-gradient text-white font-black rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all">Mettre à jour</button>
                             </div>
-                            {success && <p className="text-emerald-500 font-bold text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {success}</p>}
-                        </div>
-                    </div>
-                </div>
 
-                {/* Global Activity */}
-                <div className="space-y-8">
-                    <div className="bg-indigo-600 p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden">
-                        <TrendingUp className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-                        <h3 className="text-xl font-black mb-6 flex items-center gap-2">Stats Globales</h3>
-                        <div className="space-y-4">
-                            <div className="bg-white/10 p-4 rounded-2xl">
-                                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest">Total Étoiles Famille</p>
-                                <p className="text-3xl font-black">{children.reduce((acc, c) => acc + c.stars, 0)} ⭐</p>
-                            </div>
-                            <div className="bg-white/10 p-4 rounded-2xl">
-                                <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest">Activités cette semaine</p>
-                                <p className="text-3xl font-black">{stats.length}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
-                        <h3 className="text-xl font-black text-slate-800 mb-6">Derniers Exploits</h3>
-                        <div className="space-y-4 text-sm font-medium">
-                            {stats.slice(0, 4).map(s => (
-                                <div key={s.id} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0 uppercase tracking-tighter text-[10px]">
-                                    <span className="text-slate-400 font-black">{new Date(s.date).toLocaleDateString()}</span>
-                                    <span className="text-slate-700 font-black">{s.subject}</span>
-                                    <span className="text-indigo-600 font-black">+{s.score} PTS</span>
+                            <div className="pt-10 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                                    <Moon className="w-6 h-6 text-indigo-600 mb-4" />
+                                    <h4 className="font-black text-slate-800">Mode Sommeil</h4>
+                                    <p className="text-xs font-bold text-slate-400 mt-2 mb-4">Bloquer l'accès automatiquement après une certaine heure (ex: 20:00).</p>
+                                    <button className="text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline">Configurer l'horaire</button>
                                 </div>
-                            ))}
+                                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                                    <Award className="w-6 h-6 text-yellow-600 mb-4" />
+                                    <h4 className="font-black text-slate-800">Détection d'IA</h4>
+                                    <p className="text-xs font-bold text-slate-400 mt-2 mb-4">Recevoir un rapport quand l'enfant utilise l'aide aux devoirs.</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-10 h-5 bg-indigo-600 rounded-full relative">
+                                            <div className="absolute top-1 right-1 w-3 h-3 bg-white rounded-full shadow-sm" />
+                                        </div>
+                                        <span className="font-black text-[10px] text-indigo-600 uppercase">Activé</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                )}
+            </main>
 
-            {/* Add/Edit Child Modal */}
+            {/* Add/Edit Child Modal (Simplified for the new layout) */}
             <AnimatePresence>
                 {showAddChild && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={resetChildForm} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-[3rem] p-10 w-full max-w-2xl relative z-10 shadow-2xl">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-[3rem] p-10 w-full max-w-2xl relative z-10 shadow-2xl overflow-y-auto max-h-[90vh]">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-3xl font-black text-slate-800">{editingChild ? 'Modifier le Profil' : 'Ajouter un Enfant'}</h3>
                                 <button onClick={resetChildForm} className="p-2 hover:bg-slate-100 rounded-full transition-all"><X className="w-6 h-6" /></button>
@@ -312,11 +402,11 @@ export default function ParentalSpace() {
                             <div className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-3">
-                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Prénom de l'enfant</label>
-                                        <input value={childName} onChange={e => setChildName(e.target.value)} className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold" placeholder="Ex: Léo" />
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Prénom</label>
+                                        <input value={childName} onChange={e => setChildName(e.target.value)} className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold" placeholder="Léo" />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Classe / Niveau</label>
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Classe</label>
                                         <select value={childGrade} onChange={e => setChildGrade(e.target.value)} className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold appearance-none">
                                             {['CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème'].map(g => <option key={g} value={g}>{g}</option>)}
                                         </select>
@@ -325,25 +415,36 @@ export default function ParentalSpace() {
 
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Limite de temps quotidienne</label>
-                                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-black text-sm">{childTimeLimit === 0 ? 'Illimité' : `${childTimeLimit} min`}</span>
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Limite de temps</label>
+                                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-black text-sm">{childTimeLimit} min</span>
                                     </div>
-                                    <input type="range" min="0" max="120" step="15" value={childTimeLimit} onChange={e => setChildTimeLimit(Number(e.target.value))} className="w-full accent-indigo-600" />
+                                    <input type="range" min="15" max="180" step="15" value={childTimeLimit} onChange={e => setChildTimeLimit(Number(e.target.value))} className="w-full accent-indigo-600" />
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Matières à restreindre</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {['Maths', 'Français', 'Histoire', 'Sciences', 'Dessin'].map(topic => (
-                                            <button key={topic} onClick={() => toggleTopic(topic)} className={`px-4 py-2 rounded-xl text-[10px] font-black border-2 transition-all ${childBlockedTopics.includes(topic) ? 'bg-red-50 border-red-200 text-red-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
-                                                {topic}
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Applications autorisées</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        {[
+                                            { id: 'assistant', label: 'IA' }, { id: 'quiz', label: 'Quiz' },
+                                            { id: 'math', label: 'Calcul' }, { id: 'drawing', label: 'Atelier' },
+                                            { id: 'homework', label: 'Aide Photo' }, { id: 'story', label: 'Contes' },
+                                            { id: 'dictionary', label: 'Dico' }, { id: 'fact', label: 'Curiosité' }
+                                        ].map(feature => (
+                                            <button
+                                                key={feature.id}
+                                                type="button"
+                                                onClick={() => toggleTopic(feature.id)}
+                                                className={`px-4 py-3 rounded-2xl text-[10px] font-black border-2 transition-all flex items-center justify-between ${!childBlockedTopics.includes(feature.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'}`}
+                                            >
+                                                <span>{feature.label}</span>
+                                                <div className={`w-2 h-2 rounded-full ${!childBlockedTopics.includes(feature.id) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
                                             </button>
                                         ))}
                                     </div>
                                 </div>
 
-                                <button onClick={saveChild} disabled={loading || !childName} className="w-full magical-gradient text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
-                                    {loading ? 'Sauvegarde...' : 'C\'est parti !'}
+                                <button onClick={saveChild} disabled={loading || !childName} className="w-full magical-gradient text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+                                    {loading ? 'Enregistrement...' : 'Sauvegarder le Profil'}
                                 </button>
                             </div>
                         </motion.div>

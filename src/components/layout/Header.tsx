@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Star, Menu } from 'lucide-react';
+import { Star, Menu, Clock } from 'lucide-react';
 import { TabItem } from '../../types/app';
 import { Child } from '../../lib/supabase';
 
@@ -8,10 +8,11 @@ interface HeaderProps {
     activeTab: string;
     tabs: TabItem[];
     selectedChild: Child | null;
+    timeLeft?: number | null;
     setIsMobileNavOpen: (open: boolean) => void;
 }
 
-export default function Header({ activeTab, tabs, selectedChild, setIsMobileNavOpen }: HeaderProps) {
+export default function Header({ activeTab, tabs, selectedChild, timeLeft, setIsMobileNavOpen }: HeaderProps) {
     const currentTab = tabs.find(t => t.id === activeTab);
     const isHome = activeTab === 'home';
 
@@ -32,6 +33,15 @@ export default function Header({ activeTab, tabs, selectedChild, setIsMobileNavO
             </div>
 
             <div className="flex items-center gap-2 md:gap-3">
+                {timeLeft !== null && (
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                        <Clock className={`w-3.5 h-3.5 ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`} />
+                        <span className={`font-black text-[10px] md:text-sm ${timeLeft < 10 ? 'text-red-600' : 'text-slate-600'}`}>
+                            {timeLeft} MIN
+                        </span>
+                    </div>
+                )}
+
                 <div className="hidden sm:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
                     <span className="text-sm">🎓</span>
                     <span className="font-black text-indigo-700 text-[10px] uppercase tracking-wider">{selectedChild?.grade_level}</span>
