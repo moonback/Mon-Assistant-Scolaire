@@ -2,11 +2,12 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Palette, Eraser, Download, Trash2, Pencil, Sparkles, Star,
   Undo2, Redo2, Maximize2, Minimize2, Heart, Moon,
-  Brush, MousePointer2, Type, Minus, Plus, Wand2, Loader2
+  Brush, MousePointer2, Type, Minus, Plus, Wand2, Loader2,
+  Square, Circle as CircleIcon, Triangle, LineChart, Grid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-type Tool = 'pen' | 'eraser' | 'rainbow' | 'stamp-star' | 'stamp-heart' | 'stamp-moon';
+type Tool = 'pen' | 'eraser' | 'rainbow' | 'stamp-star' | 'stamp-heart' | 'stamp-moon' | 'line' | 'square' | 'circle' | 'triangle';
 
 export default function DrawingBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,6 +27,10 @@ export default function DrawingBoard() {
   const [showGenModal, setShowGenModal] = useState(false);
   const [genPrompt, setGenPrompt] = useState('');
   const [generationsLeft, setGenerationsLeft] = useState(5);
+  const [showGrid, setShowGrid] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [snapshot, setSnapshot] = useState<ImageData | null>(null);
+  const [cachedRect, setCachedRect] = useState<DOMRect | null>(null);
 
   // Initialize and check generation limit
   useEffect(() => {
@@ -49,7 +54,13 @@ export default function DrawingBoard() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
@@ -82,8 +93,7 @@ export default function DrawingBoard() {
         if (ctx) {
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           saveToHistory();
         }
       }
@@ -97,6 +107,7 @@ export default function DrawingBoard() {
         if (ctx) {
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           const img = new Image();
           img.src = tempImage;
           img.onload = () => ctx.drawImage(img, 0, 0);
@@ -108,7 +119,7 @@ export default function DrawingBoard() {
     }
   }, []);
 
-  const getCoordinates = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement, rectOverride?: DOMRect) => {
     let clientX, clientY;
     if ('touches' in e && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
@@ -117,10 +128,16 @@ export default function DrawingBoard() {
       clientX = (e as React.MouseEvent).clientX;
       clientY = (e as React.MouseEvent).clientY;
     }
-    const rect = canvas.getBoundingClientRect();
+
+    const rect = rectOverride || canvas.getBoundingClientRect();
+
+    // Exact scaling calculation to match mouse to canvas pixels
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
     };
   };
 
@@ -158,10 +175,13 @@ export default function DrawingBoard() {
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const { x, y } = getCoordinates(e, canvas);
+    const rect = canvas.getBoundingClientRect();
+    setCachedRect(rect);
+    const { x, y } = getCoordinates(e, canvas, rect);
+    setStartPos({ x, y });
 
     if (tool.startsWith('stamp-')) {
       drawStamp(ctx, x, y, tool);
@@ -170,20 +190,18 @@ export default function DrawingBoard() {
     }
 
     setIsDrawing(true);
+    setSnapshot(ctx.getImageData(0, 0, canvas.width, canvas.height));
     ctx.beginPath();
     ctx.moveTo(x, y);
 
-    // Initial draw for pen tools
-    if (tool === 'pen' || tool === 'eraser' || tool === 'rainbow') {
-      ctx.lineWidth = lineWidth;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      if (tool === 'eraser') {
-        ctx.strokeStyle = '#ffffff';
-      } else if (tool === 'pen') {
-        ctx.strokeStyle = color;
-      }
-      // Rainbow is handled in 'draw'
+    // Initial draw settings
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (tool === 'eraser') {
+      ctx.strokeStyle = '#ffffff';
+    } else {
+      ctx.strokeStyle = color;
     }
   };
 
@@ -192,9 +210,38 @@ export default function DrawingBoard() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !cachedRect) return;
 
-    const { x, y } = getCoordinates(e, canvas);
+    const { x, y } = getCoordinates(e, canvas, cachedRect);
+
+    if (['line', 'square', 'circle', 'triangle'].includes(tool)) {
+      if (snapshot) ctx.putImageData(snapshot, 0, 0);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+
+      if (tool === 'line') {
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      } else if (tool === 'square') {
+        ctx.strokeRect(startPos.x, startPos.y, x - startPos.x, y - startPos.y);
+      } else if (tool === 'circle') {
+        const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
+        ctx.beginPath();
+        ctx.arc(startPos.x, startPos.y, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (tool === 'triangle') {
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(startPos.x * 2 - x, y);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      return;
+    }
 
     if (tool === 'rainbow') {
       const hue = (Date.now() / 10) % 360;
@@ -208,6 +255,8 @@ export default function DrawingBoard() {
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
+      setSnapshot(null);
+      setCachedRect(null);
       saveToHistory();
     }
   };
@@ -249,8 +298,7 @@ export default function DrawingBoard() {
     if (canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Use clear instead of white fill
         saveToHistory();
       }
     }
@@ -324,7 +372,8 @@ export default function DrawingBoard() {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (canvas && ctx) {
-          ctx.fillStyle = '#ffffff';
+          ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear before drawing coloring page
+          ctx.fillStyle = '#ffffff'; // White background for coloring page is usually better
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           const scale = Math.min(canvas.width / 1024, canvas.height / 1024) * 0.9;
@@ -451,6 +500,14 @@ export default function DrawingBoard() {
               </button>
 
               <button
+                onClick={() => setShowGrid(!showGrid)}
+                className={`p-2.5 rounded-xl transition-all ${showGrid ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'hover:bg-slate-100 text-slate-600'}`}
+                title="Afficher le quadrillage de géométrie"
+              >
+                <Grid className="w-5 h-5" />
+              </button>
+
+              <button
                 onClick={clearCanvas}
                 className="p-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition-all group"
                 title="Tout effacer"
@@ -487,6 +544,10 @@ export default function DrawingBoard() {
               <div className="absolute inset-0 pointer-events-none opacity-[0.02] z-10"
                 style={{ backgroundImage: 'radial-gradient(#6366f1 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
 
+              <div className={`absolute inset-0 z-10 transition-opacity duration-300 ${showGrid ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <div className="absolute inset-0 drawing-grid" />
+              </div>
+
               <canvas
                 ref={canvasRef}
                 onMouseDown={startDrawing}
@@ -496,16 +557,24 @@ export default function DrawingBoard() {
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={stopDrawing}
-                className="absolute inset-0 w-full h-full relative z-20 block bg-white"
+                className={`absolute inset-0 w-full h-full z-20 block bg-white ${showGrid ? 'bg-transparent' : ''}`}
               />
+              {/* Note: if showGrid is on, the canvas MUST be semi-transparent or the grid must be DRAWN on the canvas. 
+                 Since the canvas has a white fill on resize/init, I'll make the canvas background transparent when grid is on.
+                 Wait, if I make it transparent, I see the grid through the canvas. That works!
+              */}
 
               <motion.div
-                className="fixed pointer-events-none z-50 w-6 h-6 rounded-full border-2 border-indigo-500 shadow-sm mix-blend-difference hidden md:block"
+                className="absolute pointer-events-none z-50 w-6 h-6 rounded-full border-2 border-indigo-500 shadow-sm mix-blend-difference hidden md:block"
+                style={{
+                  left: 0,
+                  top: 0
+                }}
                 animate={{
                   x: mousePos.x - 12,
                   y: mousePos.y - 12,
                 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 250, mass: 0.5 }}
+                transition={{ duration: 0 }}
               />
             </div>
           </div>
@@ -519,7 +588,11 @@ export default function DrawingBoard() {
                 { id: 'eraser', icon: Eraser, label: 'Gomme', color: 'bg-slate-700' },
                 { id: 'stamp-star', icon: Star, label: 'Étoile', color: 'bg-amber-400' },
                 { id: 'stamp-heart', icon: Heart, label: 'Cœur', color: 'bg-rose-500' },
-                { id: 'stamp-moon', icon: Moon, label: 'Lune', color: 'bg-purple-600' }
+                { id: 'stamp-moon', icon: Moon, label: 'Lune', color: 'bg-purple-600' },
+                { id: 'line', icon: LineChart, label: 'Ligne', color: 'bg-indigo-500' },
+                { id: 'square', icon: Square, label: 'Carré', color: 'bg-blue-600' },
+                { id: 'circle', icon: CircleIcon, label: 'Cercle', color: 'bg-emerald-600' },
+                { id: 'triangle', icon: Triangle, label: 'Triangle', color: 'bg-orange-500' }
               ].map((t) => (
                 <button
                   key={t.id}

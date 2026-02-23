@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact';
+type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact' | 'homework';
 
 const SYSTEM_INSTRUCTIONS: Record<Mode, string> = {
   assistant: `Tu es un assistant pédagogique bienveillant pour des enfants de l'école primaire (6-11 ans).
@@ -12,6 +12,14 @@ Règles :
 3. Donne des exemples concrets.
 4. Termine par une question de vérification.
 5. Refuse poliment les questions non scolaires.`,
+
+  homework: `Tu es un tuteur expert en aide aux devoirs. 
+Lorsqu'un élève t'envoie une photo d'un exercice :
+1. Analyse l'image pour comprendre l'énoncé.
+2. Ne donne pas directement la réponse ! Guide l'élève étape par étape.
+3. Pose des questions pour l'aider à trouver la solution par lui-même.
+4. Utilise un ton encourageant et patient.
+5. S'il s'agit de géométrie ou de maths, explique les règles fondamentales.`,
 
   quiz: `Tu es un générateur de quiz pour enfants.
 Génère un QCM de 3 questions sur le sujet demandé.
@@ -27,7 +35,7 @@ Format JSON attendu :
 Si le sujet n'est pas clair, choisis un sujet scolaire au hasard (animaux, espace, histoire, etc.).`,
 
   story: `Tu es un conteur d'histoires magiques pour enfants.
-Invente une histoire courte (environ 150 mots), captivante et éducative basée sur les éléments fournis.
+Inventne une histoire courte (environ 150 mots), captivante et éducative basée sur les éléments fournis.
 Utilise un vocabulaire riche mais accessible.
 Ajoute une petite morale ou une leçon à la fin.`,
 
@@ -60,7 +68,7 @@ export async function askGemini(
     if (image) {
       contents = {
         parts: [
-          { text: prompt },
+          { text: prompt || "Aide-moi à comprendre cet exercice." },
           {
             inlineData: {
               mimeType: "image/jpeg",
@@ -72,7 +80,7 @@ export async function askGemini(
     }
 
     const response = await ai.models.generateContent({
-      model: image ? "gemini-2.5-flash-image" : "gemini-3-flash-preview", // Use vision model if image provided
+      model: "gemini-2.0-flash-exp",
       contents: contents,
       config: {
         systemInstruction: systemInstruction,

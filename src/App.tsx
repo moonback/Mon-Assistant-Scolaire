@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import {
   MessageCircle, Brain, Book, BookA, Calculator,
   Lightbulb, Star, Home, Trophy, LogOut, Palette,
-  Menu, X, ChevronLeft, ChevronRight, Settings, Bell, GraduationCap, Sparkles
+  Menu, X, ChevronLeft, ChevronRight, Settings, Bell, GraduationCap, Sparkles, Camera
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -23,8 +23,9 @@ import DidYouKnow from './components/DidYouKnow';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import DrawingBoard from './components/DrawingBoard';
+import HomeworkHelper from './components/HomeworkHelper';
 
-type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing';
+type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework';
 
 function AppContent() {
   const { session, profile, signOut, refreshProfile } = useAuth();
@@ -79,6 +80,7 @@ function AppContent() {
     { id: 'quiz', label: 'Quiz', icon: Brain, color: 'from-violet-500 to-purple-400', desc: 'Teste tes connaissances' },
     { id: 'math', label: 'Calcul', icon: Calculator, color: 'from-emerald-500 to-teal-400', desc: 'Entraîne-toi en maths' },
     { id: 'drawing', label: 'L\'Atelier', icon: Palette, color: 'from-pink-500 to-rose-400', desc: 'Ton espace d\'artiste' },
+    { id: 'homework', label: 'Aide Photo', icon: Camera, color: 'from-blue-600 to-indigo-500', desc: 'Aide aux devoirs par l\'image' },
     { id: 'story', label: 'Histoires', icon: Book, color: 'from-orange-500 to-amber-400', desc: 'Crée des histoires' },
     { id: 'dictionary', label: 'Dico', icon: BookA, color: 'from-cyan-500 to-sky-400', desc: 'Cherche un mot' },
     { id: 'fact', label: 'Infos', icon: Lightbulb, color: 'from-yellow-400 to-orange-400', desc: 'Découvre des faits' },
@@ -292,6 +294,7 @@ function AppContent() {
       case 'math': return <MathGame onEarnPoints={(pts) => addStars(pts, 'math')} />;
       case 'story': return <Story />;
       case 'drawing': return <DrawingBoard />;
+      case 'homework': return <HomeworkHelper onEarnPoints={(pts) => addStars(pts, 'homework')} gradeLevel={profile?.grade_level} />;
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
       default: return null;
