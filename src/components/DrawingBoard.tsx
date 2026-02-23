@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Palette, Eraser, Download, Trash2, Pencil, Sparkles, Star,
   Undo2, Redo2, Maximize2, Minimize2, Heart, Moon,
-  Brush, MousePointer2, Type, Minus, Plus
+  Brush, MousePointer2, Type, Minus, Plus, Wand2, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -22,6 +22,9 @@ export default function DrawingBoard() {
   const [history, setHistory] = useState<string[]>([]);
   const [historyStep, setHistoryStep] = useState(-1);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showGenModal, setShowGenModal] = useState(false);
+  const [genPrompt, setGenPrompt] = useState('');
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -232,6 +235,92 @@ export default function DrawingBoard() {
     }
   };
 
+  const generateColoringPage = async () => {
+    if (!genPrompt) return;
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey || apiKey === 'your_openrouter_key_here') {
+      alert("S'il te plaît, ajoute ta clé API OpenRouter dans le fichier .env ! (VITE_OPENROUTER_API_KEY)");
+      return;
+    }
+
+    setIsGenerating(true);
+    setShowGenModal(false);
+
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Mon Assistant Scolaire"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-flash-1.5-8b:free",
+          messages: [
+            {
+              role: "system",
+              content: "Tu es un artiste spécialisé dans les coloriages pour enfants. Ton but est de générer UNIQUEMENT du code SVG (sans texte explicatif) pour un coloriage en noir et blanc. Utilise des lignes noires épaisses, pas de remplissage, pas d'ombres. Le SVG doit avoir un viewBox='0 0 1024 1024' et être simple."
+            },
+            {
+              role: "user",
+              content: `Génère un coloriage SVG pour : ${genPrompt}`
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur OpenRouter (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) throw new Error("Pas de réponse de l'IA");
+
+      // Extract SVG from markdown if needed
+      const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
+      const svgCode = svgMatch ? svgMatch[0] : content;
+
+      const blob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (canvas && ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          const scale = Math.min(canvas.width / 1024, canvas.height / 1024) * 0.9;
+          const x = (canvas.width / 2) - (1024 / 2) * scale;
+          const y = (canvas.height / 2) - (1024 / 2) * scale;
+
+          ctx.drawImage(img, x, y, 1024 * scale, 1024 * scale);
+          saveToHistory();
+        }
+        setIsGenerating(false);
+        setGenPrompt('');
+        URL.revokeObjectURL(url);
+      };
+
+      img.onerror = () => {
+        alert("Oups ! Je n'ai pas pu charger le dessin. Réessaie avec un autre sujet !");
+        setIsGenerating(false);
+      };
+
+      img.src = url;
+
+    } catch (error) {
+      console.error(error);
+      alert("Une erreur est survenue lors de la génération. Vérifie ta clé API !");
+      setIsGenerating(false);
+    }
+  };
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
 
@@ -313,6 +402,17 @@ export default function DrawingBoard() {
               >
                 {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
               </button>
+
+              <button
+                onClick={() => setShowGenModal(true)}
+                disabled={isGenerating}
+                className={`p-2.5 rounded-xl transition-all flex items-center gap-2 ${isGenerating ? 'bg-indigo-50 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}
+                title="Générer un coloriage magique"
+              >
+                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
+                <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Magie IA</span>
+              </button>
+
               <button
                 onClick={clearCanvas}
                 className="p-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition-all group"
@@ -448,6 +548,57 @@ export default function DrawingBoard() {
       </motion.div>
 
       {/* Styles for range and animations */}
+      <AnimatePresence>
+        {showGenModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl space-y-6"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Wand2 className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-800">Générateur Magique</h3>
+                <p className="text-slate-500 font-medium text-sm">Que veux-tu colorier aujourd'hui ?</p>
+              </div>
+
+              <input
+                autoFocus
+                type="text"
+                value={genPrompt}
+                onChange={(e) => setGenPrompt(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && generateColoringPage()}
+                placeholder="Ex: Un dragon gentil, une fée, un chat..."
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowGenModal(false)}
+                  className="py-4 rounded-2xl bg-slate-50 text-slate-500 font-black uppercase text-xs tracking-widest hover:bg-slate-100"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={generateColoringPage}
+                  className="py-4 rounded-2xl bg-indigo-600 text-white font-black uppercase text-xs tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Générer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
