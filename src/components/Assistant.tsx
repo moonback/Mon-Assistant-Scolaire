@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { askGemini } from '../services/gemini';
-import { Send, Sparkles, Eraser, History, Trash2, Clock } from 'lucide-react';
+import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2 } from 'lucide-react';
 
 interface HistoryItem {
   id: string;
@@ -14,6 +14,10 @@ export default function Assistant() {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [verificationAnswer, setVerificationAnswer] = useState('');
+  const [verificationFeedback, setVerificationFeedback] = useState('');
+  const [checkingVerification, setCheckingVerification] = useState(false);
   
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     const saved = localStorage.getItem('school_assistant_history');
@@ -34,6 +38,8 @@ export default function Assistant() {
     setError('');
     setLoading(true);
     setResponse('');
+    setVerificationAnswer('');
+    setVerificationFeedback('');
 
     try {
       const answer = await askGemini(question, 'assistant');
@@ -53,16 +59,44 @@ export default function Assistant() {
     }
   };
 
+  const handleVerificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationAnswer.trim()) return;
+
+    setCheckingVerification(true);
+    try {
+      const prompt = `
+        Contexte :
+        Question élève : "${question}"
+        Ta réponse précédente : "${response}"
+        
+        Réponse de l'élève à ta question de vérification : "${verificationAnswer}"
+        
+        Tâche : Dis à l'élève si sa réponse est bonne ou non. Sois gentil et encourageant.
+      `;
+      const feedback = await askGemini(prompt, 'assistant');
+      setVerificationFeedback(feedback);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCheckingVerification(false);
+    }
+  };
+
   const handleClear = () => {
     setQuestion('');
     setResponse('');
     setError('');
+    setVerificationAnswer('');
+    setVerificationFeedback('');
   };
 
   const loadHistoryItem = (item: HistoryItem) => {
     setQuestion(item.question);
     setResponse(item.response);
     setError('');
+    setVerificationAnswer('');
+    setVerificationFeedback('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -129,13 +163,50 @@ export default function Assistant() {
 
       {/* Zone de réponse */}
       {response && (
-        <section className="bg-white rounded-3xl shadow-md p-6 border-l-8 border-emerald-400 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <h2 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
-            <Sparkles className="w-6 h-6" />
-            Voici la réponse :
-          </h2>
-          <div className="prose prose-lg prose-slate max-w-none whitespace-pre-wrap leading-relaxed">
-            {response}
+        <section className="bg-white rounded-3xl shadow-md p-6 border-l-8 border-emerald-400 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
+              <Sparkles className="w-6 h-6" />
+              Voici la réponse :
+            </h2>
+            <div className="prose prose-lg prose-slate max-w-none whitespace-pre-wrap leading-relaxed">
+              {response}
+            </div>
+          </div>
+
+          {/* Section Vérification */}
+          <div className="bg-emerald-50 rounded-2xl p-6 border-2 border-emerald-100">
+            <h3 className="font-bold text-emerald-800 mb-3 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5" />
+              As-tu bien compris ?
+            </h3>
+            <p className="text-sm text-emerald-700 mb-4">
+              Réponds à la petite question posée à la fin de l'explication ci-dessus :
+            </p>
+            
+            <form onSubmit={handleVerificationSubmit} className="flex gap-2">
+              <input
+                type="text"
+                value={verificationAnswer}
+                onChange={(e) => setVerificationAnswer(e.target.value)}
+                placeholder="Ta réponse..."
+                className="flex-1 p-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 outline-none"
+                disabled={checkingVerification || !!verificationFeedback}
+              />
+              <button
+                type="submit"
+                disabled={checkingVerification || !verificationAnswer || !!verificationFeedback}
+                className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold px-4 rounded-xl transition-colors"
+              >
+                {checkingVerification ? <Sparkles className="animate-spin w-5 h-5" /> : 'Vérifier'}
+              </button>
+            </form>
+
+            {verificationFeedback && (
+              <div className="mt-4 p-4 bg-white rounded-xl border border-emerald-200 animate-in fade-in slide-in-from-top-2">
+                <p className="text-emerald-800 font-medium">{verificationFeedback}</p>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -189,3 +260,4 @@ export default function Assistant() {
     </div>
   );
 }
+
