@@ -247,32 +247,35 @@ export default function DrawingBoard() {
     setShowGenModal(false);
 
     try {
+      const trimmedKey = apiKey.trim();
+      console.log(`Génération d'un coloriage pour : "${genPrompt}"...`);
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": `Bearer ${trimmedKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
           "X-Title": "Mon Assistant Scolaire"
         },
         body: JSON.stringify({
-          model: "google/gemini-flash-1.5-8b:free",
+          model: "google/gemini-2.5-flash-lite-preview-09-2025",
           messages: [
             {
               role: "system",
-              content: "Tu es un artiste spécialisé dans les coloriages pour enfants. Ton but est de générer UNIQUEMENT du code SVG (sans texte explicatif) pour un coloriage en noir et blanc. Utilise des lignes noires épaisses, pas de remplissage, pas d'ombres. Le SVG doit avoir un viewBox='0 0 1024 1024' et être simple."
+              content: "Tu es un artiste expert en coloriages pour enfants. Ton unique mission est de générer du code SVG pour un coloriage. \n\nDirectives strictes :\n1. Sortie : UNIQUEMENT le code SVG, pas de texte avant ou après.\n2. Style : Lignes noires épaisses (stroke-width: 3-5), fond blanc, pas de remplissage (fill='none'), pas de dégradés.\n3. Technique : Utilise des balises <path>, <circle>, <rect> simples.\n4. Format : <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'>.\n5. Simplicité : Le dessin doit être facile à colorier pour un enfant de 5 ans."
             },
             {
               role: "user",
-              content: `Génère un coloriage SVG pour : ${genPrompt}`
+              content: `Génère un coloriage SVG simple de : ${genPrompt}`
             }
           ]
         })
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur OpenRouter (${response.status}): ${errorText}`);
+        const errorBody = await response.text();
+        console.error("OpenRouter Error Body:", errorBody);
+        throw new Error(`Erreur OpenRouter ${response.status}`);
       }
 
       const data = await response.json();
