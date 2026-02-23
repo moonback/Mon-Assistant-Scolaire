@@ -64,12 +64,23 @@ function AppContent() {
       // 1. Bedtime Enforcement
       if (selectedChild.bedtime) {
         const now = new Date();
-        const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
-        const bedtimeDate = new Date();
-        bedtimeDate.setHours(bedHour, bedMin, 0);
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-        if (now >= bedtimeDate) {
-          alert("🌙 C'est l'heure de dormir ! Ton espace magique se ferme jusqu'à demain.");
+        const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
+        const bedtimeMinutes = bedHour * 60 + bedMin;
+        const wakeUpMinutes = 7 * 60; // 07:00 AM hardcoded wakeup
+
+        let isSleepTime = false;
+        if (bedtimeMinutes > wakeUpMinutes) {
+          // Night bedtime (e.g., 20:00 to 07:00)
+          isSleepTime = currentMinutes >= bedtimeMinutes || currentMinutes < wakeUpMinutes;
+        } else {
+          // Unusual bedtime (e.g., 01:00 to 07:00)
+          isSleepTime = currentMinutes >= bedtimeMinutes && currentMinutes < wakeUpMinutes;
+        }
+
+        if (isSleepTime) {
+          alert(`🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`);
           setSelectedChild(null);
           return;
         }
@@ -81,7 +92,7 @@ function AppContent() {
         setTimeLeft(remaining);
 
         if (remaining <= 0) {
-          alert("🛑 C'est l'heure de faire une pause ! Ton temps d'écran est terminé pour aujourd'hui.");
+          alert(`🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`);
           setSelectedChild(null);
         }
       } else {

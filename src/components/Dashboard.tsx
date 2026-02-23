@@ -6,18 +6,18 @@ import { Trophy, Star, TrendingUp, Calendar, Target, Zap, Clock } from 'lucide-r
 import { motion } from 'motion/react';
 
 export default function Dashboard() {
-  const { profile } = useAuth();
+  const { selectedChild } = useAuth();
   const [stats, setStats] = useState<Progress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
-      if (!profile) return;
+      if (!selectedChild) return;
 
       const { data, error } = await supabase
         .from('progress')
         .select('*')
-        .eq('user_id', profile.id)
+        .eq('child_id', selectedChild.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -28,7 +28,7 @@ export default function Dashboard() {
     }
 
     fetchStats();
-  }, [profile]);
+  }, [selectedChild]);
 
   // Aggregate data for chart
   const chartData = [
@@ -49,9 +49,9 @@ export default function Dashboard() {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Total Étoiles', value: profile?.stars || 0, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' },
+          { label: 'Total Étoiles', value: selectedChild?.stars || 0, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' },
           { label: 'Activités', value: stats.length, icon: target => <Target className="w-6 h-6" />, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-          { label: 'Niveau', value: profile?.grade_level || 'N/A', icon: zap => <Zap className="w-6 h-6" />, color: 'text-purple-500', bg: 'bg-purple-50' },
+          { label: 'Niveau', value: selectedChild?.grade_level || 'N/A', icon: zap => <Zap className="w-6 h-6" />, color: 'text-purple-500', bg: 'bg-purple-50' },
         ].map((item, i) => (
           <motion.div
             key={i}

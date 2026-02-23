@@ -302,6 +302,19 @@ export default function ParentalSpace() {
                                                 <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{child.grade_level}</span>
                                                 <span className="bg-yellow-50 text-yellow-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{child.stars} ⭐</span>
                                                 <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">{child.daily_time_limit} MIN</span>
+                                                {child.bedtime && (
+                                                    <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">🌙 {child.bedtime}</span>
+                                                )}
+                                                {/* Time Spent (Conso) */}
+                                                {(() => {
+                                                    const today = new Date().toISOString().split('T')[0];
+                                                    const spent = localStorage.getItem(`time_spent_${child.id}_${today}`) || '0';
+                                                    return (
+                                                        <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                                                            Utilisé: {spent}m
+                                                        </span>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
@@ -403,7 +416,12 @@ export default function ParentalSpace() {
                                     <Moon className="w-6 h-6 text-indigo-600 mb-4" />
                                     <h4 className="font-black text-slate-800">Mode Sommeil</h4>
                                     <p className="text-xs font-bold text-slate-400 mt-2 mb-4">Bloquer l'accès automatiquement après une certaine heure (ex: 20:00).</p>
-                                    <button className="text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline">Configurer l'horaire</button>
+                                    <button
+                                        onClick={() => setActiveTab('children')}
+                                        className="text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:underline"
+                                    >
+                                        Configurer l'horaire
+                                    </button>
                                 </div>
                                 <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
                                     <Award className="w-6 h-6 text-yellow-600 mb-4" />
