@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { Calculator, Check, X, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export default function MathGame() {
+interface MathGameProps {
+  onEarnPoints?: (amount: number) => void;
+}
+
+export default function MathGame({ onEarnPoints }: MathGameProps) {
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
   const [operator, setOperator] = useState('+');
@@ -37,7 +41,7 @@ export default function MathGame() {
   // Init
   if (num1 === 0) generateProblem();
 
-  const checkAnswer = (e: React.FormEvent) => {
+  const checkAnswer = (e: FormEvent) => {
     e.preventDefault();
     const val = parseInt(answer);
     let correct;
@@ -53,6 +57,7 @@ export default function MathGame() {
       setMessage('Bravo ! 🎉');
       setStatus('correct');
       setScore(s => s + 1);
+      onEarnPoints?.(5); // 5 points per correct answer
       setTimeout(generateProblem, 1500);
     } else {
       setMessage('Essaie encore ! 🤔');

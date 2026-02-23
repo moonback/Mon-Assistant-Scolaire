@@ -4,8 +4,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { MessageCircle, Brain, Book, BookA, Calculator, Lightbulb, Star, Home, Trophy } from 'lucide-react';
+import { MessageCircle, Brain, Book, BookA, Calculator, Lightbulb, Star, Home, Trophy, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 
 // Components
 import Assistant from './components/Assistant';
@@ -14,29 +16,50 @@ import Story from './components/Story';
 import Dictionary from './components/Dictionary';
 import MathGame from './components/MathGame';
 import DidYouKnow from './components/DidYouKnow';
+import AuthPage from './components/AuthPage';
+import Dashboard from './components/Dashboard';
 
-type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact';
+type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard';
 
-export default function App() {
+function AppContent() {
+  const { session, profile, signOut, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [stars, setStars] = useState(() => {
-    const saved = localStorage.getItem('school_assistant_stars');
-    return saved ? parseInt(saved) : 0;
-  });
   const [showConfetti, setShowConfetti] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem('school_assistant_stars', stars.toString());
-  }, [stars]);
+  // If not logged in, show Auth Page
+  if (!session) {
+    return <AuthPage />;
+  }
 
-  const addStars = (amount: number) => {
-    setStars(prev => prev + amount);
+  const addStars = async (amount: number, activityType: string, subject: string = 'General') => {
+    if (!profile) return;
+
+    // Optimistic update
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 2000);
+
+    try {
+      // Update local state via refreshProfile after DB update
+      await supabase.rpc('increment_stars', { row_id: profile.id, count: amount });
+      
+      // Log progress
+      await supabase.from('progress').insert({
+        user_id: profile.id,
+        score: amount,
+        activity_type: activityType,
+        subject: subject,
+        date: new Date().toISOString()
+      });
+
+      refreshProfile();
+    } catch (e) {
+      console.error('Error updating stars:', e);
+    }
   };
 
   const tabs = [
     { id: 'home', label: 'Accueil', icon: Home, color: 'bg-slate-500' },
+    { id: 'dashboard', label: 'Progression', icon: Trophy, color: 'bg-yellow-500', desc: 'Voir mes stats' },
     { id: 'assistant', label: 'Assistant', icon: MessageCircle, color: 'bg-sky-500', desc: 'Pose tes questions' },
     { id: 'quiz', label: 'Quiz', icon: Brain, color: 'bg-violet-500', desc: 'Teste tes connaissances' },
     { id: 'math', label: 'Calcul', icon: Calculator, color: 'bg-emerald-500', desc: 'Entraîne-toi en maths' },
@@ -52,12 +75,15 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
             <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-sky-400 to-violet-500 rounded-3xl p-8 text-white shadow-lg mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold mb-2">Bonjour ! 👋</h2>
+                <h2 className="text-3xl font-bold mb-2">Bonjour {profile?.username || 'l\'ami'} ! 👋</h2>
                 <p className="opacity-90 text-lg">Prêt à apprendre de nouvelles choses aujourd'hui ?</p>
+                <div className="mt-2 inline-block bg-white/20 px-3 py-1 rounded-lg text-sm font-medium">
+                  Classe : {profile?.grade_level || 'Non définie'}
+                </div>
               </div>
               <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm text-center">
-                <p className="text-sm font-bold uppercase tracking-wider opacity-80">Ton niveau</p>
-                <p className="text-4xl font-black">{Math.floor(stars / 100) + 1}</p>
+                <p className="text-sm font-bold uppercase tracking-wider opacity-80">Étoiles</p>
+                <p className="text-4xl font-black">{profile?.stars || 0}</p>
               </div>
             </div>
 
@@ -81,9 +107,10 @@ export default function App() {
             })}
           </div>
         );
-      case 'assistant': return <Assistant onEarnPoints={addStars} />;
-      case 'quiz': return <Quiz onEarnPoints={addStars} />;
-      case 'math': return <MathGame onEarnPoints={addStars} />;
+      case 'dashboard': return <Dashboard />;
+      case 'assistant': return <Assistant onEarnPoints={(pts) => addStars(pts, 'assistant')} gradeLevel={profile?.grade_level} />;
+      case 'quiz': return <Quiz onEarnPoints={(pts) => addStars(pts, 'quiz')} gradeLevel={profile?.grade_level} />;
+      case 'math': return <MathGame onEarnPoints={(pts) => addStars(pts, 'math')} />;
       case 'story': return <Story />;
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
@@ -93,7 +120,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-24 md:pb-0">
-      {/* Confetti Effect (Simple CSS Animation) */}
+      {/* Confetti Effect */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden">
           <div className="absolute animate-ping text-6xl">⭐</div>
@@ -120,11 +147,15 @@ export default function App() {
           <div className="flex items-center gap-4">
             <div className="bg-yellow-50 border-2 border-yellow-200 px-4 py-2 rounded-full flex items-center gap-2">
               <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-              <span className="font-bold text-yellow-700">{stars}</span>
+              <span className="font-bold text-yellow-700">{profile?.stars || 0}</span>
             </div>
-            <div className="bg-slate-100 p-2 rounded-full">
-               <Trophy className="w-5 h-5 text-slate-400" />
-            </div>
+            <button 
+              onClick={signOut}
+              className="bg-slate-100 p-2 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
+              title="Se déconnecter"
+            >
+               <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </header>
@@ -144,7 +175,7 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Navigation (Mobile) & Sidebar (Desktop) */}
+      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:top-20 md:bottom-auto md:left-4 md:right-auto md:w-20 md:h-[calc(100vh-6rem)] md:bg-transparent md:border-none md:flex md:flex-col md:gap-4 z-20">
         <div className="flex justify-around items-center h-20 md:h-auto md:flex-col md:gap-4 md:justify-start">
           {tabs.filter(t => t.id !== 'home').map((tab) => {
@@ -167,7 +198,6 @@ export default function App() {
                 <Icon className={`w-6 h-6 mb-1 md:mb-0 ${isActive ? `text-${tab.color.split('-')[1]}-600` : ''}`} />
                 <span className="text-[10px] font-medium md:hidden">{tab.label}</span>
                 
-                {/* Desktop Tooltip */}
                 <div className="hidden md:block absolute left-full ml-3 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-lg">
                   {tab.label}
                 </div>
@@ -175,7 +205,6 @@ export default function App() {
             );
           })}
           
-          {/* Mobile Home Button (Floating) */}
           <button
             onClick={() => setActiveTab('home')}
             className="md:hidden absolute -top-6 left-1/2 -translate-x-1/2 bg-sky-500 text-white p-4 rounded-full shadow-lg border-4 border-slate-50"
@@ -185,6 +214,14 @@ export default function App() {
         </div>
       </nav>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

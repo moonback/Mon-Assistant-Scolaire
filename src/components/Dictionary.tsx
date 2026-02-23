@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { askGemini } from '../services/gemini';
 import { Search, BookA, RefreshCw } from 'lucide-react';
 
@@ -7,7 +7,7 @@ export default function Dictionary() {
   const [definition, setDefinition] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
     if (!word.trim()) return;
     

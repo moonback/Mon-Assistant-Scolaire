@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { askGemini } from '../services/gemini';
 import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2 } from 'lucide-react';
 
@@ -9,7 +9,12 @@ interface HistoryItem {
   date: number;
 }
 
-export default function Assistant() {
+interface AssistantProps {
+  onEarnPoints?: (amount: number) => void;
+  gradeLevel?: string;
+}
+
+export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: AssistantProps) {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +33,7 @@ export default function Assistant() {
     localStorage.setItem('school_assistant_history', JSON.stringify(history));
   }, [history]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!question.trim()) {
       setError('Tu dois écrire une question !');
@@ -42,7 +47,7 @@ export default function Assistant() {
     setVerificationFeedback('');
 
     try {
-      const answer = await askGemini(question, 'assistant');
+      const answer = await askGemini(question, 'assistant', gradeLevel);
       setResponse(answer);
       
       const newItem: HistoryItem = {
@@ -59,7 +64,7 @@ export default function Assistant() {
     }
   };
 
-  const handleVerificationSubmit = async (e: React.FormEvent) => {
+  const handleVerificationSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!verificationAnswer.trim()) return;
 
@@ -72,10 +77,20 @@ export default function Assistant() {
         
         Réponse de l'élève à ta question de vérification : "${verificationAnswer}"
         
-        Tâche : Dis à l'élève si sa réponse est bonne ou non. Sois gentil et encourageant.
+        Tâche : Dis à l'élève si sa réponse est bonne ou non.
+        IMPORTANT : Commence ta réponse par [CORRECT] si c'est bon, ou [INCORRECT] si c'est faux.
+        Ensuite, explique pourquoi gentiment.
       `;
-      const feedback = await askGemini(prompt, 'assistant');
-      setVerificationFeedback(feedback);
+      const feedback = await askGemini(prompt, 'assistant', gradeLevel);
+      
+      const isCorrect = feedback.includes('[CORRECT]');
+      const cleanFeedback = feedback.replace('[CORRECT]', '').replace('[INCORRECT]', '').trim();
+      
+      setVerificationFeedback(cleanFeedback);
+      
+      if (isCorrect) {
+        onEarnPoints?.(20); // 20 points for verification
+      }
     } catch (err) {
       console.error(err);
     } finally {

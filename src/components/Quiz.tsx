@@ -10,7 +10,12 @@ interface Question {
   explanation: string;
 }
 
-export default function Quiz() {
+interface QuizProps {
+  onEarnPoints?: (amount: number) => void;
+  gradeLevel?: string;
+}
+
+export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
   const [topic, setTopic] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,7 +35,7 @@ export default function Quiz() {
     setIsCorrect(null);
 
     try {
-      const json = await askGemini(topic || "Culture générale", 'quiz');
+      const json = await askGemini(topic || "Culture générale", 'quiz', gradeLevel);
       const data = JSON.parse(json);
       setQuestions(data);
     } catch (e) {
@@ -47,7 +52,10 @@ export default function Quiz() {
     const correct = index === questions[currentQuestion].correctAnswer;
     setIsCorrect(correct);
     
-    if (correct) setScore(s => s + 1);
+    if (correct) {
+      setScore(s => s + 1);
+      onEarnPoints?.(10); // 10 points per correct answer
+    }
 
     // Wait a bit before next question
     setTimeout(() => {
