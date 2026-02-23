@@ -14,18 +14,33 @@ export const supabase = createClient(
 );
 
 export type Profile = {
+  id: string; // auth.uid()
+  username: string; // Parent name or family name
+  avatar_url: string;
+  created_at: string;
+  parent_pin: string | null;
+};
+
+export type Child = {
   id: string;
-  username: string;
+  parent_id: string;
+  name: string;
   avatar_url: string;
   grade_level: string; // CP, CE1, CE2, CM1, CM2
   stars: number;
+  daily_time_limit: number; // In minutes, 0 means no limit
+  bedtime?: string;
+  reward_goals?: any[];
+  blocked_topics: string[];
   created_at: string;
 };
 
 export type Progress = {
   id: string;
-  user_id: string;
-  subject: string; // Math, Français, Science, etc.
+  user_id: string; // Parent ID
+  child_id: string; // Linked child
+  subject: string;
+  activity_type: string;
   score: number;
   date: string;
 };

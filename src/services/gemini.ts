@@ -1,8 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact';
+type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact' | 'homework';
 
 const SYSTEM_INSTRUCTIONS: Record<Mode, string> = {
   assistant: `Tu es un assistant pédagogique bienveillant pour des enfants de l'école primaire (6-11 ans).
@@ -12,6 +8,14 @@ Règles :
 3. Donne des exemples concrets.
 4. Termine par une question de vérification.
 5. Refuse poliment les questions non scolaires.`,
+
+  homework: `Tu es un tuteur expert en aide aux devoirs. 
+Lorsqu'un élève t'envoie une photo d'un exercice :
+1. Analyse l'image pour comprendre l'énoncé.
+2. Ne donne pas directement la réponse ! Guide l'élève étape par étape.
+3. Pose des questions pour l'aider à trouver la solution par lui-même.
+4. Utilise un ton encourageant et patient.
+5. S'il s'agit de géométrie ou de maths, explique les règles fondamentales.`,
 
   quiz: `Tu es un générateur de quiz pour enfants.
 Génère un QCM de 3 questions sur le sujet demandé.
@@ -27,7 +31,7 @@ Format JSON attendu :
 Si le sujet n'est pas clair, choisis un sujet scolaire au hasard (animaux, espace, histoire, etc.).`,
 
   story: `Tu es un conteur d'histoires magiques pour enfants.
-Invente une histoire courte (environ 150 mots), captivante et éducative basée sur les éléments fournis.
+Inventne une histoire courte (environ 150 mots), captivante et éducative basée sur les éléments fournis.
 Utilise un vocabulaire riche mais accessible.
 Ajoute une petite morale ou une leçon à la fin.`,
 
@@ -45,9 +49,14 @@ export async function askGemini(
   prompt: string,
   mode: Mode = 'assistant',
   gradeLevel: string = 'CM1',
-  image?: string // Base64 image string
+  image?: string // Base64 image string (data:image/jpeg;base64,...)
 ): Promise<string> {
   try {
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("La clé API OpenRouter n'est pas configurée.");
+    }
+
     const systemInstruction = `${SYSTEM_INSTRUCTIONS[mode]}
     
     IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
@@ -55,34 +64,58 @@ export async function askGemini(
     ${gradeLevel === 'CM2' || gradeLevel === '6ème' ? 'Tu peux aller un peu plus loin dans les explications, mais reste clair.' : ''}
     `;
 
-    let contents: any = prompt;
-
-    if (image) {
-      contents = {
-        parts: [
-          { text: prompt },
+    const messages = [
+      {
+        role: "system",
+        content: systemInstruction
+      },
+      {
+        role: "user",
+        content: [
           {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: image.split(',')[1] // Remove data:image/jpeg;base64, prefix
-            }
+            type: "text",
+            text: prompt || (image ? "Aide-moi à comprendre cet exercice." : "")
           }
         ]
-      };
+      }
+    ];
+
+    if (image) {
+      (messages[1].content as any).push({
+        type: "image_url",
+        image_url: {
+          url: image
+        }
+      });
     }
 
-    const response = await ai.models.generateContent({
-      model: image ? "gemini-2.5-flash-image" : "gemini-3-flash-preview", // Use vision model if image provided
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: mode === 'quiz' ? 'application/json' : 'text/plain',
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Mon Assistant Scolaire",
+        "Content-Type": "application/json"
       },
+      body: JSON.stringify({
+        model: "nvidia/nemotron-3-nano-30b-a3b:free",
+        // model: "mistralai/mistral-small-creative",
+
+        messages: messages,
+        response_format: mode === 'quiz' ? { type: "json_object" } : undefined
+      })
     });
 
-    return response.text || "Désolé, je n'ai pas pu générer de réponse.";
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Erreur OpenRouter (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
   } catch (error) {
-    console.error("Erreur Gemini:", error);
+    console.error("Erreur OpenRouter:", error);
+    if (mode === 'quiz') return "[]";
     return "Oups ! Une erreur s'est produite. Vérifie ta connexion.";
   }
 }

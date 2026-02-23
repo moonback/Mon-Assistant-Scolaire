@@ -18,13 +18,13 @@ Ce document présente la feuille de route pour le développement futur de l'appl
 ## 🎨 Phase 3 : Multimodalité & Interaction (v1.3 - v1.4)
 - [ ] **Reconnaissance Vocale** : Permettre à l'enfant de poser ses questions à l'oral (Speech-to-Text).
 - [ ] **Synthèse Vocale (TTS)** : L'assistant lit les réponses à haute voix pour aider les petits lecteurs.
-- [ ] **Aide aux devoirs par l'image** : Prendre une photo d'un exercice pour obtenir de l'aide (Gemini Vision).
-- [ ] **Dessin interactif** : Zone de dessin pour résoudre des problèmes de géométrie ou s'exprimer.
+- [x] **Aide aux devoirs par l'image** : Prendre une photo d'un exercice pour obtenir de l'aide (Gemini Vision).
+- [x] **Dessin interactif** : Zone de dessin pour résoudre des problèmes de géométrie ou s'exprimer.
 
 ## 🛡️ Phase 4 : Contrôle Parental & Sécurité (v1.5)
-- [ ] **Espace Parents** : Dashboard protégé par code PIN.
-- [ ] **Suivi d'activité** : Temps passé, sujets abordés, difficultés rencontrées.
-- [ ] **Filtres personnalisés** : Bloquer certains sujets ou limiter le temps d'écran.
+- [x] **Espace Parents** : Dashboard protégé par code PIN.
+- [x] **Suivi d'activité** : Temps passé, sujets abordés, difficultés rencontrées.
+- [x] **Filtres personnalisés** : Bloquer certains sujets ou limiter le temps d'écran.
 - [ ] **Export PDF** : Générer des fiches de révision basées sur l'historique.
 
 ## 🌍 Phase 5 : Expansion & Contenu (v2.0)

@@ -1,57 +1,82 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- Migration script to update existing schema to Multi-Child architecture
+-- Run this in your Supabase SQL Editor
 
--- Create profiles table
-create table profiles (
-  id uuid references auth.users on delete cascade not null primary key,
-  username text unique,
+-- 1. Update Profiles table
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS parent_pin text;
+-- Optionally remove old child-specific columns if you want to clean up
+-- ALTER TABLE public.profiles DROP COLUMN IF EXISTS grade_level;
+-- ALTER TABLE public.profiles DROP COLUMN IF EXISTS stars;
+
+-- 2. Create Children table
+CREATE TABLE IF NOT EXISTS public.children (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  parent_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
   avatar_url text,
-  grade_level text check (grade_level in ('CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème')),
-  stars integer default 0,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  grade_level text CHECK (grade_level IN ('CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème')),
+  stars integer DEFAULT 0,
+  daily_time_limit integer DEFAULT 30,
+  bedtime text DEFAULT '20:00',
+  reward_goals jsonb DEFAULT '[]',
+  blocked_topics text[] DEFAULT '{}',
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Create progress table
-create table progress (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references profiles(id) on delete cascade not null,
-  subject text not null,
-  score integer not null,
-  activity_type text not null, -- 'quiz', 'math', 'assistant'
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- 3. Update Progress table
+ALTER TABLE IF EXISTS public.progress ADD COLUMN IF NOT EXISTS child_id uuid REFERENCES public.children(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS public.progress RENAME COLUMN created_at TO date; -- Align with new naming or keep as is
 
--- Set up Row Level Security (RLS)
-alter table profiles enable row level security;
-alter table progress enable row level security;
+-- 4. Enable RLS on new table
+ALTER TABLE public.children ENABLE ROW LEVEL SECURITY;
 
--- Create policies
-create policy "Public profiles are viewable by everyone." on profiles
-  for select using (true);
+-- 5. Recreate Policies (Drop existing if necessary)
+DROP POLICY IF EXISTS "Users can view their own children." ON public.children;
+CREATE POLICY "Users can view their own children." ON public.children
+  FOR SELECT USING (auth.uid() = parent_id);
 
-create policy "Users can insert their own profile." on profiles
-  for insert with check (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can insert their own children." ON public.children;
+CREATE POLICY "Users can insert their own children." ON public.children
+  FOR INSERT WITH CHECK (auth.uid() = parent_id);
 
-create policy "Users can update own profile." on profiles
-  for update using (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can update their own children." ON public.children;
+CREATE POLICY "Users can update their own children." ON public.children
+  FOR UPDATE USING (auth.uid() = parent_id);
 
-create policy "Users can view own progress." on progress
-  for select using (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete their own children." ON public.children;
+CREATE POLICY "Users can delete their own children." ON public.children
+  FOR DELETE USING (auth.uid() = parent_id);
 
-create policy "Users can insert own progress." on progress
-  for insert with check (auth.uid() = user_id);
+-- Update progress policies
+DROP POLICY IF EXISTS "Users can view own progress." ON public.progress;
+CREATE POLICY "Users can view progress of their children." ON public.progress
+  FOR SELECT USING (auth.uid() = user_id);
 
--- Function to handle new user signup
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, username, grade_level, stars)
-  values (new.id, new.raw_user_meta_data->>'username', new.raw_user_meta_data->>'grade_level', 0);
-  return new;
-end;
-$$ language plpgsql security definer;
+DROP POLICY IF EXISTS "Users can insert own progress." ON public.progress;
+CREATE POLICY "Users can insert progress for their children." ON public.progress
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Trigger the function every time a user is created
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+-- 6. Update Signup Trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username)
+  VALUES (new.id, new.raw_user_meta_data->>'username')
+  ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username;
+  
+  -- Create first child profile
+  INSERT INTO public.children (parent_id, name, grade_level)
+  VALUES (new.id, COALESCE(new.raw_user_meta_data->>'username', 'Mon Enfant'), COALESCE(new.raw_user_meta_data->>'grade_level', 'CP'));
+  
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. Add Atomic Increment Helper
+CREATE OR REPLACE FUNCTION increment_child_stars(child_id uuid, count integer)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.children
+  SET stars = stars + count
+  WHERE id = child_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

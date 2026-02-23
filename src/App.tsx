@@ -1,15 +1,17 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useState, useEffect } from 'react';
-import { MessageCircle, Brain, Book, BookA, Calculator, Lightbulb, Star, Home, Trophy, LogOut, Palette } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
+import { Tab } from './types/app';
+import { tabs } from './config/tabs';
 
-// Components
+// Layout Components
+import Sidebar from './components/layout/Sidebar';
+import Header from './components/layout/Header';
+import MobileNav from './components/layout/MobileNav';
+import ChildSelector from './components/auth/ChildSelector';
+
+// Feature Components
 import Assistant from './components/Assistant';
 import Quiz from './components/Quiz';
 import Story from './components/Story';
@@ -19,203 +21,243 @@ import DidYouKnow from './components/DidYouKnow';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import DrawingBoard from './components/DrawingBoard';
-
-type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing';
+import HomeworkHelper from './components/HomeworkHelper';
+import ParentalSpace from './components/ParentalSpace';
+import ChildProfile from './components/ChildProfile';
 
 function AppContent() {
-  const { session, profile, signOut, refreshProfile } = useAuth();
+  const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // If not logged in, show Auth Page
-  if (!session) {
-    return <AuthPage />;
-  }
+  const showChildSelector = !selectedChild && activeTab !== 'parental';
 
-  const addStars = async (amount: number, activityType: string, subject: string = 'General') => {
-    if (!profile) return;
+  // Responsive sidebar handling
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarCollapsed(window.innerWidth < 1280);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    // Optimistic update
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  // Time Limit Enforcement & Tracking
+  useEffect(() => {
+    if (!selectedChild) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const childId = selectedChild.id;
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `time_spent_${childId}_${today}`;
+
+    // Get time spent today (in minutes)
+    let timeSpent = parseInt(localStorage.getItem(storageKey) || '0');
+
+    const updateTime = () => {
+      // 1. Bedtime Enforcement
+      if (selectedChild.bedtime) {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
+        const bedtimeMinutes = bedHour * 60 + bedMin;
+        const wakeUpMinutes = 7 * 60; // 07:00 AM hardcoded wakeup
+
+        let isSleepTime = false;
+        if (bedtimeMinutes > wakeUpMinutes) {
+          // Night bedtime (e.g., 20:00 to 07:00)
+          isSleepTime = currentMinutes >= bedtimeMinutes || currentMinutes < wakeUpMinutes;
+        } else {
+          // Unusual bedtime (e.g., 01:00 to 07:00)
+          isSleepTime = currentMinutes >= bedtimeMinutes && currentMinutes < wakeUpMinutes;
+        }
+
+        if (isSleepTime) {
+          alert(`🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`);
+          setSelectedChild(null);
+          return;
+        }
+      }
+
+      // 2. Daily Limit Enforcement
+      if (selectedChild.daily_time_limit > 0) {
+        const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
+        setTimeLeft(remaining);
+
+        if (remaining <= 0) {
+          alert(`🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`);
+          setSelectedChild(null);
+        }
+      } else {
+        setTimeLeft(null); // Unlimited
+      }
+    };
+
+    updateTime();
+
+    const interval = setInterval(() => {
+      timeSpent += 1;
+      localStorage.setItem(storageKey, timeSpent.toString());
+      updateTime();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [selectedChild, setSelectedChild]);
+
+  // Points/Stars Logic
+  const addStars = useCallback(async (amount: number, activityType: string, subject: string = 'General') => {
+    if (!selectedChild || !session) return;
+
     setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 2000);
+    setTimeout(() => setShowConfetti(false), 3000);
 
     try {
-      // Update local state via refreshProfile after DB update
-      await supabase.rpc('increment_stars', { row_id: profile.id, count: amount });
-      
-      // Log progress
+      await supabase.rpc('increment_child_stars', { child_id: selectedChild.id, count: amount });
+
       await supabase.from('progress').insert({
-        user_id: profile.id,
+        user_id: session.user.id,
+        child_id: selectedChild.id,
         score: amount,
         activity_type: activityType,
         subject: subject,
         date: new Date().toISOString()
       });
 
-      refreshProfile();
+      await refreshChildren();
     } catch (e) {
-      console.error('Error updating stars:', e);
+      console.error('Failed to update stars:', e);
     }
-  };
+  }, [selectedChild, session, refreshChildren]);
 
-  const tabs = [
-    { id: 'home', label: 'Accueil', icon: Home, color: 'bg-slate-500' },
-    { id: 'dashboard', label: 'Progression', icon: Trophy, color: 'bg-yellow-500', desc: 'Voir mes stats' },
-    { id: 'assistant', label: 'Assistant', icon: MessageCircle, color: 'bg-sky-500', desc: 'Pose tes questions' },
-    { id: 'quiz', label: 'Quiz', icon: Brain, color: 'bg-violet-500', desc: 'Teste tes connaissances' },
-    { id: 'math', label: 'Calcul', icon: Calculator, color: 'bg-emerald-500', desc: 'Entraîne-toi en maths' },
-    { id: 'story', label: 'Histoires', icon: Book, color: 'bg-pink-500', desc: 'Crée des histoires' },
-    { id: 'drawing', label: 'Dessin', icon: Palette, color: 'bg-indigo-500', desc: 'Dessine librement' },
-    { id: 'dictionary', label: 'Dico', icon: BookA, color: 'bg-orange-500', desc: 'Cherche un mot' },
-    { id: 'fact', label: 'Infos', icon: Lightbulb, color: 'bg-yellow-500', desc: 'Découvre des faits' },
-  ];
-
+  // Content Dispatcher
   const renderContent = () => {
+    const commonProps = {
+      onEarnPoints: addStars,
+      gradeLevel: selectedChild?.grade_level
+    };
+
     switch (activeTab) {
       case 'home':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-r from-sky-400 to-violet-500 rounded-3xl p-8 text-white shadow-lg mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Bonjour {profile?.username || 'l\'ami'} ! 👋</h2>
-                <p className="opacity-90 text-lg">Prêt à apprendre de nouvelles choses aujourd'hui ?</p>
-                <div className="mt-2 inline-block bg-white/20 px-3 py-1 rounded-lg text-sm font-medium">
-                  Classe : {profile?.grade_level || 'Non définie'}
-                </div>
-              </div>
-              <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm text-center">
-                <p className="text-sm font-bold uppercase tracking-wider opacity-80">Étoiles</p>
-                <p className="text-4xl font-black">{profile?.stars || 0}</p>
-              </div>
+          <div className="space-y-6 pb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {tabs
+                .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
+                .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
+                .map((tab, idx) => (
+                  <motion.button
+                    key={tab.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    whileHover={{ y: -10, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl transition-all text-left group overflow-hidden relative"
+                  >
+                    <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${tab.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tab.color} text-white flex items-center justify-center mb-4 shadow-lg group-hover:rotate-6 transition-transform`}>
+                      <tab.icon className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-lg font-black text-slate-800">{tab.label}</h4>
+                    <p className="text-slate-500 font-medium text-xs mt-2 leading-relaxed line-clamp-2">{tab.desc}</p>
+                  </motion.button>
+                ))}
             </div>
-
-            {tabs.filter(t => t.id !== 'home').map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as Tab)}
-                  className="bg-white p-6 rounded-3xl shadow-sm hover:shadow-md transition-all border-2 border-slate-100 hover:border-sky-200 group text-left flex flex-col items-start gap-4"
-                >
-                  <div className={`p-4 rounded-2xl ${tab.color} text-white shadow-lg group-hover:scale-110 transition-transform`}>
-                    <Icon className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-800">{tab.label}</h3>
-                    <p className="text-slate-500">{tab.desc}</p>
-                  </div>
-                </button>
-              );
-            })}
           </div>
         );
       case 'dashboard': return <Dashboard />;
-      case 'assistant': return <Assistant onEarnPoints={(pts) => addStars(pts, 'assistant')} gradeLevel={profile?.grade_level} />;
-      case 'quiz': return <Quiz onEarnPoints={(pts) => addStars(pts, 'quiz')} gradeLevel={profile?.grade_level} />;
-      case 'math': return <MathGame onEarnPoints={(pts) => addStars(pts, 'math')} />;
+      case 'assistant': return <Assistant {...commonProps} />;
+      case 'quiz': return <Quiz {...commonProps} />;
+      case 'math': return <MathGame onEarnPoints={addStars} />;
       case 'story': return <Story />;
       case 'drawing': return <DrawingBoard />;
+      case 'homework': return <HomeworkHelper {...commonProps} />;
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
+      case 'profile': return <ChildProfile />;
+      case 'parental': return <ParentalSpace />;
       default: return null;
     }
   };
 
+  if (!session) return <AuthPage />;
+
+  if (showChildSelector) {
+    return (
+      <ChildSelector
+        children={children}
+        setSelectedChild={setSelectedChild}
+        setActiveTab={setActiveTab}
+        signOut={signOut}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-24 md:pb-0">
-      {/* Confetti Effect */}
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden">
-          <div className="absolute animate-ping text-6xl">⭐</div>
-          <div className="absolute animate-bounce text-6xl delay-100 translate-x-10">🌟</div>
-          <div className="absolute animate-pulse text-6xl delay-200 -translate-x-10">✨</div>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div 
-            className="flex items-center gap-3 cursor-pointer" 
-            onClick={() => setActiveTab('home')}
-          >
-            <div className="bg-gradient-to-br from-sky-400 to-violet-500 p-2 rounded-xl text-white">
-              <Brain className="w-6 h-6" />
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-violet-600 hidden sm:block">
-              Mon École Magique
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="bg-yellow-50 border-2 border-yellow-200 px-4 py-2 rounded-full flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-              <span className="font-bold text-yellow-700">{profile?.stars || 0}</span>
-            </div>
-            <button 
-              onClick={signOut}
-              className="bg-slate-100 p-2 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
-              title="Se déconnecter"
-            >
-               <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto pt-6">
-        <AnimatePresence mode="wait">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Confetti Overlay */}
+      <AnimatePresence>
+        {showConfetti && (
           <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
           >
-            {renderContent()}
+            <div className="text-[12rem] animate-bounce">✨⭐✨</div>
           </motion.div>
-        </AnimatePresence>
-      </main>
+        )}
+      </AnimatePresence>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:top-20 md:bottom-auto md:left-4 md:right-auto md:w-20 md:h-[calc(100vh-6rem)] md:bg-transparent md:border-none md:flex md:flex-col md:gap-4 z-20">
-        <div className="flex justify-around items-center h-20 md:h-auto md:flex-col md:gap-4 md:justify-start overflow-x-auto px-4 md:px-0">
-          {tabs.filter(t => t.id !== 'home').map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as Tab)}
-                className={`relative flex flex-col items-center justify-center min-w-[3.5rem] h-full md:w-14 md:h-14 md:rounded-2xl transition-all ${
-                  isActive ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
-                } md:bg-white md:shadow-sm md:hover:scale-110`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className={`absolute inset-0 ${tab.color} opacity-10 md:rounded-2xl`}
-                  />
-                )}
-                <Icon className={`w-6 h-6 mb-1 md:mb-0 ${isActive ? `text-${tab.color.split('-')[1]}-600` : ''}`} />
-                <span className="text-[10px] font-medium md:hidden">{tab.label}</span>
-                
-                <div className="hidden md:block absolute left-full ml-3 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-lg">
-                  {tab.label}
-                </div>
-              </button>
-            );
-          })}
-          
-          <button
-            onClick={() => setActiveTab('home')}
-            className="md:hidden absolute -top-6 left-1/2 -translate-x-1/2 bg-sky-500 text-white p-4 rounded-full shadow-lg border-4 border-slate-50"
-          >
-            <Home className="w-6 h-6" />
-          </button>
-        </div>
-      </nav>
+      <Sidebar
+        tabs={tabs.filter(t => !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id))}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isCollapsed={isSidebarCollapsed}
+        setIsCollapsed={setIsSidebarCollapsed}
+        selectedChild={selectedChild}
+        setSelectedChild={setSelectedChild}
+      />
+
+      <div className={`flex-1 flex flex-col transition-all duration-500 ease-in-out ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
+        <Header
+          activeTab={activeTab}
+          tabs={tabs}
+          selectedChild={selectedChild}
+          timeLeft={timeLeft}
+          setIsMobileNavOpen={setIsMobileNavOpen}
+        />
+
+        <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+
+      <MobileNav
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
+        tabs={tabs.filter(t => !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id))}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </div>
   );
 }
@@ -227,5 +269,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-
-

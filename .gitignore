@@ -1,8 +1,21 @@
 node_modules/
 build/
 dist/
+dist_electron/
 coverage/
 .DS_Store
 *.log
 .env*
 !.env.example
+
+# Electron specific
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.zip
+
+# VS Code
+.vscode/
+*.code-workspace
