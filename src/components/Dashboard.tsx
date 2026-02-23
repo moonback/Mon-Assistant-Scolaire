@@ -45,9 +45,9 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: 'Total Étoiles', value: profile?.stars || 0, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' },
           { label: 'Activités', value: stats.length, icon: target => <Target className="w-6 h-6" />, color: 'text-indigo-500', bg: 'bg-indigo-50' },
@@ -58,14 +58,14 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center gap-5 interactive-card"
+            className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 interactive-card"
           >
-            <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center ${item.color}`}>
-              {typeof item.icon === 'function' ? item.icon({}) : <item.icon className="w-7 h-7" />}
+            <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center ${item.color}`}>
+              {typeof item.icon === 'function' ? item.icon({}) : <item.icon className="w-6 h-6" />}
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">{item.label}</p>
-              <p className="text-2xl font-black text-slate-800">{item.value}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</p>
+              <p className="text-xl font-black text-slate-800 leading-tight">{item.value}</p>
             </div>
           </motion.div>
         ))}
@@ -76,19 +76,19 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-[3rem] shadow-sm p-8 border border-slate-100"
+          className="bg-white rounded-[2.5rem] shadow-sm p-6 border border-slate-100"
         >
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                <TrendingUp className="w-7 h-7 text-indigo-500" />
+              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2.5">
+                <TrendingUp className="w-6 h-6 text-indigo-500" />
                 Mon Énergie
               </h2>
               <p className="text-slate-500 font-medium text-sm mt-1">Répartition de tes points par matière</p>
             </div>
           </div>
 
-          <div className="h-72 w-full">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <defs>
@@ -151,11 +151,11 @@ export default function Dashboard() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-[3rem] shadow-sm p-8 border border-slate-100"
+          className="bg-white rounded-[2.5rem] shadow-sm p-6 border border-slate-100"
         >
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <Clock className="w-7 h-7 text-orange-500" />
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2.5">
+              <Clock className="w-6 h-6 text-orange-500" />
               Journal de Bord
             </h3>
           </div>
@@ -169,15 +169,15 @@ export default function Dashboard() {
                 transition={{ delay: i * 0.1 }}
                 className="group flex items-center justify-between p-4 bg-slate-50 hover:bg-indigo-50/50 rounded-3xl transition-all border border-transparent hover:border-indigo-100"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center font-black text-lg ${stat.activity_type === 'quiz' ? 'text-violet-500' :
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center font-black text-base ${stat.activity_type === 'quiz' ? 'text-violet-500' :
                     stat.activity_type === 'math' ? 'text-emerald-500' : 'text-sky-500'
                     }`}>
                     {stat.activity_type.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-black text-slate-700 capitalize">{stat.subject}</p>
-                    <p className="text-xs font-bold text-slate-400 flex items-center gap-1 mt-0.5 uppercase tracking-wide">
+                    <p className="font-black text-slate-700 capitalize text-sm">{stat.subject}</p>
+                    <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-0.5 uppercase tracking-wide">
                       <Calendar className="w-3 h-3" />
                       {new Date(stat.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </p>
