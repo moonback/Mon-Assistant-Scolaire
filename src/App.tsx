@@ -101,22 +101,7 @@ function AppContent() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-10 pb-16">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="magical-gradient rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="relative z-10">
-                <h2 className="text-2xl md:text-4xl font-black tracking-tight">Salut {selectedChild?.name} ! 👋</h2>
-                <p className="text-white/80 text-sm font-bold uppercase tracking-wider">Prêt pour tes missions ?</p>
-              </div>
-              <div className="flex gap-2 z-10">
-                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
-                  <span className="text-xl">⭐</span> <span className="font-black text-lg">{selectedChild?.stars} pts</span>
-                </div>
-                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
-                  <span className="text-lg">🎓</span> <span className="font-black text-lg uppercase">{selectedChild?.grade_level}</span>
-                </div>
-              </div>
-            </motion.div>
-
+          <div className="space-y-6 pb-16">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {tabs
                 .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
