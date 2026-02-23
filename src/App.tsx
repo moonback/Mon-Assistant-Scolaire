@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import {
   MessageCircle, Brain, Book, BookA, Calculator,
   Lightbulb, Star, Home, Trophy, LogOut, Palette,
-  Menu, X, ChevronLeft, ChevronRight, Settings, Bell, GraduationCap, Sparkles, Camera
+  Menu, X, ChevronLeft, ChevronRight, Settings, Bell, GraduationCap, Sparkles, Camera, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -24,8 +24,9 @@ import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import DrawingBoard from './components/DrawingBoard';
 import HomeworkHelper from './components/HomeworkHelper';
+import ParentalSpace from './components/ParentalSpace';
 
-type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework';
+type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental';
 
 function AppContent() {
   const { session, profile, signOut, refreshProfile } = useAuth();
@@ -46,6 +47,27 @@ function AppContent() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Time Limit Check
+  useEffect(() => {
+    if (!profile?.daily_time_limit) return;
+
+    // Simplistic time tracking: store start time in session storage
+    const sessionStart = sessionStorage.getItem('session_start') || Date.now().toString();
+    if (!sessionStorage.getItem('session_start')) {
+      sessionStorage.setItem('session_start', sessionStart);
+    }
+
+    const interval = setInterval(() => {
+      const elapsedMinutes = (Date.now() - parseInt(sessionStart)) / (1000 * 60);
+      if (elapsedMinutes > profile.daily_time_limit) {
+        alert("Oups ! C'est l'heure de faire une pause ! 🛑 Ton temps d'écran est terminé pour aujourd'hui. On se retrouve demain !");
+        signOut();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [profile, signOut]);
 
   // If not logged in, show Auth Page
   if (!session) {
@@ -84,6 +106,7 @@ function AppContent() {
     { id: 'story', label: 'Histoires', icon: Book, color: 'from-orange-500 to-amber-400', desc: 'Crée des histoires' },
     { id: 'dictionary', label: 'Dico', icon: BookA, color: 'from-cyan-500 to-sky-400', desc: 'Cherche un mot' },
     { id: 'fact', label: 'Infos', icon: Lightbulb, color: 'from-yellow-400 to-orange-400', desc: 'Découvre des faits' },
+    { id: 'parental', label: 'Zone Parents', icon: ShieldCheck, color: 'from-slate-700 to-slate-900', desc: 'Sécurité et limites' },
   ];
 
   const renderContent = () => {
@@ -297,6 +320,7 @@ function AppContent() {
       case 'homework': return <HomeworkHelper onEarnPoints={(pts) => addStars(pts, 'homework')} gradeLevel={profile?.grade_level} />;
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
+      case 'parental': return <ParentalSpace />;
       default: return null;
     }
   };

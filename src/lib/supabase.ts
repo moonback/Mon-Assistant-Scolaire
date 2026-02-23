@@ -20,6 +20,9 @@ export type Profile = {
   grade_level: string; // CP, CE1, CE2, CM1, CM2
   stars: number;
   created_at: string;
+  parent_pin?: string;
+  daily_time_limit?: number; // In minutes, 0 means no limit
+  blocked_topics?: string[];
 };
 
 export type Progress = {

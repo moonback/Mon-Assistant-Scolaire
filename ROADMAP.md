@@ -22,9 +22,9 @@ Ce document présente la feuille de route pour le développement futur de l'appl
 - [x] **Dessin interactif** : Zone de dessin pour résoudre des problèmes de géométrie ou s'exprimer.
 
 ## 🛡️ Phase 4 : Contrôle Parental & Sécurité (v1.5)
-- [ ] **Espace Parents** : Dashboard protégé par code PIN.
-- [ ] **Suivi d'activité** : Temps passé, sujets abordés, difficultés rencontrées.
-- [ ] **Filtres personnalisés** : Bloquer certains sujets ou limiter le temps d'écran.
+- [x] **Espace Parents** : Dashboard protégé par code PIN.
+- [x] **Suivi d'activité** : Temps passé, sujets abordés, difficultés rencontrées.
+- [x] **Filtres personnalisés** : Bloquer certains sujets ou limiter le temps d'écran.
 - [ ] **Export PDF** : Générer des fiches de révision basées sur l'historique.
 
 ## 🌍 Phase 5 : Expansion & Contenu (v2.0)
