@@ -102,37 +102,22 @@ function AppContent() {
       case 'home':
         return (
           <div className="space-y-10 pb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="magical-gradient rounded-[2.5rem] p-6 md:p-10 text-white shadow-2xl relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-1000" />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="magical-gradient rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="relative z-10">
-                <h2 className="text-3xl md:text-5xl font-black mb-2 tracking-tight">
-                  Bonjour, <span className="text-yellow-200">{selectedChild?.name}</span> ! 👋
-                </h2>
-                <p className="text-white/80 text-lg font-medium max-w-xl leading-relaxed mb-6">
-                  Prêt pour tes missions du jour ?
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 flex items-center gap-3 transition-transform hover:scale-105">
-                    <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center shadow-lg text-lg">
-                      ⭐
-                    </div>
-                    <span className="font-black text-xl">{selectedChild?.stars} <span className="text-sm opacity-80">pts</span></span>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 flex items-center gap-3 transition-transform hover:scale-105">
-                    <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg text-white text-sm">
-                      🎓
-                    </div>
-                    <span className="font-black text-xl uppercase tracking-wider">{selectedChild?.grade_level}</span>
-                  </div>
+                <h2 className="text-2xl md:text-4xl font-black tracking-tight">Salut {selectedChild?.name} ! 👋</h2>
+                <p className="text-white/80 text-sm font-bold uppercase tracking-wider">Prêt pour tes missions ?</p>
+              </div>
+              <div className="flex gap-2 z-10">
+                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+                  <span className="text-xl">⭐</span> <span className="font-black text-lg">{selectedChild?.stars} pts</span>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+                  <span className="text-lg">🎓</span> <span className="font-black text-lg uppercase">{selectedChild?.grade_level}</span>
                 </div>
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {tabs
                 .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
                 .map((tab, idx) => (
@@ -144,14 +129,14 @@ function AppContent() {
                     whileHover={{ y: -10, scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab(tab.id)}
-                    className="bg-white p-8 rounded-[3rem] border border-slate-100 hover:shadow-2xl transition-all text-left group overflow-hidden relative"
+                    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl transition-all text-left group overflow-hidden relative"
                   >
                     <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${tab.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${tab.color} text-white flex items-center justify-center mb-6 shadow-lg group-hover:rotate-6 transition-transform`}>
-                      <tab.icon className="w-7 h-7" />
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tab.color} text-white flex items-center justify-center mb-4 shadow-lg group-hover:rotate-6 transition-transform`}>
+                      <tab.icon className="w-6 h-6" />
                     </div>
-                    <h4 className="text-xl font-black text-slate-800">{tab.label}</h4>
-                    <p className="text-slate-500 font-medium text-sm mt-2 leading-relaxed">{tab.desc}</p>
+                    <h4 className="text-lg font-black text-slate-800">{tab.label}</h4>
+                    <p className="text-slate-500 font-medium text-xs mt-2 leading-relaxed line-clamp-2">{tab.desc}</p>
                   </motion.button>
                 ))}
             </div>
