@@ -60,20 +60,37 @@ export default function ParentalSpace() {
     };
 
     const saveParentSettings = async () => {
-        if (!profile) return;
+        if (!profile) {
+            setError("Profil non trouvé. Réessaie.");
+            return;
+        }
         setLoading(true);
         setSuccess('');
+        setError('');
+
+        console.log('Tentative de sauvegarde du PIN:', newPin, 'pour user:', profile.id);
+
         try {
-            const { error } = await supabase
+            const { error: supabaseError } = await supabase
                 .from('profiles')
-                .update({ parent_pin: newPin || profile.parent_pin })
+                .update({ parent_pin: newPin })
                 .eq('id', profile.id);
-            if (error) throw error;
+
+            if (supabaseError) {
+                console.error('Erreur Supabase:', supabaseError);
+                throw supabaseError;
+            }
+
             setSuccess('Code PIN mis à jour ! 🔐');
             await refreshProfile();
             setNewPin('');
-        } catch (err) {
-            setError('Erreur lors de la sauvegarde...');
+            // Petite pause pour laisser l'utilisateur voir le succès
+            setTimeout(() => {
+                setIsAuthenticated(false); // Verrouille pour tester le nouveau PIN
+            }, 1500);
+        } catch (err: any) {
+            console.error('Erreur complète:', err);
+            setError(`Erreur : ${err.message || 'Impossible de sauvegarder'}`);
         } finally {
             setLoading(false);
         }

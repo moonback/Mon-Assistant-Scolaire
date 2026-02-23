@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import {
   MessageCircle, Brain, Book, BookA, Calculator,
   Lightbulb, Star, Home, Trophy, LogOut, Palette,
-  Menu, X, ChevronLeft, ChevronRight, Settings, Bell, GraduationCap, Sparkles, Camera, ShieldCheck
+  Menu, X, ChevronLeft, ChevronRight, Settings, Bell, GraduationCap, Sparkles, Camera, ShieldCheck, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -25,8 +25,9 @@ import Dashboard from './components/Dashboard';
 import DrawingBoard from './components/DrawingBoard';
 import HomeworkHelper from './components/HomeworkHelper';
 import ParentalSpace from './components/ParentalSpace';
+import ChildProfile from './components/ChildProfile';
 
-type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental';
+type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental' | 'profile';
 
 function AppContent() {
   const { session, profile, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -101,6 +102,7 @@ function AppContent() {
     { id: 'story', label: 'Histoires', icon: Book, color: 'from-orange-500 to-amber-400', desc: 'Crée des histoires' },
     { id: 'dictionary', label: 'Dico', icon: BookA, color: 'from-cyan-500 to-sky-400', desc: 'Cherche un mot' },
     { id: 'fact', label: 'Infos', icon: Lightbulb, color: 'from-yellow-400 to-orange-400', desc: 'Découvre des faits' },
+    { id: 'profile', label: 'Mon Profil', icon: User, color: 'from-indigo-500 to-purple-500', desc: 'Paramètres et avatar' },
     { id: 'parental', label: 'Zone Parents', icon: ShieldCheck, color: 'from-slate-700 to-slate-900', desc: 'Sécurité et limites' },
   ];
 
@@ -147,6 +149,7 @@ function AppContent() {
       case 'homework': return <HomeworkHelper onEarnPoints={(pts) => addStars(pts, 'homework')} gradeLevel={selectedChild?.grade_level} />;
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
+      case 'profile': return <ChildProfile />;
       case 'parental': return <ParentalSpace />;
       default: return null;
     }
@@ -198,9 +201,34 @@ function AppContent() {
           ))}
         </nav>
         <div className="p-4 mt-auto">
-          <button onClick={() => setSelectedChild(null)} className="w-full p-2 flex items-center gap-3 rounded-xl hover:bg-slate-50 transition-all group">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs">{selectedChild?.name.charAt(0)}</div>
-            {!isSidebarCollapsed && <div className="text-left"><p className="font-bold text-slate-800 text-[11px] truncate">{selectedChild?.name}</p><p className="text-[8px] font-black text-slate-400 uppercase">{selectedChild?.grade_level}</p></div>}
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`w-full p-2 flex items-center gap-3 rounded-xl transition-all group ${activeTab === 'profile' ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50'}`}
+          >
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-xs overflow-hidden">
+              {selectedChild?.avatar_url ? (
+                <img src={selectedChild.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                selectedChild?.name.charAt(0)
+              )}
+            </div>
+            {!isSidebarCollapsed && (
+              <div className="text-left">
+                <p className="font-bold text-slate-800 text-[11px] truncate">{selectedChild?.name}</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase">{selectedChild?.grade_level}</p>
+              </div>
+            )}
+          </button>
+
+          <button
+            onClick={() => setSelectedChild(null)}
+            className="w-full mt-2 p-2 flex items-center gap-3 rounded-xl hover:bg-slate-50 transition-all text-slate-400 hover:text-indigo-600"
+            title="Changer d'enfant"
+          >
+            <div className="w-8 h-8 flex items-center justify-center">
+              <LogOut className="w-4 h-4 rotate-180" />
+            </div>
+            {!isSidebarCollapsed && <span className="text-[10px] font-bold">Changer d'enfant</span>}
           </button>
         </div>
       </aside>
