@@ -74,132 +74,208 @@ function AppContent() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-8 pb-12">
+          <div className="space-y-12 pb-16">
             {/* Hero Section */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="magical-gradient rounded-[3rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden group"
+              className="magical-gradient rounded-[3rem] p-10 md:p-14 text-white shadow-2xl relative overflow-hidden group"
             >
-              {/* Decorative circles */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl transition-all group-hover:bg-white/20" />
-              <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-white/10 rounded-full blur-2xl transition-all group-hover:bg-white/20" />
+              {/* Animated Light Orbs */}
+              <motion.div
+                animate={{
+                  x: [0, 50, 0],
+                  y: [0, 30, 0],
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 bg-white/20 rounded-full blur-3xl"
+              />
+              <motion.div
+                animate={{
+                  x: [0, -40, 0],
+                  y: [0, -20, 0],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-indigo-300/20 rounded-full blur-3xl"
+              />
 
-              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="text-center md:text-left">
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="inline-block bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold tracking-wide uppercase mb-4 shadow-sm"
+              <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+                <div className="text-center lg:text-left flex-1">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-2 rounded-full text-xs font-black tracking-[0.2em] uppercase mb-6 border border-white/30 shadow-sm"
                   >
+                    <Sparkles className="w-4 h-4 text-yellow-300" />
                     Prêt pour l'aventure ?
-                  </motion.span>
-                  <h2 className="text-4xl md:text-6xl font-black mb-4 leading-tight">
-                    Bonjour, {profile?.username || 'l\'ami'} ! 👋
+                  </motion.div>
+                  <h2 className="text-5xl md:text-7xl font-black mb-6 leading-[1.1] tracking-tight">
+                    Bonjour, <span className="text-yellow-200">{profile?.username || 'l\'ami'}</span> ! 👋
                   </h2>
-                  <p className="text-white/90 text-lg md:text-xl font-medium max-w-xl">
-                    C'est une magnifique journée pour apprendre et s'amuser. Quelle sera ta première mission aujourd'hui ?
+                  <p className="text-white/80 text-xl font-medium max-w-xl leading-relaxed">
+                    C'est une magnifique journée pour apprendre et s'amuser. Quelle sera ta première mission magique aujourd'hui ?
                   </p>
-                  <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
-                    <div className="bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-2xl flex items-center gap-2 border border-white/20">
-                      <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
-                      <span className="font-bold text-lg">{profile?.stars || 0} étoiles obtenues</span>
-                    </div>
-                    <div className="bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-2xl flex items-center gap-2 border border-white/20">
-                      <GraduationCap className="w-5 h-5" />
-                      <span className="font-bold text-lg">Classe : {profile?.grade_level || 'Non définie'}</span>
-                    </div>
+                  <div className="mt-10 flex flex-wrap gap-4 justify-center lg:justify-start">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-white/10 backdrop-blur-md px-6 py-3.5 rounded-2xl flex items-center gap-3 border border-white/20 shadow-xl"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center shadow-lg shadow-yellow-400/20">
+                        <Star className="w-6 h-6 text-yellow-900 fill-current" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] uppercase font-black opacity-60">Score Total</p>
+                        <p className="font-black text-xl leading-none">{profile?.stars || 0}</p>
+                      </div>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-white/10 backdrop-blur-md px-6 py-3.5 rounded-2xl flex items-center gap-3 border border-white/20 shadow-xl"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-400/20">
+                        <GraduationCap className="w-6 h-6 text-indigo-900" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] uppercase font-black opacity-60">Ta Classe</p>
+                        <p className="font-black text-xl leading-none">{profile?.grade_level || 'Non définie'}</p>
+                      </div>
+                    </motion.div>
                   </div>
                 </div>
 
                 <motion.div
-                  animate={{ y: [0, -15, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-48 h-48 md:w-64 md:h-64 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-2xl relative"
+                  animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-56 h-56 md:w-80 md:h-80 relative flex items-center justify-center"
                 >
-                  <Brain className="w-24 h-24 md:w-32 md:h-32 text-white drop-shadow-xl" />
-                  {/* Floating sparkles */}
-                  <motion.div
-                    animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute top-10 right-10"
-                  >
-                    <Star className="w-6 h-6 text-yellow-300 fill-yellow-300" />
-                  </motion.div>
+                  <div className="absolute inset-0 bg-white/20 rounded-[3rem] blur-2xl rotate-12 scale-90" />
+                  <div className="absolute inset-0 bg-indigo-400/20 rounded-[3rem] blur-2xl -rotate-12 scale-90" />
+                  <div className="w-full h-full bg-white/10 backdrop-blur-md rounded-[3rem] flex items-center justify-center border border-white/30 shadow-2xl relative overflow-hidden group-hover:bg-white/20 transition-colors">
+                    <Brain className="w-32 h-32 md:w-44 md:h-44 text-white drop-shadow-2xl" />
+                    <motion.div
+                      animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.2, 1] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                      className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent"
+                    />
+                  </div>
                 </motion.div>
               </div>
             </motion.div>
 
-            {/* Quick Actions Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-8 px-4">
-                <h3 className="text-2xl font-black text-slate-800 tracking-tight">Tes Activités</h3>
-                <button className="text-indigo-600 font-bold hover:underline flex items-center gap-1">
-                  Voir tout <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
-                {tabs.filter(t => t.id !== 'home' && t.id !== 'dashboard').map((tab, idx) => {
-                  const Icon = tab.icon;
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      onClick={() => setActiveTab(tab.id as Tab)}
-                      className="group relative bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all border border-slate-100 hover:border-indigo-100 text-left flex flex-col items-start gap-5 interactive-card overflow-hidden"
-                    >
-                      {/* Hover background effect */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${tab.color} opacity-0 group-hover:opacity-[0.03] transition-opacity`} />
-
-                      <div className={`p-5 rounded-[1.5rem] bg-gradient-to-br ${tab.color} text-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
-                        <Icon className="w-8 h-8" />
-                      </div>
-                      <div className="relative z-10">
-                        <h4 className="text-xl font-bold text-slate-800">{tab.label}</h4>
-                        <p className="text-slate-500 font-medium mt-1 leading-tight">{tab.desc}</p>
-                      </div>
-
-                      {/* Arrow icon */}
-                      <div className="mt-2 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-500 group-hover:text-white transition-all ml-auto">
-                        <ChevronRight className="w-5 h-5" />
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Bottom Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
-                <Dashboard />
-              </div>
-              <div className="space-y-6">
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-                  <h4 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
-                    <Lightbulb className="w-5 h-5 text-yellow-500" />
-                    Le Savais-tu ?
-                  </h4>
-                  <p className="text-slate-600 leading-relaxed italic">
-                    "Les abeilles peuvent reconnaître les visages humains, tout comme nous !"
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 text-white shadow-xl">
-                  <h4 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
-                    Prochain Défi
-                  </h4>
-                  <p className="opacity-90 font-medium mb-6">Complète un quiz aujourd'hui pour gagner 50 étoiles bonus !</p>
+            {/* Main Layout Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+              {/* Activities Content (3/4) */}
+              <div className="xl:col-span-3 space-y-12">
+                <header className="flex items-center justify-between px-4">
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-800 tracking-tight">Tes Missions Magiques</h3>
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">Choisis une activité pour gagner des étoiles</p>
+                  </div>
                   <button
                     onClick={() => setActiveTab('quiz')}
-                    className="w-full bg-white text-indigo-700 font-bold py-3.5 rounded-2xl shadow-lg hover:bg-slate-50 transition-colors"
+                    className="group px-6 py-2 rounded-full border-2 border-slate-100 text-slate-500 font-black text-xs uppercase tracking-widest hover:border-indigo-200 hover:text-indigo-600 transition-all flex items-center gap-2"
                   >
-                    C'est parti !
+                    Voir tout <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
+                </header>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {tabs.filter(t => !['home', 'dashboard', 'fact'].includes(t.id)).map((tab, idx) => {
+                    const Icon = tab.icon;
+                    return (
+                      <motion.button
+                        key={tab.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        onClick={() => setActiveTab(tab.id as Tab)}
+                        className="group relative bg-white p-8 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all border border-slate-50 hover:border-indigo-100 text-left flex flex-col items-start gap-6 interactive-card"
+                      >
+                        <div className={`p-5 rounded-[1.5rem] bg-gradient-to-br ${tab.color} text-white shadow-xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500`}>
+                          <Icon className="w-8 h-8" />
+                        </div>
+                        <div>
+                          <h4 className="text-2xl font-black text-slate-800">{tab.label}</h4>
+                          <p className="text-slate-500 font-medium mt-2 leading-relaxed">{tab.desc}</p>
+                        </div>
+                        <div className="mt-auto w-full flex items-center justify-between pt-4">
+                          <span className="text-xs font-black text-indigo-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Explorer</span>
+                          <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            <ChevronRight className="w-5 h-5" />
+                          </div>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
                 </div>
+
+                <div className="mt-8">
+                  <Dashboard />
+                </div>
+              </div>
+
+              {/* Sidebar Content (1/4) */}
+              <div className="xl:col-span-1 space-y-8">
+                {/* Fact Card */}
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-white rounded-[3rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden group"
+                >
+                  <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Lightbulb className="w-16 h-16 text-yellow-500" />
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6 text-yellow-500">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center">
+                        <Lightbulb className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-lg font-black text-slate-800">Le Savais-tu ?</h4>
+                    </div>
+                    <p className="text-slate-600 leading-[1.6] font-medium text-lg italic mb-8">
+                      "Les pieuvres possèdent trois cœurs et leur sang est de couleur bleue !"
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('fact')}
+                      className="w-full py-4 rounded-2xl bg-amber-50 text-amber-700 font-black text-xs uppercase tracking-widest hover:bg-amber-100 transition-colors"
+                    >
+                      En découvrir plus
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* Challenge Card */}
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden"
+                >
+                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+
+                  <div className="relative z-10 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto mb-6 border border-white/20">
+                      <Trophy className="w-8 h-8 text-yellow-300 shadow-sm" />
+                    </div>
+                    <h4 className="text-2xl font-black mb-2 tracking-tight">Défi de la Semaine</h4>
+                    <p className="text-indigo-100 font-medium mb-8 leading-relaxed">Réussis 3 quiz parfaits pour débloquer le badge <br /><span className="text-white font-bold">"Maître Magicien"</span> !</p>
+
+                    <div className="space-y-4">
+                      <div className="h-4 bg-black/20 rounded-full overflow-hidden p-1">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: '66%' }}
+                          className="h-full bg-gradient-to-r from-yellow-300 to-amber-400 rounded-full shadow-lg"
+                        />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-80">2 sur 3 quiz réussis</p>
+                    </div>
+
+                    <button
+                      onClick={() => setActiveTab('quiz')}
+                      className="w-full mt-10 bg-white text-indigo-700 font-black py-4 rounded-2xl shadow-xl hover:bg-slate-50 hover:scale-[1.02] transition-all px-4 text-center"
+                    >
+                      Relever le défi
+                    </button>
+                  </div>
+                </motion.div>
               </div>
             </div>
           </div>
