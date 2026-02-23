@@ -61,6 +61,21 @@ function AppContent() {
     let timeSpent = parseInt(localStorage.getItem(storageKey) || '0');
 
     const updateTime = () => {
+      // 1. Bedtime Enforcement
+      if (selectedChild.bedtime) {
+        const now = new Date();
+        const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
+        const bedtimeDate = new Date();
+        bedtimeDate.setHours(bedHour, bedMin, 0);
+
+        if (now >= bedtimeDate) {
+          alert("🌙 C'est l'heure de dormir ! Ton espace magique se ferme jusqu'à demain.");
+          setSelectedChild(null);
+          return;
+        }
+      }
+
+      // 2. Daily Limit Enforcement
       if (selectedChild.daily_time_limit > 0) {
         const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
         setTimeLeft(remaining);

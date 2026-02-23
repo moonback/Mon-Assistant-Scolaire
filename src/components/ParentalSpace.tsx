@@ -29,7 +29,9 @@ export default function ParentalSpace() {
     const [childName, setChildName] = useState('');
     const [childGrade, setChildGrade] = useState('CP');
     const [childTimeLimit, setChildTimeLimit] = useState(30);
+    const [childBedtime, setChildBedtime] = useState('20:00');
     const [childBlockedTopics, setChildBlockedTopics] = useState<string[]>([]);
+    const [rewardGoals, setRewardGoals] = useState<any[]>([]);
     const [stats, setStats] = useState<Progress[]>([]);
 
     useEffect(() => {
@@ -87,6 +89,8 @@ export default function ParentalSpace() {
                 name: childName,
                 grade_level: childGrade,
                 daily_time_limit: childTimeLimit,
+                bedtime: childBedtime,
+                reward_goals: rewardGoals,
                 blocked_topics: childBlockedTopics,
                 avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${childName}`
             };
@@ -117,7 +121,9 @@ export default function ParentalSpace() {
         setChildName('');
         setChildGrade('CP');
         setChildTimeLimit(30);
+        setChildBedtime('20:00');
         setChildBlockedTopics([]);
+        setRewardGoals([]);
     };
 
     const openEditChild = (child: Child) => {
@@ -125,7 +131,9 @@ export default function ParentalSpace() {
         setChildName(child.name);
         setChildGrade(child.grade_level);
         setChildTimeLimit(child.daily_time_limit);
+        setChildBedtime(child.bedtime || '20:00');
         setChildBlockedTopics(child.blocked_topics || []);
+        setRewardGoals(child.reward_goals || []);
         setShowAddChild(true);
     };
 
@@ -133,6 +141,18 @@ export default function ParentalSpace() {
         setChildBlockedTopics(prev =>
             prev.includes(topic) ? prev.filter(t => t !== topic) : [...prev, topic]
         );
+    };
+
+    const addRewardGoal = () => {
+        setRewardGoals([...rewardGoals, { id: Date.now(), label: '', target: 100, icon: '🎁' }]);
+    };
+
+    const updateRewardGoal = (id: number, field: string, value: any) => {
+        setRewardGoals(rewardGoals.map(g => g.id === id ? { ...g, [field]: value } : g));
+    };
+
+    const removeRewardGoal = (id: number) => {
+        setRewardGoals(rewardGoals.filter(g => g.id !== id));
     };
 
     if (!isAuthenticated) {
@@ -413,12 +433,69 @@ export default function ParentalSpace() {
                                     </div>
                                 </div>
 
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Limite de temps</label>
+                                            <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-black text-sm">{childTimeLimit} min</span>
+                                        </div>
+                                        <input type="range" min="15" max="180" step="15" value={childTimeLimit} onChange={e => setChildTimeLimit(Number(e.target.value))} className="w-full accent-indigo-600" />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Heure du coucher</label>
+                                            <Moon className="w-4 h-4 text-indigo-600" />
+                                        </div>
+                                        <input
+                                            type="time"
+                                            value={childBedtime}
+                                            onChange={e => setChildBedtime(e.target.value)}
+                                            className="w-full p-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 outline-none font-bold"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Limite de temps</label>
-                                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-black text-sm">{childTimeLimit} min</span>
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Objectifs de Récompense</label>
+                                        <button type="button" onClick={addRewardGoal} className="text-indigo-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline">
+                                            <Plus className="w-3 h-3" /> Ajouter
+                                        </button>
                                     </div>
-                                    <input type="range" min="15" max="180" step="15" value={childTimeLimit} onChange={e => setChildTimeLimit(Number(e.target.value))} className="w-full accent-indigo-600" />
+                                    <div className="space-y-3">
+                                        {rewardGoals.map(goal => (
+                                            <div key={goal.id} className="flex gap-2 items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                                <input
+                                                    value={goal.icon}
+                                                    onChange={e => updateRewardGoal(goal.id, 'icon', e.target.value)}
+                                                    className="w-10 bg-white p-2 rounded-xl text-center border border-slate-200"
+                                                    placeholder="🎁"
+                                                />
+                                                <input
+                                                    value={goal.label}
+                                                    onChange={e => updateRewardGoal(goal.id, 'label', e.target.value)}
+                                                    placeholder="Cadeau secret..."
+                                                    className="flex-1 bg-white p-2 rounded-xl border border-slate-200 text-xs font-bold"
+                                                />
+                                                <div className="flex items-center gap-1">
+                                                    <input
+                                                        type="number"
+                                                        value={goal.target}
+                                                        onChange={e => updateRewardGoal(goal.id, 'target', parseInt(e.target.value))}
+                                                        className="w-16 bg-white p-2 rounded-xl text-center border border-slate-200 text-xs font-black"
+                                                    />
+                                                    <span className="text-[10px] font-black text-slate-400">⭐</span>
+                                                </div>
+                                                <button onClick={() => removeRewardGoal(goal.id)} className="p-2 text-red-300 hover:text-red-500 transition-all">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {rewardGoals.length === 0 && (
+                                            <p className="text-center py-4 bg-slate-50 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aucun objectif défini</p>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">

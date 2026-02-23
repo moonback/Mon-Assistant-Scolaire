@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS public.children (
   grade_level text CHECK (grade_level IN ('CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème')),
   stars integer DEFAULT 0,
   daily_time_limit integer DEFAULT 30,
+  bedtime text DEFAULT '20:00',
+  reward_goals jsonb DEFAULT '[]',
   blocked_topics text[] DEFAULT '{}',
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );

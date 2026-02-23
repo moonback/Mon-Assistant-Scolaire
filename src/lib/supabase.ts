@@ -29,6 +29,8 @@ export type Child = {
   grade_level: string; // CP, CE1, CE2, CM1, CM2
   stars: number;
   daily_time_limit: number; // In minutes, 0 means no limit
+  bedtime?: string;
+  reward_goals?: any[];
   blocked_topics: string[];
   created_at: string;
 };
