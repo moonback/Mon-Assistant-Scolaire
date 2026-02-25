@@ -8,6 +8,7 @@ import ParentalOverview from './parental/ParentalOverview';
 import ParentalChildren from './parental/ParentalChildren';
 import ParentalRewards from './parental/ParentalRewards';
 import ParentalSecurity from './parental/ParentalSecurity';
+import ParentalCompetitions from './parental/ParentalCompetitions';
 
 interface ParentalSpaceProps {
     activeSubTab: Tab;
@@ -148,6 +149,10 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
 
                 {activeTab === 'rewards' && (
                     <ParentalRewards childrenContext={children} />
+                )}
+
+                {activeTab === 'competitions' && (
+                    <ParentalCompetitions childrenContext={children} />
                 )}
 
                 {activeTab === 'security' && (

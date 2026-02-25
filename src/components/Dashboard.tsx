@@ -6,6 +6,7 @@ import { Trophy, Star, TrendingUp, Calendar, Target, Clock } from 'lucide-react'
 import { motion } from 'motion/react';
 import DailyChallenges from './DailyChallenges';
 import PedagogicalHub from './PedagogicalHub';
+import SiblingCompetition from './SiblingCompetition';
 
 interface DashboardProps {
   onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
@@ -98,6 +99,8 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
         stats={stats}
         onEarnPoints={onEarnPoints}
       />
+
+      <SiblingCompetition />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <motion.section

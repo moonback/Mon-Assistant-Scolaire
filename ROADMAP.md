@@ -25,7 +25,7 @@ L'objectif de **Mon Assistant Scolaire** est de devenir le compagnon éducatif I
 
 ## 🌟 Phase 3 : Extension (V2.0 - Futur)
 - [ ] **Synchronisation Mobile** : Application compagnon pour les parents (iOS/Android) pour recevoir des notifications en temps réel.
-- [ ] **Compétitions Amicales** : Défis entre frères et sœurs (ou amis) avec consentement parental.
+- [x] **Compétitions Amicales** : Défis entre frères et sœurs (ou amis) avec consentement parental.
 - [ ] **Multi-langues** : Support complet de l'anglais et de l'espagnol comme matières d'apprentissage.
 - [ ] **Exports Pédagogiques** : Génération de rapports PDF pour les professeurs.
 - [ ] **Réalité Augmentée** : Visualisation de modèles 3D (corps humain, système solaire) via Gemini.

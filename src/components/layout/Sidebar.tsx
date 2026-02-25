@@ -9,6 +9,7 @@ import {
     Gift,
     Settings as SettingsIcon,
     ShieldCheck,
+    Swords,
 } from 'lucide-react';
 import { TabItem, ParentalTab } from '../../types/app';
 import { Child } from '../../lib/supabase';
@@ -39,6 +40,7 @@ export default function Sidebar({
     const parentalMenuItems = [
         { id: 'overview' as ParentalTab, label: 'Vue d\'ensemble', icon: LayoutDashboard },
         { id: 'children' as ParentalTab, label: 'Mes enfants', icon: Users },
+        { id: 'competitions' as ParentalTab, label: 'Compétitions', icon: Swords },
         { id: 'rewards' as ParentalTab, label: 'Récompenses', icon: Gift },
         { id: 'security' as ParentalTab, label: 'Sécurité', icon: SettingsIcon },
     ];
@@ -93,8 +95,8 @@ export default function Sidebar({
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => setParentalActiveTab(item.id)}
                                     className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition-all ${isActive
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                            : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100'
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                        : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100'
                                         } ${isCollapsed ? 'justify-center px-0' : ''}`}
                                     title={isCollapsed ? item.label : ''}
                                 >
@@ -114,8 +116,8 @@ export default function Sidebar({
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition-all ${isActive
-                                        ? 'bg-white text-indigo-700 shadow-md ring-1 ring-indigo-100/50'
-                                        : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm shadow-transparent hover:shadow-slate-200/50'
+                                    ? 'bg-white text-indigo-700 shadow-md ring-1 ring-indigo-100/50'
+                                    : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm shadow-transparent hover:shadow-slate-200/50'
                                     } ${isCollapsed ? 'justify-center px-0' : ''}`}
                                 title={isCollapsed ? tab.label : ''}
                             >
