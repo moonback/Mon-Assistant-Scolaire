@@ -57,7 +57,11 @@ function AppContent() {
 
   // Time Limit Enforcement & Tracking
   useEffect(() => {
-    if (!selectedChild) {
+    let intervalId: NodeJS.Timeout | null = null;
+    let isMounted = true;
+
+    // Don't enforce or track time if no child is selected OR if we are in the parental space
+    if (!selectedChild || activeTab === 'parental') {
       setTimeLeft(null);
       return;
     }
@@ -67,16 +71,20 @@ function AppContent() {
 
     const fetchAndTimeTracking = async () => {
       // 1. Fetch current time spent from Supabase
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('daily_child_stats')
         .select('time_spent_minutes')
         .eq('child_id', childId)
         .eq('date', today)
         .maybeSingle();
 
+      if (!isMounted) return;
+
       let timeSpent = data?.time_spent_minutes || 0;
 
       const updateTime = () => {
+        if (!selectedChild) return false;
+
         // Bedtime Enforcement
         if (selectedChild.bedtime) {
           const now = new Date();
@@ -99,7 +107,7 @@ function AppContent() {
               message: `🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`
             });
             setSelectedChild(null);
-            return;
+            return true;
           }
         }
 
@@ -115,17 +123,27 @@ function AppContent() {
               message: `🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`
             });
             setSelectedChild(null);
+            return true;
           }
         } else {
           setTimeLeft(null);
         }
+        return false;
       };
 
-      updateTime();
+      // Initial check
+      const blocked = updateTime();
+      if (blocked) return;
 
-      const interval = setInterval(async () => {
+      // Start interval
+      intervalId = setInterval(async () => {
         timeSpent += 1;
-        updateTime();
+        const nowBlocked = updateTime();
+
+        if (nowBlocked) {
+          if (intervalId) clearInterval(intervalId);
+          return;
+        }
 
         // Update Supabase
         await supabase
@@ -136,19 +154,17 @@ function AppContent() {
             time_spent_minutes: timeSpent
           }, { onConflict: 'child_id,date' });
       }, 60000);
-
-      return interval;
     };
 
-    let intervalId: NodeJS.Timeout;
-    fetchAndTimeTracking().then(id => {
-      if (id) intervalId = id;
-    });
+    fetchAndTimeTracking();
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     };
-  }, [selectedChild, setSelectedChild]);
+  }, [selectedChild, activeTab, setSelectedChild]);
 
   // Daily Challenge Notifications
   useEffect(() => {
