@@ -8,6 +8,7 @@ import { TabItem } from '../types/app';
 export const tabs: TabItem[] = [
     { id: 'home', label: 'Accueil', icon: Home, color: 'from-blue-500 to-sky-400', desc: 'Ton centre de mission' },
     { id: 'dashboard', label: 'Progression', icon: Trophy, color: 'from-yellow-500 to-amber-400', desc: 'Voir mes exploits' },
+    { id: 'challenges', label: 'Défis AI', icon: Brain, color: 'from-orange-500 to-red-400', desc: 'Tes missions du jour' },
     { id: 'assistant', label: 'Assistant', icon: MessageCircle, color: 'from-purple-500 to-indigo-400', desc: 'Pose tes questions' },
     { id: 'quiz', label: 'Quiz', icon: Brain, color: 'from-violet-500 to-purple-400', desc: 'Teste tes connaissances' },
     { id: 'math', label: 'Calcul', icon: Calculator, color: 'from-emerald-500 to-teal-400', desc: 'Deviens un pro des chiffres' },

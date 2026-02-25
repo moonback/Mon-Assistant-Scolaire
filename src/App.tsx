@@ -25,6 +25,7 @@ import DrawingBoard from './components/DrawingBoard';
 import HomeworkHelper from './components/HomeworkHelper';
 import ParentalSpace from './components/ParentalSpace';
 import ChildProfile from './components/ChildProfile';
+import DailyChallenges from './components/DailyChallenges';
 
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -245,6 +246,7 @@ function AppContent() {
           </div>
         );
       case 'dashboard': return <Dashboard onEarnPoints={addStars} />;
+      case 'challenges': return <DailyChallenges {...commonProps} childId={selectedChild?.id || ''} />;
       case 'assistant': return <Assistant {...commonProps} />;
       case 'quiz': return <Quiz {...commonProps} />;
       case 'math': return <MathGame onEarnPoints={addStars} />;

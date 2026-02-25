@@ -26,23 +26,29 @@ export interface DailyChallenges {
 const STORAGE_KEY = 'daily_challenges';
 
 export const dailyChallengeService = {
-    async getChallenges(childId: string, gradeLevel: string = 'CM1'): Promise<DailyChallenges | null> {
+    async getChallenges(childId: string, gradeLevel: string = 'CM1', theme?: string): Promise<DailyChallenges | null> {
         const today = new Date().toISOString().split('T')[0];
 
         try {
-            // 1. Check if challenge exists for today/grade in Supabase
-            let { data: challenge, error: challengeError } = await supabase
+            // 1. Check if challenge exists for today/grade/theme in Supabase
+            let query = supabase
                 .from('daily_challenges')
                 .select('*')
                 .eq('date', today)
-                .eq('grade_level', gradeLevel)
-                .maybeSingle();
+                .eq('grade_level', gradeLevel);
+
+            if (theme) {
+                query = query.eq('theme', theme);
+            }
+
+            let { data: challenge, error: challengeError } = await query.maybeSingle();
 
             // 2. If not, generate with AI and save to Supabase
             if (!challenge) {
+                const themePrompt = theme ? ` sur le thème : "${theme}"` : '';
                 const [wordRes, problemRes] = await Promise.all([
-                    askGemini("Génère le mot du jour.", 'wordOfTheDay', gradeLevel),
-                    askGemini("Génère le problème du jour.", 'problemOfTheDay', gradeLevel)
+                    askGemini(`Génère le mot du jour${themePrompt}.`, 'wordOfTheDay', gradeLevel),
+                    askGemini(`Génère le problème du jour${themePrompt}.`, 'problemOfTheDay', gradeLevel)
                 ]);
 
                 let word: DailyWord;
@@ -67,13 +73,20 @@ export const dailyChallengeService = {
                     .insert({
                         date: today,
                         grade_level: gradeLevel,
+                        theme: theme || 'Général',
                         word_data: word,
                         problem_data: problem
                     })
                     .select()
                     .single();
 
-                if (insertError) throw insertError;
+                if (insertError) {
+                    // If unique constraint violation (someone else generated it exactly at same time), just fetch it
+                    if (insertError.code === '23505') {
+                        return this.getChallenges(childId, gradeLevel, theme);
+                    }
+                    throw insertError;
+                }
                 challenge = newChallenge;
             }
 

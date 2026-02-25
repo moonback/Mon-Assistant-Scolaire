@@ -15,7 +15,6 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
   const { selectedChild } = useAuth();
   const [stats, setStats] = useState<Progress[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     async function fetchStats() {
       if (!selectedChild) return;
@@ -37,9 +36,10 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
   }, [selectedChild]);
 
   const chartData = [
-    { name: 'Quiz', score: stats.filter((s) => s.activity_type === 'quiz').reduce((acc, curr) => acc + curr.score, 0), color: '#6366f1' },
-    { name: 'Maths', score: stats.filter((s) => s.activity_type === 'math').reduce((acc, curr) => acc + curr.score, 0), color: '#6366f1' },
-    { name: 'Assistant', score: stats.filter((s) => s.activity_type === 'assistant').reduce((acc, curr) => acc + curr.score, 0), color: '#6366f1' },
+    { name: 'Quiz', score: stats.filter((s) => s.activity_type === 'quiz').reduce((acc, curr) => acc + curr.score, 0) },
+    { name: 'Défis', score: stats.filter((s) => s.activity_type === 'daily_challenge').reduce((acc, curr) => acc + curr.score, 0) },
+    { name: 'Maths', score: stats.filter((s) => s.activity_type === 'math').reduce((acc, curr) => acc + curr.score, 0) },
+    { name: 'Assistant', score: stats.filter((s) => s.activity_type === 'assistant').reduce((acc, curr) => acc + curr.score, 0) },
   ];
 
   if (loading) {
@@ -53,12 +53,6 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
 
   return (
     <div className="space-y-5">
-      <DailyChallenges
-        childId={selectedChild?.id || ''}
-        gradeLevel={selectedChild?.grade_level || 'CM1'}
-        onEarnPoints={onEarnPoints}
-      />
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[
           { label: 'Total points', value: selectedChild?.stars || 0, icon: Star },
@@ -165,6 +159,6 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           </div>
         </section>
       </div>
-    </div>
+    </div >
   );
 }
