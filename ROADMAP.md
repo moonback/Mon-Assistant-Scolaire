@@ -35,7 +35,7 @@ Ce document présente la feuille de route pour le développement futur de l'appl
 
 ## 🛠️ Technique & Infrastructure
 - [x] **Base de données** : Migration du `localStorage` vers une base de données réelle (Supabase) pour la synchro multi-appareils.
-- [ ] **Optimisation IA** : Affinage des prompts système pour réduire les hallucinations et améliorer la pédagogie.
+- [x] **Optimisation IA** : Affinage des prompts système pour réduire les hallucinations et améliorer la pédagogie.
 - [ ] **Accessibilité** : Support complet pour les lecteurs d'écran et modes contrastés (Dyslexie).
 
 ---
