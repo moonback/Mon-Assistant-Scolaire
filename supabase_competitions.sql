@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS competitions (
     subject TEXT NOT NULL,
     activity_type TEXT NOT NULL, -- 'quiz_score', 'stars_earned', 'time_studied'
     goal_value INTEGER DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'pending_approval', -- 'pending_approval', 'active', 'completed', 'canceled'
+    status TEXT NOT NULL DEFAULT 'pending_acceptance', -- 'pending_acceptance', 'pending_approval', 'active', 'completed', 'canceled'
     winner_id UUID REFERENCES children(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     expires_at TIMESTAMPTZ,
@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS competitions (
 -- RLS for competitions
 ALTER TABLE competitions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Parents can manage family competitions" ON competitions;
 CREATE POLICY "Parents can manage family competitions"
     ON competitions
     FOR ALL
@@ -25,6 +26,7 @@ CREATE POLICY "Parents can manage family competitions"
     USING (parent_id = auth.uid())
     WITH CHECK (parent_id = auth.uid());
 
+DROP POLICY IF EXISTS "Children can see their own competitions" ON competitions;
 CREATE POLICY "Children can see their own competitions"
     ON competitions
     FOR SELECT

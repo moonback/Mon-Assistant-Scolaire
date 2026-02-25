@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import DailyChallenges from './DailyChallenges';
 import PedagogicalHub from './PedagogicalHub';
 import SiblingCompetition from './SiblingCompetition';
+import ParentalMissions from './ParentalMissions';
 
 interface DashboardProps {
   onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
@@ -101,6 +102,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
       />
 
       <SiblingCompetition />
+      <ParentalMissions />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <motion.section

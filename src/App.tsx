@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState, useMemo } from 'react';
+import SiblingCompetition from './components/SiblingCompetition';
+import ParentalMissions from './components/ParentalMissions';
 import { AnimatePresence, motion } from 'motion/react';
 import { Moon, Clock, Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -148,6 +150,9 @@ function AppContent() {
               <h3 className="text-3xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
               <p className="text-slate-500 font-medium">Choisis ton aventure du jour, {selectedChild?.name} !</p>
             </div>
+
+            <SiblingCompetition />
+            <ParentalMissions />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Mission du jour (Primary big button) - Maps to challenges */}

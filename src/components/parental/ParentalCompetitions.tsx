@@ -10,7 +10,7 @@ interface Competition {
     subject: string;
     activity_type: string;
     goal_value: number;
-    status: 'pending_approval' | 'active' | 'completed' | 'canceled';
+    status: 'pending_acceptance' | 'pending_approval' | 'active' | 'completed' | 'canceled';
     winner_id: string | null;
     created_at: string;
     expires_at: string;
@@ -148,11 +148,31 @@ export default function ParentalCompetitions({ childrenContext }: ParentalCompet
                 <div className="space-y-6">
                     <section className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                         <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-amber-500" /> En attente d'approbation
+                            <Clock className="h-5 w-5 text-amber-500" /> En attente d'acceptation (Enfant)
+                        </h3>
+                        <div className="space-y-3">
+                            {competitions.filter(c => c.status === 'pending_acceptance').map(comp => (
+                                <div key={comp.id} className="p-4 bg-slate-50/50 rounded-xl border border-slate-100 flex justify-between items-center opacity-70">
+                                    <div className="text-sm font-bold text-slate-700">
+                                        <span className="text-indigo-600">{getChildName(comp.challenger_id)}</span> attend <span className="text-indigo-600">{getChildName(comp.opponent_id)}</span>
+                                        <p className="text-[10px] text-slate-400 uppercase mt-0.5">{comp.subject}</p>
+                                    </div>
+                                    <span className="text-[10px] font-black text-slate-400">EN ATTENTE</span>
+                                </div>
+                            ))}
+                            {competitions.filter(c => c.status === 'pending_acceptance').length === 0 && (
+                                <p className="text-center text-slate-400 text-sm font-medium italic">Aucun défi en attente d'acceptation.</p>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-orange-500" /> Validation Parentale
                         </h3>
                         <div className="space-y-3">
                             {competitions.filter(c => c.status === 'pending_approval').map(comp => (
-                                <div key={comp.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                <div key={comp.id} className="flex items-center justify-between p-4 bg-indigo-50/30 rounded-xl border border-indigo-100">
                                     <div className="text-sm font-bold text-slate-700">
                                         <span className="text-indigo-600">{getChildName(comp.challenger_id)}</span> défie <span className="text-indigo-600">{getChildName(comp.opponent_id)}</span>
                                         <p className="text-[10px] text-slate-400 uppercase mt-0.5">{comp.subject} • {comp.activity_type}</p>

@@ -11,7 +11,7 @@ interface Competition {
     subject: string;
     activity_type: string;
     goal_value: number;
-    status: 'pending_approval' | 'active' | 'completed' | 'canceled';
+    status: 'pending_acceptance' | 'pending_approval' | 'active' | 'completed' | 'canceled';
     winner_id: string | null;
 }
 
@@ -54,7 +54,7 @@ export default function SiblingCompetition() {
                 opponent_id: opponentId,
                 subject,
                 activity_type: type,
-                status: 'pending_approval',
+                status: 'pending_acceptance',
                 parent_id: selectedChild.parent_id
             });
 
@@ -62,6 +62,15 @@ export default function SiblingCompetition() {
             setShowDuelModal(false);
             fetchMyCompetitions();
         }
+    };
+
+    const acceptDuel = async (id: string) => {
+        const { error } = await supabase
+            .from('competitions')
+            .update({ status: 'pending_approval' })
+            .eq('id', id);
+
+        if (!error) fetchMyCompetitions();
     };
 
     const getOpponentName = (comp: Competition) => {
@@ -89,34 +98,49 @@ export default function SiblingCompetition() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {competitions.length > 0 ? (
-                    competitions.map(comp => (
-                        <motion.div
-                            key={comp.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className={`p-5 rounded-[2rem] border-2 flex items-center justify-between group transition-all ${comp.status === 'pending_approval'
-                                    ? 'bg-slate-50 border-slate-100 opacity-75'
-                                    : 'bg-white border-indigo-100 shadow-xl shadow-indigo-100/20'
-                                }`}
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${comp.status === 'active' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-400'}`}>
-                                    {comp.status === 'active' ? '⚔️' : '⏳'}
+                    competitions.map(comp => {
+                        const isIncoming = comp.opponent_id === selectedChild?.id && comp.status === 'pending_acceptance';
+
+                        return (
+                            <motion.div
+                                key={comp.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className={`p-5 rounded-[2rem] border-2 flex items-center justify-between group transition-all ${comp.status === 'pending_approval' || comp.status === 'pending_acceptance'
+                                        ? 'bg-slate-50 border-slate-100'
+                                        : 'bg-white border-indigo-100 shadow-xl shadow-indigo-100/20'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${comp.status === 'active' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-400'}`}>
+                                        {comp.status === 'active' ? '⚔️' : isIncoming ? '🔔' : '⏳'}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-slate-800">Duel contre {getOpponentName(comp)}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            {comp.status === 'pending_approval' ? 'En attente des parents' :
+                                                comp.status === 'pending_acceptance' && !isIncoming ? 'Attente réponse frère/sœur' :
+                                                    isIncoming ? 'Nouveau défi reçu !' :
+                                                        `${comp.subject} • ${comp.activity_type.replace('_', ' ')}`}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-black text-slate-800">Duel contre {getOpponentName(comp)}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                        {comp.status === 'pending_approval' ? 'En attente des parents' : `${comp.subject} • ${comp.activity_type.replace('_', ' ')}`}
-                                    </p>
-                                </div>
-                            </div>
-                            {comp.status === 'active' && (
-                                <div className="animate-pulse">
-                                    <TrendingUp className="h-5 w-5 text-indigo-600" />
-                                </div>
-                            )}
-                        </motion.div>
-                    ))
+                                {comp.status === 'active' && (
+                                    <div className="animate-pulse">
+                                        <TrendingUp className="h-5 w-5 text-indigo-600" />
+                                    </div>
+                                )}
+                                {isIncoming && (
+                                    <button
+                                        onClick={() => acceptDuel(comp.id)}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-indigo-100 transition-all active:scale-95"
+                                    >
+                                        Accepter
+                                    </button>
+                                )}
+                            </motion.div>
+                        );
+                    })
                 ) : (
                     <div className="col-span-full py-8 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
                         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Aucun duel actif</p>
