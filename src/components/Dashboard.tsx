@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Trophy, Star, TrendingUp, Calendar, Target, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import DailyChallenges from './DailyChallenges';
+import PedagogicalHub from './PedagogicalHub';
 
 interface DashboardProps {
   onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
@@ -23,7 +24,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
         .from('progress')
         .select('*')
         .eq('child_id', selectedChild.id)
-        .order('created_at', { ascending: false })
+        .order('date', { ascending: false })
         .limit(50);
 
       if (!error && data) {
@@ -82,6 +83,14 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
         ))}
       </div>
 
+
+      <PedagogicalHub
+        childId={selectedChild?.id || ''}
+        gradeLevel={selectedChild?.grade_level || 'CM1'}
+        stats={stats}
+        onEarnPoints={onEarnPoints}
+      />
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="mb-4">
@@ -93,7 +102,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           </div>
 
           <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2ff" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
