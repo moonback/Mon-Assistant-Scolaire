@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, Trophy, GraduationCap, Camera, User, Heart, Shield, Sparkles, Award, Zap, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import BadgeCollection from './BadgeCollection';
 
 export default function ChildProfile() {
   const { selectedChild, refreshChildren } = useAuth();
@@ -163,8 +164,8 @@ export default function ChildProfile() {
                   whileHover={{ y: -5, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={`relative group rounded-[2rem] border-2 p-4 text-center transition-all ${selectedChild?.avatar_url?.includes(av.seed)
-                      ? 'bg-indigo-50 border-indigo-200 shadow-lg shadow-indigo-100'
-                      : 'bg-slate-50 border-slate-50 hover:border-indigo-200 hover:bg-white'
+                    ? 'bg-indigo-50 border-indigo-200 shadow-lg shadow-indigo-100'
+                    : 'bg-slate-50 border-slate-50 hover:border-indigo-200 hover:bg-white'
                     }`}
                 >
                   <div className={`mx-auto mb-3 h-16 w-16 overflow-hidden rounded-2xl border-2 transition-transform group-hover:rotate-6 ${selectedChild?.avatar_url?.includes(av.seed) ? 'border-white shadow-md' : 'border-white/50'
@@ -185,61 +186,7 @@ export default function ChildProfile() {
           </section>
 
           {/* Trophy Room & Badges */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-white shadow-xl shadow-indigo-200 relative overflow-hidden group"
-            >
-              <Award className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                    <Trophy className="h-5 w-5 text-yellow-300" />
-                  </div>
-                  <h4 className="text-lg font-black uppercase tracking-tighter">Salle des Trophées</h4>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 group-hover:bg-white/20 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Star className="h-5 w-5 text-amber-300 fill-current" />
-                      <div>
-                        <p className="text-sm font-black">Collectionneur d'Étoiles</p>
-                        <p className="text-[10px] font-bold text-white/60 uppercase">Total: {selectedChild?.stars} ⭐</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/40" />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 group-hover:bg-white/20 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Heart className="h-5 w-5 text-pink-300 fill-current" />
-                      <div>
-                        <p className="text-sm font-black">Matière Favorite</p>
-                        <p className="text-[10px] font-bold text-white/60 uppercase">Français (Expert)</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-white/40" />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="rounded-[2.5rem] bg-white p-8 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-center justify-center text-center group"
-            >
-              <div className="w-20 h-20 bg-emerald-50 rounded-[2rem] flex items-center justify-center text-emerald-600 mb-4 group-hover:rotate-12 transition-transform duration-500">
-                <Shield className="h-10 w-10 fill-emerald-500/10" />
-              </div>
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Titre Honorifique</h4>
-              <p className="text-2xl font-black text-slate-800 italic">"Apprenti Sage"</p>
-              <div className="mt-6 w-full h-px bg-slate-100" />
-              <p className="mt-4 text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
-                Continue tes quêtes pour débloquer <br />le titre de <span className="text-indigo-600 font-black">"Maître du Savoir"</span>
-              </p>
-            </motion.div>
-          </div>
+          <BadgeCollection earnedBadgeIds={selectedChild?.badges || []} />
         </div>
       </div>
     </div>

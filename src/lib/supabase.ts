@@ -34,6 +34,7 @@ export type Child = {
   reward_goals?: any[];
   blocked_topics: string[];
   weak_points?: string[];
+  badges?: string[]; // Array of badge IDs
   created_at: string;
 };
 
