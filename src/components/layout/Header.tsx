@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Menu, Clock, ShieldCheck, Lock } from 'lucide-react';
+import { Star, Menu, Clock, ShieldCheck, Lock, Moon } from 'lucide-react';
 import { TabItem } from '../../types/app';
 import { Child } from '../../lib/supabase';
 
@@ -34,26 +34,57 @@ export default function Header({ activeTab, tabs, selectedChild, timeLeft, setIs
 
             <div className="flex items-center gap-2">
                 {isParental ? (
-                    <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 sm:flex">
-                        <Lock className="h-3.5 w-3.5" />
-                        Zone sécurisée
+                    <div className="hidden items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-2 text-xs font-bold text-indigo-600 sm:flex shadow-sm">
+                        <Lock className="h-4 w-4" />
+                        ZONE SÉCURISÉE
                     </div>
                 ) : (
                     <>
+                        {/* Status Badges for Active Controls */}
+                        <div className="hidden lg:flex items-center gap-2 mr-2">
+                            {selectedChild?.daily_time_limit && selectedChild.daily_time_limit > 0 ? (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black uppercase tracking-wider">
+                                    <Clock className="h-3 w-3" />
+                                    Limite Active
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-400 border border-slate-100 text-[10px] font-black uppercase tracking-wider opacity-60">
+                                    <Clock className="h-3 w-3" />
+                                    Sans Limite
+                                </div>
+                            )}
+
+                            {selectedChild?.bedtime ? (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black uppercase tracking-wider">
+                                    <Moon className="h-3 w-3" />
+                                    Coucher: {selectedChild.bedtime}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-400 border border-slate-100 text-[10px] font-black uppercase tracking-wider opacity-60">
+                                    <Moon className="h-3 w-3" />
+                                    Pas de Coucher
+                                </div>
+                            )}
+                        </div>
+
                         {timeLeft !== null && (
-                            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600">
-                                <Clock className={`h-3.5 w-3.5 ${timeLeft < 10 ? 'text-red-500' : ''}`} />
-                                <span className="font-medium">{timeLeft} min</span>
+                            <div className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm ${timeLeft < 5
+                                ? 'bg-red-50 border-red-200 text-red-600 animate-pulse'
+                                : 'bg-white border-slate-200 text-slate-700'
+                                }`}>
+                                <div className={`w-2 h-2 rounded-full ${timeLeft < 5 ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                                <span className="font-black">{timeLeft} MIN RESTANTES</span>
                             </div>
                         )}
 
-                        <div className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 sm:flex">
+                        <div className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 sm:flex shadow-sm">
+                            <span className="text-[10px] text-slate-400 font-black">NIVEAU</span>
                             <span>{selectedChild?.grade_level}</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm">
-                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                            <span className="font-semibold text-slate-800">{selectedChild?.stars || 0}</span>
+                        <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-1.5 text-sm shadow-sm">
+                            <Star className="h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]" />
+                            <span className="font-black text-amber-700">{selectedChild?.stars || 0}</span>
                         </div>
                     </>
                 )}
