@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import { supabase, Profile, Child } from '../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -94,34 +94,36 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
     setLoading(false);
   };
 
-  const setSelectedChild = (child: Child | null) => {
+  const setSelectedChild = useCallback((child: Child | null) => {
     setSelectedChildState(child);
     if (child) localStorage.setItem('selected_child_id', child.id);
     else localStorage.removeItem('selected_child_id');
-  };
+  }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (session?.user.id) await fetchProfile(session.user.id);
-  };
+  }, [session?.user.id]);
 
-  const refreshChildren = async () => {
+  const refreshChildren = useCallback(async () => {
     if (session?.user.id) await fetchChildren(session.user.id);
-  };
+  }, [session?.user.id]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setProfile(null);
     setChildren([]);
     setSelectedChild(null);
     setSession(null);
     localStorage.removeItem('selected_child_id');
-  };
+  }, [setSelectedChild]);
+
+  const value = useMemo(() => ({
+    session, profile, children, selectedChild, loading,
+    signOut, refreshProfile, setSelectedChild, refreshChildren
+  }), [session, profile, children, selectedChild, loading, signOut, refreshProfile, setSelectedChild, refreshChildren]);
 
   return (
-    <AuthContext.Provider value={{
-      session, profile, children, selectedChild, loading,
-      signOut, refreshProfile, setSelectedChild, refreshChildren
-    }}>
+    <AuthContext.Provider value={value}>
       {childrenProp}
     </AuthContext.Provider>
   );

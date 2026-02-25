@@ -90,8 +90,11 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
     }).sort((a, b) => a.avg - b.avg);
   }, [stats]);
 
-  const weakestSubjects = subjectInsights.slice(0, 2).map((s) => s.subject);
-  const strongestSubject = subjectInsights.at(-1)?.subject || 'Compétences générales';
+  const { weakestSubjects, strongestSubject } = useMemo(() => {
+    const weakest = subjectInsights.slice(0, 2).map((s) => s.subject);
+    const strongest = subjectInsights.at(-1)?.subject || 'Compétences générales';
+    return { weakestSubjects: weakest, strongestSubject: strongest };
+  }, [subjectInsights]);
 
   const missions = useMemo<Mission[]>(() => {
     const consolidationSubject = strongestSubject;

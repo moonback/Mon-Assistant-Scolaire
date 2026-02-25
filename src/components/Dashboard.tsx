@@ -24,7 +24,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
         .from('progress')
         .select('*')
         .eq('child_id', selectedChild.id)
-        .order('created_at', { ascending: false })
+        .order('date', { ascending: false })
         .limit(50);
 
       if (!error && data) {
@@ -102,7 +102,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           </div>
 
           <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2ff" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
