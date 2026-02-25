@@ -200,28 +200,31 @@ function AppContent() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-6 pb-16">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="space-y-4 pb-10">
+            <div className="max-w-2xl space-y-1">
+              <h3 className="text-xl font-semibold text-slate-900">Activités</h3>
+              <p className="text-sm text-slate-500">Choisis une seule activité pour te concentrer.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {tabs
                 .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
                 .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
                 .map((tab, idx) => (
                   <motion.button
                     key={tab.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    whileHover={{ y: -10, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03, duration: 0.2 }}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => setActiveTab(tab.id)}
-                    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl transition-all text-left group overflow-hidden relative"
+                    className="rounded-2xl border border-slate-200 bg-white p-5 text-left transition-shadow hover:shadow-sm"
                   >
-                    <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${tab.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tab.color} text-white flex items-center justify-center mb-4 shadow-lg group-hover:rotate-6 transition-transform`}>
-                      <tab.icon className="w-6 h-6" />
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-indigo-600">
+                      <tab.icon className="h-5 w-5" />
                     </div>
-                    <h4 className="text-lg font-black text-slate-800">{tab.label}</h4>
-                    <p className="text-slate-500 font-medium text-xs mt-2 leading-relaxed line-clamp-2">{tab.desc}</p>
+                    <h4 className="text-base font-semibold text-slate-900">{tab.label}</h4>
+                    <p className="mt-1 text-sm text-slate-500">{tab.desc}</p>
                   </motion.button>
                 ))}
             </div>
@@ -256,7 +259,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col md:flex-row font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* Confetti Overlay */}
       <AnimatePresence>
         {showConfetti && (
@@ -266,7 +269,7 @@ function AppContent() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
           >
-            <div className="text-[12rem] animate-bounce">✨⭐✨</div>
+            <div className="text-8xl">✨</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -292,14 +295,14 @@ function AppContent() {
           setIsMobileNavOpen={setIsMobileNavOpen}
         />
 
-        <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full overflow-hidden">
+        <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               {renderContent()}
             </motion.div>

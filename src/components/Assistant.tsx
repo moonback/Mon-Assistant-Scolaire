@@ -1,6 +1,6 @@
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { askGemini } from '../services/gemini';
-import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2, Mic, Volume2, StopCircle, Image as ImageIcon, X, ChevronRight, User } from 'lucide-react';
+import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2, Mic, Volume2, StopCircle, Image as ImageIcon, X } from 'lucide-react';
 import { useSpeechRecognition, useSpeechSynthesis } from '../hooks/useSpeech';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -40,7 +40,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   useEffect(() => {
     async function fetchHistory() {
       if (!selectedChild) return;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('conversations')
         .select('*')
         .eq('child_id', selectedChild.id)
@@ -48,13 +48,15 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
         .limit(20);
 
       if (data) {
-        setHistory(data.map(item => ({
-          id: item.id,
-          question: item.question,
-          response: item.response,
-          date: item.created_at,
-          image_url: item.image_url
-        })));
+        setHistory(
+          data.map((item) => ({
+            id: item.id,
+            question: item.question,
+            response: item.response,
+            date: item.created_at,
+            image_url: item.image_url,
+          })),
+        );
       }
     }
     fetchHistory();
@@ -62,7 +64,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
 
   useEffect(() => {
     if (transcript) {
-      setQuestion(prev => prev ? prev + ' ' + transcript : transcript);
+      setQuestion((prev) => (prev ? `${prev} ${transcript}` : transcript));
       resetTranscript();
     }
   }, [transcript, resetTranscript]);
@@ -71,9 +73,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
+      reader.onloadend = () => setSelectedImage(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -101,24 +101,27 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
           .from('conversations')
           .insert({
             child_id: selectedChild.id,
-            question: question,
+            question,
             response: answer,
-            image_url: selectedImage || undefined
+            image_url: selectedImage || undefined,
           })
           .select()
           .single();
 
         if (!insertError && newItem) {
-          setHistory(prev => [{
-            id: newItem.id,
-            question: newItem.question,
-            response: newItem.response,
-            date: newItem.created_at,
-            image_url: newItem.image_url
-          }, ...prev]);
+          setHistory((prev) => [
+            {
+              id: newItem.id,
+              question: newItem.question,
+              response: newItem.response,
+              date: newItem.created_at,
+              image_url: newItem.image_url,
+            },
+            ...prev,
+          ]);
         }
       }
-    } catch (err) {
+    } catch {
       setError("Je n'ai pas réussi à trouver la réponse. Réessaie !");
     } finally {
       setLoading(false);
@@ -136,9 +139,9 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
         Contexte :
         Question élève : "${question}"
         Ta réponse précédente : "${response}"
-        
+
         Réponse de l'élève à ta question de vérification : "${verificationAnswer}"
-        
+
         Tâche : Dis à l'élève si sa réponse est bonne ou non.
         IMPORTANT : Commence ta réponse par [CORRECT] si c'est bon, ou [INCORRECT] si c'est faux.
         Ensuite, explique pourquoi gentiment.
@@ -153,8 +156,6 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
       if (isCorrect) {
         onEarnPoints?.(20, 'assistant', 'General');
       }
-    } catch (err) {
-      console.error(err);
     } finally {
       setCheckingVerification(false);
     }
@@ -187,277 +188,128 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Main Interaction Zone */}
-        <div className="flex-1 space-y-6">
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[2.5rem] shadow-sm p-8 border border-slate-100"
-          >
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                  <User className="w-6 h-6" />
-                </div>
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">
-                  Pose ta question...
-                </h2>
+    <div className="mx-auto max-w-6xl space-y-5 pb-8">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-4">
+          <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-slate-200 bg-white p-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">Assistant IA</h2>
+                <p className="text-sm text-slate-500">Pose une question claire pour obtenir une meilleure explication.</p>
               </div>
 
-              <div className="relative group">
+              <div className="relative">
                 <textarea
                   id="question"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Exemple : Comment on fait une division ? Qui est Louis XIV ?"
-                  className="w-full h-40 p-6 rounded-[2rem] bg-slate-50 border-2 border-transparent focus:border-indigo-400 focus:bg-white focus:ring-8 focus:ring-indigo-50 outline-none transition-all resize-none text-lg font-medium pr-16"
+                  placeholder="Exemple : Explique-moi la division étape par étape."
+                  className="h-36 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 pr-14 text-slate-800 outline-none transition focus:border-indigo-300 focus:bg-white"
                 />
                 <button
                   type="button"
                   onClick={isListening ? stopListening : startListening}
-                  className={`absolute right-4 bottom-4 w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${isListening
-                    ? 'bg-red-500 text-white animate-pulse shadow-red-200'
-                    : 'bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
-                    }`}
+                  className={`absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-lg border ${isListening ? 'border-red-200 bg-red-50 text-red-600' : 'border-slate-200 bg-white text-slate-600'}`}
                   title="Parler"
                 >
-                  {isListening ? <StopCircle className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  {isListening ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </button>
               </div>
 
-              {/* Image Preview */}
               <AnimatePresence>
                 {selectedImage && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="relative inline-block"
-                  >
-                    <img src={selectedImage} alt="Aperçu" className="h-32 w-auto rounded-3xl border-4 border-white shadow-xl" />
-                    <button
-                      type="button"
-                      onClick={() => setSelectedImage(null)}
-                      className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-lg hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative inline-block">
+                    <img src={selectedImage} alt="Aperçu" className="h-24 rounded-xl border border-slate-200" />
+                    <button type="button" onClick={() => setSelectedImage(null)} className="absolute -right-2 -top-2 rounded-full border border-slate-200 bg-white p-1 text-slate-500">
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-red-500 bg-red-50 p-4 rounded-2xl text-sm font-bold flex items-center gap-2 border border-red-100"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
-                  {error}
-                </motion.div>
-              )}
+              {error && <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-              <div className="flex gap-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 px-6 rounded-2xl transition-all flex items-center gap-2"
-                >
-                  <ImageIcon className="w-5 h-5" />
-                  <span className="hidden sm:inline">Photo</span>
+              <div className="flex flex-wrap gap-2">
+                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <ImageIcon className="h-4 w-4" /> Photo
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-indigo-100 group"
-                >
-                  {loading ? (
-                    <>
-                      <Sparkles className="w-6 h-6 animate-spin" />
-                      <span>Je réfléchis...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                      <span>Poser ma question</span>
-                    </>
-                  )}
+                <button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+                  {loading ? <Sparkles className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {loading ? 'Analyse...' : 'Envoyer'}
                 </button>
 
                 {(question || selectedImage) && (
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="bg-slate-50 hover:bg-red-50 hover:text-red-500 text-slate-400 font-bold py-4 px-4 rounded-2xl transition-all border border-slate-100"
-                  >
-                    <Eraser className="w-6 h-6" />
+                  <button type="button" onClick={handleClear} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                    <Eraser className="h-4 w-4" />
                   </button>
                 )}
               </div>
             </form>
           </motion.section>
 
-          {/* Response Area */}
           <AnimatePresence mode="wait">
             {response && (
-              <motion.section
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-[3rem] shadow-xl p-8 md:p-10 border border-indigo-50 relative overflow-hidden space-y-8"
-              >
-                {/* Background decoration */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -mr-16 -mt-16" />
-
-                <div>
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-                        <Sparkles className="w-8 h-8" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Magic Réponse</h2>
-                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Explications claires</p>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => isSpeaking ? stopSpeaking() : speak(response)}
-                      className={`w-12 h-12 rounded-2xl transition-all shadow-md flex items-center justify-center ${isSpeaking
-                        ? 'bg-emerald-500 text-white animate-pulse shadow-emerald-200'
-                        : 'bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                        }`}
-                      title={isSpeaking ? "Arrêter la lecture" : "Lire la réponse"}
-                    >
-                      {isSpeaking ? <StopCircle className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-                    </button>
-                  </div>
-
-                  <div className="bg-slate-50/50 p-8 rounded-[2rem] border border-slate-100">
-                    <div className="prose prose-lg prose-indigo max-w-none whitespace-pre-wrap leading-relaxed font-semibold text-slate-700">
-                      {response}
-                    </div>
-                  </div>
+              <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-slate-900">Réponse</h3>
+                  <button onClick={() => (isSpeaking ? stopSpeaking() : speak(response))} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600">
+                    {isSpeaking ? <StopCircle className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  </button>
                 </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{response}</div>
 
-                {/* Verification Section */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-[2.5rem] p-8 border border-emerald-100/50"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    <h3 className="font-black text-emerald-800 text-xl">Mission Comprise ?</h3>
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                    <CheckCircle2 className="h-4 w-4 text-indigo-600" /> Vérifie ta compréhension
                   </div>
-                  <p className="text-emerald-700/80 font-bold mb-6 italic">
-                    "Une petite question magique se cache à la fin de ma réponse... Peux-tu y répondre ?"
-                  </p>
-
-                  <form onSubmit={handleVerificationSubmit} className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        value={verificationAnswer}
-                        onChange={(e) => setVerificationAnswer(e.target.value)}
-                        placeholder="Ta réponse magique ici..."
-                        className="w-full p-5 rounded-2xl bg-white border-2 border-emerald-100 focus:border-emerald-400 outline-none transition-all font-bold placeholder:text-emerald-200"
-                        disabled={checkingVerification || !!verificationFeedback}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={checkingVerification || !verificationAnswer || !!verificationFeedback}
-                      className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black px-8 py-5 rounded-2xl transition-all shadow-lg shadow-emerald-100 whitespace-nowrap active:scale-95"
-                    >
-                      {checkingVerification ? <Sparkles className="animate-spin w-6 h-6" /> : 'Vérifier ma réponse'}
+                  <form onSubmit={handleVerificationSubmit} className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={verificationAnswer}
+                      onChange={(e) => setVerificationAnswer(e.target.value)}
+                      placeholder="Ta réponse"
+                      className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                      disabled={checkingVerification || !!verificationFeedback}
+                    />
+                    <button type="submit" disabled={checkingVerification || !verificationAnswer || !!verificationFeedback} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+                      Vérifier
                     </button>
                   </form>
 
-                  <AnimatePresence>
-                    {verificationFeedback && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="mt-6 p-6 bg-white rounded-2xl border-2 border-emerald-200 shadow-sm"
-                      >
-                        <p className="text-emerald-800 font-black text-lg flex items-center gap-2">
-                          {verificationFeedback.includes('Bravo') ? '🌟' : '💡'} {verificationFeedback}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
+                  {verificationFeedback && <p className="text-sm text-slate-700">{verificationFeedback}</p>}
+                </div>
               </motion.section>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Sidebar Historique */}
-        <aside className="w-full lg:w-80 space-y-6">
-          <section className="bg-white rounded-[2.5rem] shadow-sm p-8 border border-slate-100 sticky top-28">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2 tracking-tight">
-                <History className="w-6 h-6 text-indigo-500" />
-                Mémoire
+        <aside>
+          <section className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <History className="h-4 w-4 text-indigo-600" /> Historique
               </h2>
               {history.length > 0 && (
-                <button
-                  onClick={clearHistory}
-                  className="text-slate-300 hover:text-red-500 transition-colors p-2"
-                  title="Effacer tout"
-                >
-                  <Trash2 className="w-5 h-5" />
+                <button onClick={clearHistory} className="rounded-lg p-1.5 text-slate-400 hover:text-red-600" title="Effacer tout">
+                  <Trash2 className="h-4 w-4" />
                 </button>
               )}
             </div>
 
-            <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2 custom-scrollbar">
-              {history.map((item, i) => (
-                <motion.button
-                  key={item.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  onClick={() => loadHistoryItem(item)}
-                  className="w-full text-left p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50 border border-transparent hover:border-indigo-100 transition-all group relative"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
-                      {item.image_url ? <ImageIcon className="w-5 h-5 text-indigo-400" /> : <Clock className="w-5 h-5 text-slate-300" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-700 group-hover:text-indigo-700 line-clamp-2 leading-snug">
-                        {item.question || "Analyse d'image"}
-                      </p>
-                      <p className="text-[10px] font-black text-slate-300 mt-2 uppercase tracking-widest">
-                        {new Date(item.date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-indigo-400 mt-1" />
-                  </div>
-                </motion.button>
+            <div className="max-h-[calc(100vh-240px)] space-y-2 overflow-y-auto pr-1">
+              {history.map((item) => (
+                <button key={item.id} onClick={() => loadHistoryItem(item)} className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition-colors hover:bg-white">
+                  <p className="line-clamp-2 text-sm font-medium text-slate-800">{item.question || "Analyse d'image"}</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                    <Clock className="h-3.5 w-3.5" />
+                    {new Date(item.date).toLocaleDateString()}
+                  </p>
+                </button>
               ))}
 
-              {history.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <History className="w-8 h-8 text-slate-200" />
-                  </div>
-                  <p className="text-slate-400 font-bold text-sm px-4">Tes questions apparaîtront ici !</p>
-                </div>
-              )}
+              {history.length === 0 && <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">Aucune question pour le moment.</p>}
             </div>
           </section>
         </aside>
@@ -465,4 +317,3 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     </div>
   );
 }
-
