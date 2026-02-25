@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target } from 'lucide-react';
-import { Progress } from '../lib/supabase';
+import { Progress, supabase } from '../lib/supabase';
 
 interface PedagogicalHubProps {
   childId: string;
@@ -17,6 +17,10 @@ interface Mission {
   objective: string;
   points: number;
   subject: string;
+}
+
+interface MissionRecord {
+  completed_mission_ids: string[];
 }
 
 function normalizeSubject(stat: Progress) {
@@ -47,21 +51,8 @@ function nextReviewLabel(avg: number, seen: number) {
 
 export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoints }: PedagogicalHubProps) {
   const today = new Date().toISOString().split('T')[0];
-  const missionStorageKey = `pedagogical_missions_${childId}_${today}`;
   const [completedMissionIds, setCompletedMissionIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    const raw = localStorage.getItem(missionStorageKey);
-    if (!raw) {
-      setCompletedMissionIds([]);
-      return;
-    }
-    try {
-      setCompletedMissionIds(JSON.parse(raw));
-    } catch {
-      setCompletedMissionIds([]);
-    }
-  }, [missionStorageKey]);
+  const [savingMissionId, setSavingMissionId] = useState<string | null>(null);
 
   const subjectInsights = useMemo(() => {
     const grouped = new Map<string, number[]>();
@@ -122,6 +113,48 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
     ];
   }, [today, strongestSubject, weakestSubjects]);
 
+  useEffect(() => {
+    const loadMissionState = async () => {
+      if (!childId) return;
+
+      const { data, error } = await supabase
+        .from('pedagogical_daily_missions')
+        .select('completed_mission_ids')
+        .eq('child_id', childId)
+        .eq('date', today)
+        .maybeSingle<MissionRecord>();
+
+      if (error) {
+        console.error('Failed to load mission state:', error);
+        setCompletedMissionIds([]);
+        return;
+      }
+
+      if (data?.completed_mission_ids) {
+        setCompletedMissionIds(data.completed_mission_ids);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('pedagogical_daily_missions')
+        .insert({
+          child_id: childId,
+          date: today,
+          grade_level: gradeLevel,
+          generated_missions: missions,
+          completed_mission_ids: [],
+        });
+
+      if (insertError) {
+        console.error('Failed to initialize mission row:', insertError);
+      }
+
+      setCompletedMissionIds([]);
+    };
+
+    loadMissionState();
+  }, [childId, today, gradeLevel, missions]);
+
   const spacedReviewPlan = useMemo(() => {
     return subjectInsights.slice(0, 4).map((item) => ({
       ...item,
@@ -129,12 +162,41 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
     }));
   }, [subjectInsights]);
 
-  const completeMission = (mission: Mission) => {
-    if (completedMissionIds.includes(mission.id)) return;
+  const completeMission = async (mission: Mission) => {
+    if (completedMissionIds.includes(mission.id) || !childId) return;
+
     const next = [...completedMissionIds, mission.id];
     setCompletedMissionIds(next);
-    localStorage.setItem(missionStorageKey, JSON.stringify(next));
+    setSavingMissionId(mission.id);
+
+    const { error } = await supabase
+      .from('pedagogical_daily_missions')
+      .upsert({
+        child_id: childId,
+        date: today,
+        grade_level: gradeLevel,
+        generated_missions: missions,
+        completed_mission_ids: next,
+      }, { onConflict: 'child_id,date' });
+
+    if (error) {
+      console.error('Failed to persist mission completion:', error);
+      setCompletedMissionIds((prev) => prev.filter((id) => id !== mission.id));
+      setSavingMissionId(null);
+      return;
+    }
+
+    await supabase.from('pedagogical_mission_events').insert({
+      child_id: childId,
+      date: today,
+      mission_id: mission.id,
+      mission_subject: mission.subject,
+      points_awarded: mission.points,
+      grade_level: gradeLevel,
+    });
+
     onEarnPoints(mission.points, 'pedagogy_mission', mission.subject);
+    setSavingMissionId(null);
   };
 
   const completionRate = Math.round((completedMissionIds.length / missions.length) * 100);
@@ -156,6 +218,7 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
         <div className="grid gap-3 md:grid-cols-3">
           {missions.map((mission, i) => {
             const done = completedMissionIds.includes(mission.id);
+            const isSaving = savingMissionId === mission.id;
             return (
               <motion.div
                 key={mission.id}
@@ -170,10 +233,10 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                 <p className="mt-2 text-xs text-slate-500">🎯 {mission.objective}</p>
                 <button
                   onClick={() => completeMission(mission)}
-                  disabled={done}
-                  className={`mt-3 w-full rounded-lg px-3 py-2 text-xs font-semibold ${done ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                  disabled={done || isSaving}
+                  className={`mt-3 w-full rounded-lg px-3 py-2 text-xs font-semibold ${done ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300'}`}
                 >
-                  {done ? `Terminé +${mission.points} pts` : `Marquer terminé (+${mission.points})`}
+                  {done ? `Terminé +${mission.points} pts` : isSaving ? 'Enregistrement...' : `Marquer terminé (+${mission.points})`}
                 </button>
               </motion.div>
             );
