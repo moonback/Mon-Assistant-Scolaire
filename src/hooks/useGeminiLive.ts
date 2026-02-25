@@ -149,9 +149,25 @@ export function useGeminiLive(): UseGeminiLiveReturn {
 
                             const WORKLET = `
                 class MicCapture extends AudioWorkletProcessor {
+                  constructor() {
+                    super();
+                    // Buffer format: Float32Array
+                    // 2048 samples at 16000Hz = ~128ms of audio.
+                    // This creates less network overhead reducing latency significantly.
+                    this.buffer = new Float32Array(2048);
+                    this.pos = 0;
+                  }
                   process(inputs) {
                     const ch = inputs[0]?.[0];
-                    if (ch && ch.length > 0) this.port.postMessage(ch.slice());
+                    if (ch && ch.length > 0) {
+                      for (let i = 0; i < ch.length; i++) {
+                        this.buffer[this.pos++] = ch[i];
+                        if (this.pos >= this.buffer.length) {
+                          this.port.postMessage(this.buffer.slice());
+                          this.pos = 0;
+                        }
+                      }
+                    }
                     return true;
                   }
                 }
