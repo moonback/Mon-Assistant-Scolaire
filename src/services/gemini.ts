@@ -84,11 +84,21 @@ Règles :
 - Retourner UNIQUEMENT le tableau JSON, sans texte autour.`
 };
 
+export function buildAssistantSystemPrompt(gradeLevel: string, childContext?: string): string {
+  return `${SYSTEM_INSTRUCTIONS['assistant']}
+
+IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
+${gradeLevel === 'CP' || gradeLevel === 'CE1' ? 'Utilise des phrases très courtes et des mots très simples.' : ''}
+${gradeLevel === 'CM2' || gradeLevel === '6ème' ? 'Tu peux aller un peu plus loin dans les explications, mais reste clair.' : ''}
+${childContext ? `\n--- PROFIL DE L'ENFANT (utilise ces infos pour personnaliser tes réponses) ---\n${childContext}\n---` : ''}`;
+}
+
 export async function askGemini(
   prompt: string,
   mode: Mode = 'assistant',
   gradeLevel: string = 'CM1',
-  image?: string // Base64 image string (data:image/jpeg;base64,...)
+  image?: string, // Base64 image string (data:image/jpeg;base64,...)
+  childContext?: string // Optional child profile context
 ): Promise<string> {
   try {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
@@ -96,7 +106,9 @@ export async function askGemini(
       throw new Error("La clé API OpenRouter n'est pas configurée.");
     }
 
-    const systemInstruction = `${SYSTEM_INSTRUCTIONS[mode]}
+    const systemInstruction = mode === 'assistant' && childContext
+      ? buildAssistantSystemPrompt(gradeLevel, childContext)
+      : `${SYSTEM_INSTRUCTIONS[mode]}
     
     IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
     ${gradeLevel === 'CP' || gradeLevel === 'CE1' ? 'Utilise des phrases très courtes et des mots très simples.' : ''}
