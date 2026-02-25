@@ -58,9 +58,9 @@ export default function Sidebar({
                             {isParentMode ? <ShieldCheck className="h-4 w-4" /> : <Brain className="h-4 w-4" />}
                         </div>
                         <div>
-                            <p className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">Magic Desk</p>
+                            <p className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">Family IA</p>
                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">
-                                {isParentMode ? 'Parents' : 'Élève'}
+                                {isParentMode ? 'Parents' : 'Enfants'}
                             </p>
                         </div>
                     </motion.div>
