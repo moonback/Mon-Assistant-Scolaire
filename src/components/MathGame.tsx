@@ -3,7 +3,7 @@ import { Calculator, Check, X, RefreshCw, Trophy, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface MathGameProps {
-  onEarnPoints?: (amount: number) => void;
+  onEarnPoints?: (amount: number, activityType: string, subject?: string) => void;
 }
 
 export default function MathGame({ onEarnPoints }: MathGameProps) {
@@ -68,7 +68,7 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
       setMessage('Bravo !');
       setStatus('correct');
       setScore((s) => s + 1);
-      onEarnPoints?.(5);
+      onEarnPoints?.(5, 'math');
       setTimeout(generateProblem, 900);
     } else {
       setMessage('Réessaie');
@@ -120,13 +120,12 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="0"
-              className={`w-full rounded-xl border px-4 py-4 text-center text-3xl font-semibold outline-none transition ${
-                status === 'correct'
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                  : status === 'wrong'
-                    ? 'border-red-300 bg-red-50 text-red-700'
-                    : 'border-slate-200 bg-white text-slate-900 focus:border-indigo-300'
-              }`}
+              className={`w-full rounded-xl border px-4 py-4 text-center text-3xl font-semibold outline-none transition ${status === 'correct'
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                : status === 'wrong'
+                  ? 'border-red-300 bg-red-50 text-red-700'
+                  : 'border-slate-200 bg-white text-slate-900 focus:border-indigo-300'
+                }`}
               autoFocus
             />
             {status === 'correct' && <Check className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-600" />}

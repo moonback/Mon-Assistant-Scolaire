@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { askGemini } from '../services/gemini';
 
 interface HomeworkHelperProps {
-    onEarnPoints?: (amount: number) => void;
+    onEarnPoints?: (amount: number, activityType: string, subject?: string) => void;
     gradeLevel?: string;
 }
 
@@ -41,7 +41,7 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
             const prompt = question || "Peux-tu m'aider à comprendre cet exercice ? Explique-moi les étapes sans me donner la réponse tout de suite.";
             const answer = await askGemini(prompt, 'homework', gradeLevel, selectedImage);
             setResponse(answer);
-            onEarnPoints?.(15); // Points for using the tool
+            onEarnPoints?.(15, 'homework'); // Points for using the tool
         } catch (err) {
             setError("Le scanner magique a eu un petit souci. Réessaie !");
         } finally {
