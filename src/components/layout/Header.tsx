@@ -69,12 +69,14 @@ export default function Header({ activeTab, tabs, selectedChild, timeLeft, setIs
                         </div>
 
                         {timeLeft !== null && (
-                            <div className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm ${timeLeft < 5
-                                ? 'bg-red-50 border-red-200 text-red-600 animate-pulse'
-                                : 'bg-white border-slate-200 text-slate-700'
+                            <div className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2 font-black transition-all shadow-sm text-sm ${timeLeft < 5
+                                ? 'bg-red-50 border-red-300 text-red-600 animate-pulse'
+                                : timeLeft < 15
+                                    ? 'bg-orange-50 border-orange-200 text-orange-600'
+                                    : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                 }`}>
-                                <div className={`w-2 h-2 rounded-full ${timeLeft < 5 ? 'bg-red-500' : 'bg-emerald-500'}`} />
-                                <span className="font-black">{timeLeft} MIN RESTANTES</span>
+                                <span className="text-lg">{timeLeft < 5 ? '⏰' : timeLeft < 15 ? '⌛' : '🕐'}</span>
+                                <span>{timeLeft} min</span>
                             </div>
                         )}
 

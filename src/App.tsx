@@ -147,95 +147,114 @@ function AppContent() {
         return (
           <div className="space-y-6 pb-10 max-w-4xl mx-auto">
             <div className="text-center space-y-2 mb-8">
-              <h3 className="text-3xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
-              <p className="text-slate-500 font-medium">Choisis ton aventure du jour, {selectedChild?.name} !</p>
+              <h3 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
+              <p className="text-slate-500 font-bold text-lg">Choisis ton aventure du jour, {selectedChild?.name} !</p>
             </div>
 
             <SiblingCompetition />
             <ParentalMissions />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Mission du jour (Primary big button) - Maps to challenges */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Mission du jour */}
               {!selectedChild?.blocked_topics?.includes('challenges') && (
                 <motion.button
                   whileHover={{ y: -4, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab('challenges')}
-                  className="col-span-1 md:col-span-2 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-8 text-left shadow-lg shadow-indigo-200/50 flex flex-col md:flex-row items-center gap-6 border-4 border-white"
+                  className="col-span-1 md:col-span-2 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-8 md:p-10 text-left shadow-xl shadow-indigo-200/60 flex flex-col md:flex-row items-center gap-6 border-4 border-white"
                 >
-                  <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0">
-                    <span className="text-4xl">🎯</span>
+                  <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner">
+                    <span className="text-5xl">🎯</span>
                   </div>
-                  <div className="flex-1 text-white">
-                    <h4 className="text-2xl font-bold mb-2">Mission du Jour</h4>
-                    <p className="text-indigo-100 font-medium text-lg leading-relaxed">
+                  <div className="flex-1 text-white text-center md:text-left">
+                    <h4 className="text-3xl font-black mb-2">Mission du Jour</h4>
+                    <p className="text-indigo-100 font-bold text-xl leading-relaxed">
                       Gagne le maximum d'étoiles en relevant tes défis quotidiens !
                     </p>
                   </div>
+                  <div className="shrink-0 text-white/80 text-4xl">→</div>
                 </motion.button>
               )}
 
-              {/* Parler à l'Assistant */}
+              {/* Cerveau Magique */}
               {!selectedChild?.blocked_topics?.includes('assistant') && (
                 <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('assistant')}
-                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-100 flex flex-col items-center text-center gap-4"
+                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500">
-                    <span className="text-3xl">🤖</span>
+                  <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-4xl">🤖</span>
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold text-slate-800 mb-1">Cerveau Magique</h4>
-                    <p className="text-slate-500 text-sm font-medium">Pose tes questions à l'IA</p>
+                    <h4 className="text-2xl font-black text-slate-800 mb-1">Cerveau Magique</h4>
+                    <p className="text-slate-500 font-bold text-base">Pose toutes tes questions !</p>
                   </div>
                 </motion.button>
               )}
 
-              {/* Boutique Magique */}
+              {/* Boutique */}
               {!selectedChild?.blocked_topics?.includes('market') && (
                 <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('market')}
-                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-100 flex flex-col items-center text-center gap-4"
+                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-16 h-16 bg-yellow-50 rounded-2xl flex items-center justify-center text-yellow-500">
-                    <span className="text-3xl">🎁</span>
+                  <div className="w-20 h-20 bg-yellow-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-4xl">🎁</span>
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold text-slate-800 mb-1">La Boutique</h4>
-                    <p className="text-slate-500 text-sm font-medium">Échange tes étoiles</p>
+                    <h4 className="text-2xl font-black text-slate-800 mb-1">La Boutique</h4>
+                    <p className="text-slate-500 font-bold text-base">Échange tes étoiles !</p>
                   </div>
                 </motion.button>
               )}
 
-              {/* Réviser */}
+              {/* Cartes Mémoire */}
               {!selectedChild?.blocked_topics?.includes('flashcards') && (
                 <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('flashcards')}
-                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-emerald-100 flex flex-col items-center text-center gap-4"
+                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-emerald-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500">
-                    <span className="text-3xl">📚</span>
+                  <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-4xl">📚</span>
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold text-slate-800 mb-1">Cartes Mémoire</h4>
-                    <p className="text-slate-500 text-sm font-medium">Révise en t'amusant</p>
+                    <h4 className="text-2xl font-black text-slate-800 mb-1">Cartes Mémoire</h4>
+                    <p className="text-slate-500 font-bold text-base">Révise en t'amusant !</p>
+                  </div>
+                </motion.button>
+              )}
+
+              {/* Calcul Mental */}
+              {!selectedChild?.blocked_topics?.includes('math') && (
+                <motion.button
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setActiveTab('math')}
+                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-teal-200 flex flex-col items-center text-center gap-4"
+                >
+                  <div className="w-20 h-20 bg-teal-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-4xl">🔢</span>
+                  </div>
+                  <div>
+                    <h4 className="text-2xl font-black text-slate-800 mb-1">Calcul Mental</h4>
+                    <p className="text-slate-500 font-bold text-base">Deviens un champion des maths !</p>
                   </div>
                 </motion.button>
               )}
             </div>
 
             {/* Other activities section */}
-            <div className="pt-8 mt-4 border-t border-slate-100">
-              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Plus d'activités</h4>
+            <div className="pt-6 mt-2 border-t-2 border-slate-100">
+              <h4 className="text-base font-black text-slate-400 uppercase tracking-wider mb-4 px-2">Plus d'activités</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {tabs
-                  .filter(t => !['home', 'dashboard', 'parental', 'profile', 'challenges', 'assistant', 'flashcards', 'market'].includes(t.id))
+                  .filter(t => !['home', 'dashboard', 'parental', 'profile', 'challenges', 'assistant', 'flashcards', 'market', 'math'].includes(t.id))
                   .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
                   .map((tab, idx) => (
                     <motion.button
@@ -243,15 +262,15 @@ function AppContent() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05, duration: 0.2 }}
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ scale: 1.06, y: -3 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setActiveTab(tab.id)}
-                      className="rounded-2xl bg-white p-4 text-center shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col items-center gap-3"
+                      className="rounded-2xl bg-white p-5 text-center shadow-sm hover:shadow-lg transition-all border-2 border-slate-100 hover:border-indigo-100 flex flex-col items-center gap-3"
                     >
-                      <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
-                        <tab.icon className="w-6 h-6" />
+                      <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                        <tab.icon className="w-7 h-7" />
                       </div>
-                      <span className="text-sm font-bold text-slate-700">{tab.label}</span>
+                      <span className="text-base font-black text-slate-700">{tab.label}</span>
                     </motion.button>
                   ))}
               </div>
@@ -298,9 +317,33 @@ function AppContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
+            className="fixed inset-0 z-[100] pointer-events-none overflow-hidden"
           >
-            <div className="text-8xl">✨</div>
+            {['⭐', '🌟', '✨', '💫', '🎉', '🎊', '⭐', '🌟', '✨', '💫', '🎉', '🎊', '⭐', '🌟', '✨', '💫'].map((emoji, i) => (
+              <motion.div
+                key={i}
+                initial={{
+                  opacity: 1,
+                  x: `${Math.random() * 100}vw`,
+                  y: -60,
+                  scale: Math.random() * 0.8 + 0.6,
+                  rotate: 0,
+                }}
+                animate={{
+                  y: '110vh',
+                  rotate: Math.random() * 720 - 360,
+                  opacity: [1, 1, 0],
+                }}
+                transition={{
+                  duration: Math.random() * 1.5 + 1.5,
+                  delay: Math.random() * 0.8,
+                  ease: 'easeIn',
+                }}
+                className="absolute text-3xl"
+              >
+                {emoji}
+              </motion.div>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
