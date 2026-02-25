@@ -3,7 +3,7 @@ import { Calculator, Check, X, RefreshCw, Trophy, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface MathGameProps {
-  onEarnPoints?: (amount: number, activityType: string, subject?: string) => void;
+  onEarnPoints?: (amount: number, activityType: string, subject?: string) => void | Promise<void>;
 }
 
 export default function MathGame({ onEarnPoints }: MathGameProps) {

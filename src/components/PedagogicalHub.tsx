@@ -40,6 +40,9 @@ interface SRSCard {
   notion: string;
   mastery_level: number;
   next_review_at: string;
+  front?: string;
+  back?: string;
+  hint?: string;
 }
 
 interface Milestone {

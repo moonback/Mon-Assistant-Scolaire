@@ -15,6 +15,9 @@ export interface SRSCard {
     subject: string;
     mastery_level: number;
     next_review_at: string;
+    front?: string;
+    back?: string;
+    hint?: string;
 }
 
 // Generate flashcards using AI for a given subject/notion
@@ -93,7 +96,7 @@ export async function getChildSubjects(childId: string): Promise<string[]> {
 // Rate a card after review (updates SRS scheduling)
 export async function rateCard(
     childId: string,
-    cardData: { notion: string; subject: string },
+    cardData: { notion: string; subject: string; front?: string; back?: string; hint?: string },
     success: boolean
 ): Promise<void> {
     // Get or create SRS card
@@ -124,6 +127,9 @@ export async function rateCard(
                 last_reviewed_at: now.toISOString(),
                 success_count: success ? existing.success_count + 1 : existing.success_count,
                 failure_count: !success ? existing.failure_count + 1 : existing.failure_count,
+                front: cardData.front, // Store full content for coming back
+                back: cardData.back,
+                hint: cardData.hint
             })
             .eq('id', existing.id);
     } else {
@@ -140,8 +146,23 @@ export async function rateCard(
             last_reviewed_at: now.toISOString(),
             success_count: success ? 1 : 0,
             failure_count: !success ? 1 : 0,
+            front: cardData.front,
+            back: cardData.back,
+            hint: cardData.hint
         });
     }
+}
+
+// Get all mastered/learned cards for collection view
+export async function getCollection(childId: string): Promise<SRSCard[]> {
+    const { data, error } = await supabase
+        .from('pedagogical_srs_cards')
+        .select('*')
+        .eq('child_id', childId)
+        .order('last_reviewed_at', { ascending: false });
+
+    if (error || !data) return [];
+    return data;
 }
 
 // Save a completed flashcard session

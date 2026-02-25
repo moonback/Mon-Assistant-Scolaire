@@ -11,6 +11,7 @@ import {
     getChildSubjects,
     rateCard,
     saveSession,
+    getCollection,
     Flashcard,
 } from '../services/flashcardService';
 
@@ -39,7 +40,7 @@ function getTheme(subject: string) {
 // 1. 'question' — show the question, child writes their answer
 // 2. 'reveal'   — show correct answer alongside child's answer
 type CardStep = 'question' | 'reveal';
-type Phase = 'select' | 'loading' | 'session' | 'result';
+type Phase = 'select' | 'loading' | 'session' | 'result' | 'collection';
 
 export default function Flashcards({ childId, gradeLevel, onEarnPoints }: FlashcardsProps) {
     const [phase, setPhase] = useState<Phase>('select');
@@ -53,6 +54,7 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
     const [results, setResults] = useState<{ card: Flashcard; success: boolean; childAnswer: string }[]>([]);
     const [sessionPoints, setSessionPoints] = useState(0);
     const [dueCount, setDueCount] = useState(0);
+    const [collectionCards, setCollectionCards] = useState<any[]>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -100,9 +102,9 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
         const due = await getDueCards(childId);
         if (due.length === 0) { setPhase('select'); return; }
         const flashcards: Flashcard[] = due.map(d => ({
-            front: `Explique la notion : ${d.notion}`,
-            back: `Notion de ${d.subject} : ${d.notion}`,
-            hint: `C'est en rapport avec ${d.subject}.`,
+            front: d.front || `Explique la notion : ${d.notion}`,
+            back: d.back || `Notion de ${d.subject} : ${d.notion}`,
+            hint: d.hint || `C'est en rapport avec ${d.subject}.`,
             subject: d.subject,
         }));
         setCards(flashcards);
@@ -120,7 +122,13 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
         const newResults = [...results, { card: current, success, childAnswer }];
         setResults(newResults);
 
-        await rateCard(childId, { notion: current.front, subject: current.subject }, success);
+        await rateCard(childId, {
+            notion: current.front,
+            subject: current.subject,
+            front: current.front,
+            back: current.back,
+            hint: current.hint
+        }, success);
 
         if (currentIndex < cards.length - 1) {
             setCurrentIndex(i => i + 1);
@@ -175,8 +183,28 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                         </motion.div>
                     )}
 
-                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Choisir une matière :</p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {/* Collection Button */}
+                        <motion.button
+                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.97 }}
+                            onClick={async () => {
+                                setPhase('loading');
+                                const coll = await getCollection(childId);
+                                setCollectionCards(coll);
+                                setPhase('collection');
+                            }}
+                            className="p-6 rounded-3xl bg-slate-900 border-2 border-slate-800 hover:shadow-xl transition-all text-left flex flex-col justify-between"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl mb-4 text-white">
+                                📚
+                            </div>
+                            <div>
+                                <p className="font-black text-white">Ma Collection</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Voir tes cartes apprises</p>
+                            </div>
+                        </motion.button>
+
                         {subjects.map((subject, i) => {
                             const th = getTheme(subject);
                             return (
@@ -288,6 +316,89 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                             </motion.div>
                         ))}
                     </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ───────────────────────────────────────────────
+    // PHASE: COLLECTION
+    // ───────────────────────────────────────────────
+    if (phase === 'collection') {
+        return (
+            <div className="min-h-screen bg-slate-50 p-6 md:p-10">
+                <div className="max-w-4xl mx-auto">
+                    <header className="flex items-center justify-between mb-8">
+                        <div>
+                            <button onClick={() => setPhase('select')} className="text-slate-500 text-sm font-bold hover:text-slate-800 mb-2 block">
+                                ← Retour
+                            </button>
+                            <h1 className="text-3xl font-black text-slate-900">Ma Collection 📚</h1>
+                            <p className="text-sm text-slate-500 font-medium">Toutes les notions que tu as déjà travaillées.</p>
+                        </div>
+                    </header>
+
+                    {collectionCards.length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
+                            <p className="text-slate-400 font-bold">Tu n'as pas encore de cartes dans ta collection.</p>
+                            <button onClick={() => setPhase('select')} className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-sm">
+                                Commencer à apprendre
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {collectionCards.map((card, i) => {
+                                const th = getTheme(card.subject);
+                                return (
+                                    <motion.div
+                                        key={card.id}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col justify-between"
+                                    >
+                                        <div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${th.color} text-white text-[10px] font-black uppercase tracking-widest`}>
+                                                    {card.subject}
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    {[...Array(5)].map((_, idx) => (
+                                                        <div key={idx} className={`w-2 h-2 rounded-full ${idx < card.mastery_level ? 'bg-amber-400' : 'bg-slate-100'}`} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <h3 className="text-lg font-black text-slate-800 mb-2 leading-tight">{card.front || card.notion}</h3>
+                                            <p className="text-sm text-slate-600 font-medium line-clamp-3 italic mb-4">
+                                                {card.back || 'Pas encore de corrigé détaillé.'}
+                                            </p>
+                                        </div>
+                                        <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase">
+                                                Dernière révision: {new Date(card.last_reviewed_at).toLocaleDateString()}
+                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    setCards([{
+                                                        front: card.front || card.notion,
+                                                        back: card.back || card.notion,
+                                                        hint: card.hint || '',
+                                                        subject: card.subject
+                                                    }]);
+                                                    setCurrentIndex(0);
+                                                    setCardStep('question');
+                                                    setPhase('session');
+                                                }}
+                                                className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors"
+                                            >
+                                                <RefreshCcw className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -444,8 +555,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                         <div
                             key={i}
                             className={`h-2 rounded-full transition-all duration-300 ${i < results.length
-                                    ? results[i]?.success ? 'bg-emerald-400 w-3' : 'bg-rose-400 w-3'
-                                    : i === currentIndex ? 'bg-teal-500 w-5' : 'bg-slate-200 w-2'
+                                ? results[i]?.success ? 'bg-emerald-400 w-3' : 'bg-rose-400 w-3'
+                                : i === currentIndex ? 'bg-teal-500 w-5' : 'bg-slate-200 w-2'
                                 }`}
                         />
                     ))}
