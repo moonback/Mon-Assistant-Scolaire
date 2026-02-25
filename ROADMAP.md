@@ -14,24 +14,27 @@ L'objectif de **Mon Assistant Scolaire** est de devenir le compagnon éducatif I
 
 ---
 
-## 🚀 Phase 2 : Immersion (V1.0 - En cours)
+## 🚀 Phase 2 : Raffinement & Immersion (V1.5 - En cours)
+- [x] **Design System Premium** : Standardisation de la typographie et interface "Family AI" (Terminé).
+- [x] **Système de Badges** : Collection complète de badges dynamiques (Terminé).
+- [x] **Compétitions de Fratrie** : Duels de points et défis interactifs (Terminé).
+- [x] **Le Savais-Tu ?** : Amélioration de la section culture générale (Terminé).
 - [ ] **Optimisation Gemini Live** : Stabilité de la connexion vocale et réduction de la latence.
-- [ ] **Mode Hors-ligne** : Cache local des flashcards et des données synchronisées via SQLite.
-- [x] **Système de Badges** : Plus de 50 badges à collectionner selon les réalisations.
-- [x] **Adaptabilité de l'IA** : L'assistant apprend des erreurs passées de l'enfant pour insister sur les points faibles.
-- [x] **Design System Premium** : Finalisation du passage à Tailwind 4 et animations micro-interactions.
+- [ ] **Creative Writing Lab** : Atelier d'écriture assisté par l'IA avec illustrations automatiques.
 
 ---
 
-## 🌟 Phase 3 : Extension (V2.0 - Futur)
-- [ ] **Synchronisation Mobile** : Application compagnon pour les parents (iOS/Android) pour recevoir des notifications en temps réel.
-- [x] **Compétitions Amicales** : Défis entre frères et sœurs (ou amis) avec consentement parental.
-- [ ] **Multi-langues** : Support complet de l'anglais et de l'espagnol comme matières d'apprentissage.
-- [ ] **Exports Pédagogiques** : Génération de rapports PDF pour les professeurs.
+## 🌟 Phase 4 : Extension & Intelligence (V2.0 - Futur)
+- [ ] **Tuteurs Spécialisés** : Personnalisation de l'IA selon la matière (ex: Einstein pour les sciences, Molière pour le français).
+- [ ] **Quêtes Familiales Collaboratives** : Objectifs communs entre frères et sœurs pour débloquer des récompenses parentales.
+- [ ] **Sécurité & Émotions** : Détection de la frustration de l'enfant par l'IA pour adapter le ton et la difficulté.
+- [ ] **Synchronisation Mobile** : Application compagnon parentale pour notifications de succès en temps réel.
 - [ ] **Réalité Augmentée** : Visualisation de modèles 3D (corps humain, système solaire) via Gemini.
+- [ ] **Exports Professionnels** : Génération de bilans de compétences PDF pour le suivi scolaire classique.
 
 ---
 
-## 📈 Suivi des Améliorations Pédagogiques
-- Intégration des programmes officiels de l'Éducation Nationale (France) dans les prompts system.
-- Partenariat avec des orthophonistes pour améliorer l'accessibilité (mode dys).
+## �️ Infrastructure & Accessibilité
+- [ ] **Mode "Dys" & Accessibilité** : Polices adaptées et synthèse vocale renforcée pour les enfants aux besoins spécifiques.
+- [ ] **Intégration Programmes Officiels** : Alignement strict des quiz sur les programmes de l'Éducation Nationale.
+- [ ] **Multi-langues** : Apprentissage des langues étrangères via immersion avec Gemini Live.
