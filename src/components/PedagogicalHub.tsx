@@ -305,7 +305,7 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Stats Column */}
         <div className="lg:col-span-12 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Mastery Table */}
             <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
               <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
@@ -352,10 +352,37 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                 )) : (
                   <div className="text-center py-10">
                     <Zap className="h-8 w-8 text-slate-200 mx-auto mb-3" />
-                    <p className="text-xs font-bold text-slate-400 uppercase">Tes prochaines révisions arriveront ici bientôt !</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase italic leading-tight px-4">Tes prochaines révisions arriveront ici bientôt !</p>
                   </div>
                 )}
               </div>
+            </section>
+
+            {/* Difficulty Mapping / Diagnostic */}
+            <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
+              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
+                <ShieldAlert className="h-5 w-5 text-amber-500" /> Diagnostic IA
+              </h3>
+              {subjectInsights.some(item => item.lowScoreCount > 0) ? (
+                <div className="space-y-4">
+                  {subjectInsights.filter(item => item.lowScoreCount > 0).slice(0, 1).map(item => (
+                    <div key={item.subject} className="p-4 rounded-2xl bg-amber-50/30 border border-amber-100">
+                      <h4 className="font-black text-slate-800 text-sm mb-1">{item.subject}</h4>
+                      <p className="text-[10px] text-slate-600 font-medium mb-3">Focus sur les erreurs récurrentes.</p>
+                      <div className="bg-white/80 p-3 rounded-xl border border-amber-100/50 italic text-[10px] text-slate-700 leading-relaxed font-bold">
+                        "Reprends les bases via l'Atelier 'Explique avec tes mots'."
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Parcours fluide !</p>
+                </div>
+              )}
             </section>
           </div>
         </div>

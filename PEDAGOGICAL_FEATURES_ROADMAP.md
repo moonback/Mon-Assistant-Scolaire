@@ -10,19 +10,18 @@ Il sert de :
 
 ---
 
-## Couverture pédagogique globale (axes obligatoires)
-Les fonctionnalités ci-dessous couvrent ensemble :
-- **Compréhension** (explication, justification, correction active)
-- **Répétition intelligente** (révision espacée, variantes d’exercices)
-- **Autonomie de l’enfant** (choix guidés, auto-évaluation, missions réalisables seul)
-- **Progression par niveaux** (niveaux de maîtrise par compétence)
-- **Valorisation de l’effort** (points d’effort, badges d’endurance)
-- **Détection des difficultés** (analyse d’erreurs récurrentes, signaux d’alerte)
-- **Apprentissage actif** (faire, expliquer, corriger, reformuler)
+## ÉTAT DE L'IMPLÉMENTATION
+- [x] **Mission Quotidienne Intelligente** (Implémenté)
+- [x] **Atelier "Explique avec tes mots"** (Implémenté)
+- [x] **Révision Espacée (SRS)** (Base implémentée)
+- [x] **Tableau de Maîtrise** (Implémenté)
+- [x] **Plan d'Accompagnement Hebdo** (Implémenté)
+- [x] **Portefeuille de Progrès** (Implémenté via Milestones)
+- [ ] **Cartographie des Difficultés** (Analyse de base faite, IA à renforcer)
 
 ---
 
-## 1) Mission Quotidienne Intelligente (enfant)
+## 1) Mission Quotidienne Intelligente (enfant) [TERMINÉ]
 
 1. **Nom de la fonctionnalité**  
    Mission Quotidienne Intelligente
@@ -59,11 +58,11 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `daily_missions`, `mission_items`, `mission_completion`, `hints_used`, `time_spent_seconds`, `autonomy_level`, `effort_points`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Moyenne** (moteur de génération simple + suivi de complétion).
+    **Moyenne** (moteur de génération simple + suivi de complétion).
 
 ---
 
-## 2) Atelier “Explique avec tes mots” (enfant)
+## 2) Atelier “Explique avec tes mots” (enfant) [TERMINÉ]
 
 1. **Nom de la fonctionnalité**  
    Atelier “Explique avec tes mots”
@@ -99,11 +98,11 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `explanation_attempts`, `prompt_type`, `child_text`, `ai_feedback_summary`, `understanding_score`, `error_type`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Moyenne à élevée** (analyse de texte + feedback pédagogique robuste).
+    **Moyenne à élevée** (analyse de texte + feedback pédagogique robuste).
 
 ---
 
-## 3) Révision Espacée Anti-Lassitude (enfant)
+## 3) Révision Espacée Anti-Lassitude (enfant) [BASES TERMINÉES]
 
 1. **Nom de la fonctionnalité**  
    Révision Espacée Anti-Lassitude
@@ -118,7 +117,7 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    6–11 ans, adaptatif selon notions maîtrisées/non maîtrisées.
 
 5. **Description de l’expérience enfant**  
-   Les notions reviennent selon un rythme espacé (J+1, J+3, J+7, etc.) mais avec des formats variés :
+   Les notions reviennent selon un rythme espaced (J+1, J+3, J+7, etc.) mais avec des formats variés :
    - quiz court
    - mini-jeu
    - carte “explique et corrige”
@@ -139,11 +138,11 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `spaced_repetition_cards`, `next_review_at`, `success_rate`, `format_history`, `memory_strength_index`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Moyenne** (algorithme de planification + templates d’activités).
+    **Moyenne** (algorithme de planification + templates d’activités).
 
 ---
 
-## 4) Cartographie des Difficultés (suivi pédagogique)
+## 4) Cartographie des Difficultés (suivi pédagogique) [EN COURS]
 
 1. **Nom de la fonctionnalité**  
    Cartographie des Difficultés
@@ -175,11 +174,11 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `skill_mastery`, `error_logs`, `error_patterns`, `difficulty_flags`, `remediation_plan`, `remediation_outcomes`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Élevée** (modèle de détection de patterns + visualisation pédagogique).
+    **Élevée** (modèle de détection de patterns + visualisation pédagogique).
 
 ---
 
-## 5) Tableau de Maîtrise par Niveaux (suivi pédagogique)
+## 5) Tableau de Maîtrise par Niveaux (suivi pédagogique) [TERMINÉ]
 
 1. **Nom de la fonctionnalité**  
    Tableau de Maîtrise par Niveaux
@@ -211,11 +210,11 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `competency_levels`, `level_change_events`, `mastery_evidence`, `maintenance_checks`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Moyenne** (modèle de progression + UI dashboard).
+    **Moyenne** (modèle de progression + UI dashboard).
 
 ---
 
-## 6) Espace Parent-Prof : Plan d’Accompagnement Hebdo (parent / enseignant)
+## 6) Espace Parent-Prof : Plan d’Accompagnement Hebdo (parent / enseignant) [TERMINÉ]
 
 1. **Nom de la fonctionnalité**  
    Espace Parent-Prof : Plan d’Accompagnement Hebdo
@@ -250,11 +249,11 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `weekly_support_plan`, `adult_notes`, `home_sessions`, `teacher_feedback`, `plan_completion_rate`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Moyenne** (génération de plan + espace de consultation adulte).
+    **Moyenne** (génération de plan + espace de consultation adulte).
 
 ---
 
-## 7) Portefeuille de Progrès Long Terme (transversale)
+## 7) Portefeuille de Progrès Long Terme (transversale) [TERMINÉ VIA MILESTONES]
 
 1. **Nom de la fonctionnalité**  
    Portefeuille de Progrès Long Terme
@@ -286,31 +285,28 @@ Les fonctionnalités ci-dessous couvrent ensemble :
    `progress_timeline`, `milestones`, `portfolio_entries`, `effort_indicators`, `periodic_snapshots`.
 
 10. **Difficulté de mise en œuvre (faible / moyenne / élevée)**  
-   **Élevée** (historisation robuste + visualisations longitudinales).
+    **Élevée** (historisation robuste + visualisations longitudinales).
 
 ---
 
 ## Priorisation produit recommandée
 
-### Phase 1 (impact rapide / effort maîtrisé)
+### Phase 1 (impact rapide / effort maîtrisé) [TERMINÉE]
 1. Mission Quotidienne Intelligente
 2. Tableau de Maîtrise par Niveaux
 3. Révision Espacée Anti-Lassitude
 
-### Phase 2 (qualité pédagogique renforcée)
+### Phase 2 (qualité pédagogique renforcée) [TERMINÉE]
 4. Atelier “Explique avec tes mots”
 5. Espace Parent-Prof : Plan d’Accompagnement Hebdo
 
-### Phase 3 (intelligence pédagogique avancée)
-6. Cartographie des Difficultés
-7. Portefeuille de Progrès Long Terme
+### Phase 3 (intelligence pédagogique avancée) [EN COURS]
+6. Cartographie des Difficultés (Diagnostic & Remédiation)
+7. Portefeuille de Progrès Long Terme (Amélioration visualisation)
 
 ---
 
 ## Notes d’implémentation (React + Supabase)
 - **Front React** : composants modulaires par fonctionnalité (`MissionCard`, `MasteryLevelPill`, `DifficultyHeatmap`, `PortfolioTimeline`).
 - **Supabase** : tables dédiées + vues agrégées pour dashboards parent/enfant.
-- **Jobs planifiés** : calcul quotidien des missions et révisions espacées.
-- **IA pédagogique** : utilisée pour reformulation d’explications, feedback positif, et recommandations ciblées (avec règles garde-fou pour ton adapté à l’enfant).
-- **MVP** : commencer avec règles heuristiques explicites avant modèles avancés.
-
+- **IA pédagogique** : utilisée pour reformulation d’explications, feedback positif, et recommandations ciblées.
