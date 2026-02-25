@@ -3,10 +3,15 @@ import { GoogleGenAI, Modality } from '@google/genai';
 
 export type LiveStatus = 'idle' | 'connecting' | 'listening' | 'speaking' | 'error';
 
+export type LiveMessage = {
+    role: 'user' | 'model';
+    text: string;
+    isStreaming?: boolean;
+};
+
 interface UseGeminiLiveReturn {
     status: LiveStatus;
-    aiTranscript: string;
-    userTranscript: string;
+    messages: LiveMessage[];
     errorMessage: string;
     connect: (systemPrompt: string) => void;
     disconnect: () => void;
@@ -46,8 +51,7 @@ function base64ToPCMFloat32(b64: string, sampleRate: number, onBuffer: (buf: Aud
 
 export function useGeminiLive(): UseGeminiLiveReturn {
     const [status, setStatus] = useState<LiveStatus>('idle');
-    const [aiTranscript, setAiTranscript] = useState('');
-    const [userTranscript, setUserTranscript] = useState('');
+    const [messages, setMessages] = useState<LiveMessage[]>([]);
     const [errorMessage, setErrorMessage] = useState('');
 
     const sessionRef = useRef<any>(null);
@@ -74,7 +78,8 @@ export function useGeminiLive(): UseGeminiLiveReturn {
         nextPlayTimeRef.current = startAt + audioBuffer.duration;
 
         source.onended = () => {
-            if (isAliveRef.current && nextPlayTimeRef.current <= ctx.currentTime + 0.05) {
+            // Small buffer to detect end of speech
+            if (isAliveRef.current && nextPlayTimeRef.current <= ctx.currentTime + 0.1) {
                 isPlayingRef.current = false;
                 setStatus('listening');
             }
@@ -100,8 +105,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
     const disconnect = useCallback(() => {
         cleanup();
         setStatus('idle');
-        setAiTranscript('');
-        setUserTranscript('');
+        setMessages([]);
         setErrorMessage('');
     }, [cleanup]);
 
@@ -117,8 +121,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
         cleanup();
         isAliveRef.current = true;
         setStatus('connecting');
-        setAiTranscript('');
-        setUserTranscript('');
+        setMessages([]);
         setErrorMessage('');
         nextPlayTimeRef.current = 0;
 
@@ -137,17 +140,13 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                 onopen: () => {
                     if (!isAliveRef.current) return;
                     console.log('[GeminiLive] Connecté ✓');
-
-                    // Open mic AFTER the session is established
                     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                         .then(stream => {
                             if (!isAliveRef.current) { stream.getTracks().forEach(t => t.stop()); return; }
                             streamRef.current = stream;
-
                             const audioCtx = new AudioContext({ sampleRate: 16000 });
                             audioCtxRef.current = audioCtx;
 
-                            // AudioWorklet processor inline
                             const WORKLET = `
                 class MicCapture extends AudioWorkletProcessor {
                   process(inputs) {
@@ -164,11 +163,9 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                             audioCtx.audioWorklet.addModule(workletUrl).then(() => {
                                 URL.revokeObjectURL(workletUrl);
                                 if (!isAliveRef.current) return;
-
                                 const source = audioCtx.createMediaStreamSource(stream);
                                 const worklet = new AudioWorkletNode(audioCtx, 'mic-capture');
                                 workletNodeRef.current = worklet;
-
                                 worklet.port.onmessage = (e: MessageEvent<Float32Array>) => {
                                     if (!isAliveRef.current || !sessionRef.current) return;
                                     const b64 = float32ToPCM16Base64(e.data);
@@ -176,15 +173,12 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                                         audio: { data: b64, mimeType: 'audio/pcm;rate=16000' }
                                     });
                                 };
-
                                 source.connect(worklet);
                                 setStatus('listening');
-                                console.log('[GeminiLive] Micro actif ✓');
-                            }).catch(err => {
-                                console.warn('[GeminiLive] AudioWorklet non disponible, fallback ScriptProcessor:', err);
+                            }).catch(() => {
                                 if (!isAliveRef.current) return;
                                 const source = audioCtx.createMediaStreamSource(stream);
-                                // @ts-ignore — deprecated but functional fallback
+                                // @ts-ignore
                                 const processor = audioCtx.createScriptProcessor(4096, 1, 1);
                                 processor.onaudioprocess = (ev: AudioProcessingEvent) => {
                                     if (!isAliveRef.current || !sessionRef.current) return;
@@ -199,9 +193,8 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                             });
                         })
                         .catch(err => {
-                            console.error('[GeminiLive] Micro refusé:', err);
                             setStatus('error');
-                            setErrorMessage('Accès micro refusé. Autorise le microphone dans le navigateur.');
+                            setErrorMessage('Accès micro refusé. Autorise le microphone.');
                             cleanup();
                         });
                 },
@@ -209,42 +202,60 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                 onmessage: (message: any) => {
                     if (!isAliveRef.current) return;
 
-                    // Interruption — vider la file audio
                     if (message.serverContent?.interrupted) {
                         nextPlayTimeRef.current = 0;
                         isPlayingRef.current = false;
                     }
 
-                    // Audio + texte de l'IA
+                    // User transcription
+                    const inputText = message.serverContent?.inputTranscription?.text;
+                    if (inputText) {
+                        setMessages(prev => {
+                            const last = prev[prev.length - 1];
+                            if (last && last.role === 'user') {
+                                return [...prev.slice(0, -1), { ...last, text: last.text + inputText + ' ' }];
+                            }
+                            return [...prev, { role: 'user', text: inputText + ' ' }];
+                        });
+                    }
+
+                    // model Turn
                     const parts: any[] = message.serverContent?.modelTurn?.parts || [];
                     parts.forEach((part: any) => {
                         if (part.text) {
-                            setAiTranscript(prev => prev + part.text);
+                            setMessages(prev => {
+                                const last = prev[prev.length - 1];
+                                if (last && last.role === 'model' && last.isStreaming) {
+                                    return [...prev.slice(0, -1), { ...last, text: last.text + part.text }];
+                                }
+                                return [...prev, { role: 'model', text: part.text, isStreaming: true }];
+                            });
                         }
                         if (part.inlineData?.data && audioCtxRef.current) {
                             base64ToPCMFloat32(part.inlineData.data, 24000, schedulePlay, audioCtxRef.current);
                         }
                     });
 
-                    // Transcription de l'utilisateur
-                    const inputText = message.serverContent?.inputTranscription?.text;
-                    if (inputText) setUserTranscript(prev => prev + inputText + ' ');
-
                     // Fin du tour
                     if (message.serverContent?.turnComplete) {
                         setStatus('listening');
+                        setMessages(prev => {
+                            const last = prev[prev.length - 1];
+                            if (last && last.role === 'model' && last.isStreaming) {
+                                return [...prev.slice(0, -1), { ...last, isStreaming: false }];
+                            }
+                            return prev;
+                        });
                     }
                 },
 
                 onerror: (e: any) => {
-                    console.error('[GeminiLive] Erreur:', e);
                     setStatus('error');
                     setErrorMessage(`Erreur Gemini Live : ${e?.message || 'connexion échouée'}`);
                     cleanup();
                 },
 
-                onclose: (e: any) => {
-                    console.log('[GeminiLive] Connexion fermée:', e?.reason);
+                onclose: () => {
                     if (isAliveRef.current) {
                         setStatus('idle');
                         isAliveRef.current = false;
@@ -255,9 +266,8 @@ export function useGeminiLive(): UseGeminiLiveReturn {
             if (!isAliveRef.current) { session.close(); return; }
             sessionRef.current = session;
         }).catch(err => {
-            console.error('[GeminiLive] Connexion échouée:', err);
             setStatus('error');
-            setErrorMessage(`Impossible de se connecter à Gemini Live : ${err?.message || 'erreur inconnue'}`);
+            setErrorMessage(`Erreur de connexion : ${err?.message || 'inconnue'}`);
             cleanup();
         });
 
@@ -265,5 +275,5 @@ export function useGeminiLive(): UseGeminiLiveReturn {
 
     useEffect(() => () => cleanup(), [cleanup]);
 
-    return { status, aiTranscript, userTranscript, errorMessage, connect, disconnect };
+    return { status, messages, errorMessage, connect, disconnect };
 }

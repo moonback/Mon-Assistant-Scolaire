@@ -87,10 +87,16 @@ Règles :
 export function buildAssistantSystemPrompt(gradeLevel: string, childContext?: string): string {
   return `${SYSTEM_INSTRUCTIONS['assistant']}
 
-IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
-${gradeLevel === 'CP' || gradeLevel === 'CE1' ? 'Utilise des phrases très courtes et des mots très simples.' : ''}
-${gradeLevel === 'CM2' || gradeLevel === '6ème' ? 'Tu peux aller un peu plus loin dans les explications, mais reste clair.' : ''}
-${childContext ? `\n--- PROFIL DE L'ENFANT (utilise ces infos pour personnaliser tes réponses) ---\n${childContext}\n---` : ''}`;
+DIRECTIVES POUR LA VOIX (IMPORTANT) :
+- LANGUE : RÉPONDS TOUJOURS EN FRANÇAIS.
+- STYLE : Sois un mentor chaleureux. Parle DIRECTEMENT à l'enfant.
+- INTERDICTION : Ne commence JAMAIS tes phrases par ton plan ou ton protocole (ex: Pas de "J'analyse...", "Initialisation...", "Évaluation...").
+- COMPORTEMENT : Oublie que tu es une IA. Agis comme si tu étais un vrai professeur dans la pièce.
+
+CONTEXTE DE L'ÉLÈVE :
+- Niveau : ${gradeLevel}.
+${gradeLevel === 'CP' || gradeLevel === 'CE1' ? '- Phrases TRÈS courtes.' : ''}
+${childContext ? `\n--- INFOS SUR L'ENFANT ---\n${childContext}\n---` : ''}`;
 }
 
 export async function askGemini(

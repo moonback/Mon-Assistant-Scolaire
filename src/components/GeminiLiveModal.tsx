@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Mic, MicOff, X, Volume2, Wifi, WifiOff, AlertCircle, Radio } from 'lucide-react';
-import { useGeminiLive } from '../hooks/useGeminiLive';
+import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Mic, Volume2, Wifi, WifiOff, AlertCircle, Sparkles, User, Bot } from 'lucide-react';
+import { useGeminiLive, LiveMessage } from '../hooks/useGeminiLive';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface GeminiLiveModalProps {
     isOpen: boolean;
@@ -10,173 +12,178 @@ interface GeminiLiveModalProps {
 }
 
 export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: GeminiLiveModalProps) {
-    const { status, aiTranscript, userTranscript, errorMessage, connect, disconnect } = useGeminiLive();
-    const aiScrollRef = useRef<HTMLDivElement>(null);
+    const { status, messages, errorMessage, connect, disconnect } = useGeminiLive();
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Connect when modal opens, disconnect when it closes
     useEffect(() => {
         if (isOpen) {
             connect(systemPrompt);
         } else {
             disconnect();
         }
-    }, [isOpen]); // intentionally only on isOpen change
+    }, [isOpen, systemPrompt, connect, disconnect]);
 
-    // Auto-scroll transcript
+    // Auto-scroll to bottom on new messages
     useEffect(() => {
-        if (aiScrollRef.current) {
-            aiScrollRef.current.scrollTop = aiScrollRef.current.scrollHeight;
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [aiTranscript]);
+    }, [messages, status]);
 
-    const handleClose = () => {
-        disconnect();
-        onClose();
-    };
+    if (!isOpen) return null;
 
     const statusConfig: Record<string, { label: string; color: string; textColor: string; icon: any }> = {
         idle: { label: 'Déconnecté', color: 'bg-slate-400', textColor: 'text-slate-500', icon: WifiOff },
         connecting: { label: 'Connexion en cours...', color: 'bg-amber-400', textColor: 'text-amber-600', icon: Wifi },
         connected: { label: 'Activation du micro...', color: 'bg-teal-400', textColor: 'text-teal-600', icon: Wifi },
         listening: { label: 'Je t\'écoute...', color: 'bg-indigo-500', textColor: 'text-indigo-600', icon: Mic },
-        speaking: { label: 'L\'IA répond...', color: 'bg-emerald-500', textColor: 'text-emerald-600', icon: Volume2 },
-        error: { label: 'Erreur', color: 'bg-red-400', textColor: 'text-red-600', icon: AlertCircle },
+        speaking: { label: 'L\'IA te répond...', color: 'bg-emerald-500', textColor: 'text-emerald-600', icon: Volume2 },
+        error: { label: 'Oups ! Petit souci', color: 'bg-red-400', textColor: 'text-red-600', icon: AlertCircle },
     };
 
-    const cfg = statusConfig[status];
-    const StatusIcon = cfg.icon;
+    const cfg = statusConfig[status] || statusConfig.idle;
 
     return (
         <AnimatePresence>
-            {isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm"
-                    onClick={(e) => e.target === e.currentTarget && handleClose()}
-                >
-                    <motion.div
-                        initial={{ opacity: 0, y: 60, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 60, scale: 0.95 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
-                    >
-                        {/* Header */}
-                        <div className="relative bg-gradient-to-br from-indigo-600 to-purple-700 p-6 text-white">
-                            <button onClick={handleClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
-                                <X className="h-4 w-4" />
-                            </button>
-                            <h2 className="text-lg font-black tracking-tight mb-1">Conversation IA Vocale</h2>
-                            <p className="text-xs text-white/70 font-medium">Powered by Gemini Live</p>
+                    onClick={onClose}
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                />
 
-                            {/* Animated visualizer */}
-                            <div className="flex items-center justify-center gap-1 mt-5 h-12">
-                                {status === 'speaking' ? (
-                                    Array.from({ length: 7 }).map((_, i) => (
-                                        <motion.div
-                                            key={i}
-                                            className="w-1.5 bg-white rounded-full"
-                                            animate={{ height: ['8px', `${20 + Math.random() * 24}px`, '8px'] }}
-                                            transition={{ duration: 0.5 + Math.random() * 0.3, repeat: Infinity, delay: i * 0.07 }}
-                                        />
-                                    ))
-                                ) : status === 'listening' ? (
-                                    Array.from({ length: 7 }).map((_, i) => (
-                                        <motion.div
-                                            key={i}
-                                            className="w-1.5 bg-white/50 rounded-full"
-                                            animate={{ height: ['6px', `${10 + Math.random() * 14}px`, '6px'] }}
-                                            transition={{ duration: 0.8 + Math.random() * 0.4, repeat: Infinity, delay: i * 0.1 }}
-                                        />
-                                    ))
-                                ) : status === 'connecting' ? (
-                                    <motion.div
-                                        animate={{ scale: [1, 1.3, 1] }}
-                                        transition={{ duration: 1, repeat: Infinity }}
-                                        className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center"
-                                    >
-                                        <Radio className="h-4 w-4 text-white" />
-                                    </motion.div>
-                                ) : (
-                                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                                        <MicOff className="h-4 w-4 text-white/50" />
-                                    </div>
-                                )}
+                {/* Modal Container */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                >
+                    {/* Premium Header */}
+                    <div className="relative p-6 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white overflow-hidden shrink-0">
+                        {/* Abstract decors */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl" />
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-pink-400/20 rounded-full translate-y-12 -translate-x-8 blur-xl" />
+
+                        <div className="relative flex items-center justify-between z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-white/20 backdrop-blur-lg rounded-2xl shadow-inner border border-white/20">
+                                    <Sparkles className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black tracking-tight leading-none mb-1">Conversation Magique</h2>
+                                    <p className="text-sm text-indigo-100 font-medium">Propulsé par Gemini Live</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={onClose}
+                                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 border border-white/10"
+                            >
+                                <X className="w-5 h-5 text-white" />
+                            </button>
+                        </div>
+
+                        {/* Animated Visualizer Bars */}
+                        <div className="flex items-end justify-center gap-1 h-12 mt-6">
+                            {[...Array(6)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    animate={status === 'speaking' || status === 'listening' ? {
+                                        height: [12, 32, 16, 40, 20, 12][i % 6] * (status === 'speaking' ? 1.2 : 0.8),
+                                        opacity: [0.4, 1, 0.6][i % 3]
+                                    } : { height: 8, opacity: 0.3 }}
+                                    transition={{
+                                        repeat: Infinity,
+                                        duration: 0.6,
+                                        delay: i * 0.1,
+                                        ease: "easeInOut"
+                                    }}
+                                    className="w-1.5 bg-white rounded-full transition-all duration-300"
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50" ref={scrollRef}>
+                        <div className="flex justify-center mb-4">
+                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full ${cfg.color} bg-opacity-15 border border-${cfg.textColor.split('-')[1]}-200 transition-colors duration-500`}>
+                                <cfg.icon className={`w-3.5 h-3.5 ${cfg.textColor} ${status === 'listening' ? 'animate-pulse' : ''}`} />
+                                <span className={`text-[10px] uppercase tracking-widest font-black ${cfg.textColor}`}>
+                                    {cfg.label}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Status badge */}
-                        <div className="px-6 pt-4 flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${cfg.color} ${status === 'listening' || status === 'speaking' ? 'animate-pulse' : ''}`} />
-                            <span className={`text-xs font-black uppercase tracking-widest ${cfg.textColor}`}>
-                                <StatusIcon className="h-3 w-3 inline mr-1" />{cfg.label}
-                            </span>
-                        </div>
-
-                        {/* Error */}
-                        {status === 'error' && (
-                            <div className="mx-6 mt-3 p-3 rounded-xl bg-red-50 border border-red-100 flex items-start justify-between gap-3">
-                                <p className="text-xs text-red-700 font-bold flex-1">{errorMessage}</p>
-                                <button
-                                    onClick={() => connect(systemPrompt)}
-                                    className="shrink-0 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-black hover:bg-red-700 transition"
-                                >
-                                    Réessayer
-                                </button>
+                        {messages.length === 0 && status !== 'error' && (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 opacity-50 py-12">
+                                <Mic className="w-8 h-8 mb-2" />
+                                <p className="text-sm font-medium italic">Dis quelque chose pour commencer...</p>
                             </div>
                         )}
 
-                        {/* Transcripts */}
-                        <div className="p-6 space-y-3 max-h-72 overflow-y-auto" ref={aiScrollRef}>
-                            {!aiTranscript && !userTranscript && status !== 'error' && (
-                                <p className="text-center text-sm text-slate-400 font-medium py-6 italic">
-                                    {status === 'connecting' ? 'Connexion en cours...' : 'Parle maintenant, je t\'écoute ! 🎙️'}
-                                </p>
-                            )}
-
-                            {/* User speech */}
-                            <AnimatePresence>
-                                {userTranscript && (
-                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                                        className="flex justify-end"
-                                    >
-                                        <div className="max-w-[80%] bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-4 py-3">
-                                            <p className="text-[10px] font-black uppercase text-white/60 mb-1">Toi</p>
-                                            <p className="text-sm font-medium leading-relaxed">{userTranscript}</p>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* AI response */}
-                            <AnimatePresence>
-                                {aiTranscript && (
-                                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                                        className="flex justify-start"
-                                    >
-                                        <div className="max-w-[80%] bg-slate-100 rounded-2xl rounded-tl-sm px-4 py-3">
-                                            <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Assistant IA</p>
-                                            <p className="text-sm text-slate-700 font-medium leading-relaxed">{aiTranscript}</p>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="px-6 pb-6">
-                            <button
-                                onClick={handleClose}
-                                className="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition"
+                        {messages.map((msg, idx) => (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                key={idx}
+                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                             >
-                                Terminer la conversation
-                            </button>
-                        </div>
-                    </motion.div>
+                                <div className={`flex items-start max-w-[85%] gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                    <div className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center shadow-sm border ${msg.role === 'user'
+                                            ? 'bg-white border-indigo-100 text-indigo-500'
+                                            : 'bg-indigo-600 border-indigo-700 text-white'
+                                        }`}>
+                                        {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                                    </div>
+                                    <div className={`p-4 rounded-2xl shadow-sm overflow-hidden prose prose-sm max-w-none ${msg.role === 'user'
+                                            ? 'bg-indigo-50 text-indigo-900 rounded-tr-none'
+                                            : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
+                                        }`}>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {msg.text}
+                                        </ReactMarkdown>
+                                        {msg.isStreaming && (
+                                            <span className="inline-block w-1 h-3 ml-1 bg-indigo-400 animate-pulse rounded-full" />
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+
+                        {/* Error state */}
+                        {status === 'error' && (
+                            <div className="p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="text-sm text-red-700 font-bold mb-2">{errorMessage}</p>
+                                    <button
+                                        onClick={() => connect(systemPrompt)}
+                                        className="px-4 py-2 bg-red-600 text-white text-xs font-black rounded-xl hover:bg-red-700 transition shadow-sm active:scale-95"
+                                    >
+                                        Réessayer la connexion
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Controls */}
+                    <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-center shrink-0">
+                        <button
+                            onClick={onClose}
+                            className="group relative flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-[1.25rem] font-black text-sm hover:bg-slate-800 transition-all duration-300 shadow-xl active:scale-95 overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            TERMINER LA CONVERSATION
+                        </button>
+                    </div>
                 </motion.div>
-            )}
+            </div>
         </AnimatePresence>
     );
 }
