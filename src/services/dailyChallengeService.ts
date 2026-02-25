@@ -70,23 +70,26 @@ export const dailyChallengeService = {
 
                 const { data: newChallenge, error: insertError } = await supabase
                     .from('daily_challenges')
-                    .insert({
+                    .upsert({
                         date: today,
                         grade_level: gradeLevel,
                         theme: theme || 'Général',
                         word_data: word,
                         problem_data: problem
-                    })
+                    }, { onConflict: 'date,grade_level,theme', ignoreDuplicates: true })
                     .select()
-                    .single();
+                    .maybeSingle();
 
                 if (insertError) {
-                    // If unique constraint violation (someone else generated it exactly at same time), just fetch it
-                    if (insertError.code === '23505') {
-                        return this.getChallenges(childId, gradeLevel, theme);
-                    }
                     throw insertError;
                 }
+
+                if (!newChallenge) {
+                    // Another request inserted it at the same time, triggering ignoreDuplicates 
+                    // which returns null. So we just fetch it again.
+                    return this.getChallenges(childId, gradeLevel, theme);
+                }
+
                 challenge = newChallenge;
             }
 
