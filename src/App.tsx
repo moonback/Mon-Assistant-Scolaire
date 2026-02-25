@@ -55,60 +55,82 @@ function AppContent() {
 
     const childId = selectedChild.id;
     const today = new Date().toISOString().split('T')[0];
-    const storageKey = `time_spent_${childId}_${today}`;
 
-    // Get time spent today (in minutes)
-    let timeSpent = parseInt(localStorage.getItem(storageKey) || '0');
+    const fetchAndTimeTracking = async () => {
+      // 1. Fetch current time spent from Supabase
+      const { data, error } = await supabase
+        .from('daily_child_stats')
+        .select('time_spent_minutes')
+        .eq('child_id', childId)
+        .eq('date', today)
+        .maybeSingle();
 
-    const updateTime = () => {
-      // 1. Bedtime Enforcement
-      if (selectedChild.bedtime) {
-        const now = new Date();
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      let timeSpent = data?.time_spent_minutes || 0;
 
-        const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
-        const bedtimeMinutes = bedHour * 60 + bedMin;
-        const wakeUpMinutes = 7 * 60; // 07:00 AM hardcoded wakeup
+      const updateTime = () => {
+        // Bedtime Enforcement
+        if (selectedChild.bedtime) {
+          const now = new Date();
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
+          const bedtimeMinutes = bedHour * 60 + bedMin;
+          const wakeUpMinutes = 7 * 60; // 07:00 AM wakeup
 
-        let isSleepTime = false;
-        if (bedtimeMinutes > wakeUpMinutes) {
-          // Night bedtime (e.g., 20:00 to 07:00)
-          isSleepTime = currentMinutes >= bedtimeMinutes || currentMinutes < wakeUpMinutes;
+          let isSleepTime = false;
+          if (bedtimeMinutes > wakeUpMinutes) {
+            isSleepTime = currentMinutes >= bedtimeMinutes || currentMinutes < wakeUpMinutes;
+          } else {
+            isSleepTime = currentMinutes >= bedtimeMinutes && currentMinutes < wakeUpMinutes;
+          }
+
+          if (isSleepTime) {
+            alert(`🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`);
+            setSelectedChild(null);
+            return;
+          }
+        }
+
+        // Daily Limit Enforcement
+        if (selectedChild.daily_time_limit > 0) {
+          const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
+          setTimeLeft(remaining);
+
+          if (remaining <= 0) {
+            alert(`🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`);
+            setSelectedChild(null);
+          }
         } else {
-          // Unusual bedtime (e.g., 01:00 to 07:00)
-          isSleepTime = currentMinutes >= bedtimeMinutes && currentMinutes < wakeUpMinutes;
+          setTimeLeft(null);
         }
+      };
 
-        if (isSleepTime) {
-          alert(`🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`);
-          setSelectedChild(null);
-          return;
-        }
-      }
+      updateTime();
 
-      // 2. Daily Limit Enforcement
-      if (selectedChild.daily_time_limit > 0) {
-        const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
-        setTimeLeft(remaining);
+      const interval = setInterval(async () => {
+        timeSpent += 1;
+        updateTime();
 
-        if (remaining <= 0) {
-          alert(`🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`);
-          setSelectedChild(null);
-        }
-      } else {
-        setTimeLeft(null); // Unlimited
-      }
+        // Update Supabase
+        await supabase
+          .from('daily_child_stats')
+          .upsert({
+            child_id: childId,
+            date: today,
+            time_spent_minutes: timeSpent
+          }, { onConflict: 'child_id,date' });
+      }, 60000);
+
+      return interval;
     };
 
-    updateTime();
+    let intervalId: NodeJS.Timeout;
+    fetchAndTimeTracking().then(id => {
+      if (id) intervalId = id;
+    });
 
-    const interval = setInterval(() => {
-      timeSpent += 1;
-      localStorage.setItem(storageKey, timeSpent.toString());
-      updateTime();
-    }, 60000);
-
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [selectedChild, setSelectedChild]);
 
   // Daily Challenge Notifications

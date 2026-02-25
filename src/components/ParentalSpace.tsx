@@ -33,12 +33,23 @@ export default function ParentalSpace() {
     const [childBlockedTopics, setChildBlockedTopics] = useState<string[]>([]);
     const [rewardGoals, setRewardGoals] = useState<any[]>([]);
     const [stats, setStats] = useState<Progress[]>([]);
+    const [dailyStats, setDailyStats] = useState<any[]>([]);
 
     useEffect(() => {
         if (isAuthenticated && session) {
             fetchStats();
+            fetchDailyStats();
         }
     }, [isAuthenticated, session]);
+
+    const fetchDailyStats = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabase
+            .from('daily_child_stats')
+            .select('*')
+            .eq('date', today);
+        if (data) setDailyStats(data);
+    };
 
     const fetchStats = async () => {
         if (!session) return;
@@ -305,10 +316,9 @@ export default function ParentalSpace() {
                                                 {child.bedtime && (
                                                     <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">🌙 {child.bedtime}</span>
                                                 )}
-                                                {/* Time Spent (Conso) */}
+                                                {/* Time Spent (Conso) Sync */}
                                                 {(() => {
-                                                    const today = new Date().toISOString().split('T')[0];
-                                                    const spent = localStorage.getItem(`time_spent_${child.id}_${today}`) || '0';
+                                                    const spent = dailyStats.find(s => s.child_id === child.id)?.time_spent_minutes || 0;
                                                     return (
                                                         <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">
                                                             Utilisé: {spent}m

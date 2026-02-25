@@ -10,8 +10,8 @@ Ce document présente la feuille de route pour le développement futur de l'appl
 - [x] **Historique local** : Sauvegarde des conversations dans le navigateur.
 
 ## 🚀 Phase 2 : Personnalisation & Suivi (v1.1 - v1.2)
-- [ ] **Profils Utilisateurs** : Création de profils (Avatar, Prénom, Classe/Niveau).
-- [ ] **Tableau de bord de progression** : Graphiques simples montrant les progrès par matière.
+- [x] **Profils Utilisateurs** : Création de profils (Avatar, Prénom, Classe/Niveau).
+- [x] **Tableau de bord de progression** : Graphiques simples montrant les progrès par matière.
 - [ ] **Badges & Trophées** : Système de succès plus poussé (ex: "Mathématicien en herbe", "Lecteur vorace").
 - [ ] **Niveaux de difficulté** : Adaptation des réponses et des jeux selon l'âge (CP, CE1, CM2...).
 
@@ -34,7 +34,7 @@ Ce document présente la feuille de route pour le développement futur de l'appl
 - [ ] **Mode Multijoueur** : Défier un ami ou un parent sur un quiz de culture générale.
 
 ## 🛠️ Technique & Infrastructure
-- [ ] **Base de données** : Migration du `localStorage` vers une base de données réelle (Firebase/Supabase) pour la synchro multi-appareils.
+- [x] **Base de données** : Migration du `localStorage` vers une base de données réelle (Supabase) pour la synchro multi-appareils.
 - [ ] **Optimisation IA** : Affinage des prompts système pour réduire les hallucinations et améliorer la pédagogie.
 - [ ] **Accessibilité** : Support complet pour les lecteurs d'écran et modes contrastés (Dyslexie).
 

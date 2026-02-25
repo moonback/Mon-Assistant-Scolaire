@@ -4,25 +4,30 @@ import { Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2, Mic, Volu
 import { useSpeechRecognition, useSpeechSynthesis } from '../hooks/useSpeech';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+
 interface HistoryItem {
   id: string;
   question: string;
   response: string;
-  date: number;
-  image?: string;
+  date: string;
+  image_url?: string;
 }
 
 interface AssistantProps {
-  onEarnPoints?: (amount: number) => void;
+  onEarnPoints?: (amount: number, activityType: string, subject: string) => void;
   gradeLevel?: string;
 }
 
 export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: AssistantProps) {
+  const { selectedChild } = useAuth();
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [verificationAnswer, setVerificationAnswer] = useState('');
@@ -32,14 +37,28 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechRecognition();
   const { isSpeaking, speak, stop: stopSpeaking } = useSpeechSynthesis();
 
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    const saved = localStorage.getItem('school_assistant_history');
-    return saved ? JSON.parse(saved) : [];
-  });
-
   useEffect(() => {
-    localStorage.setItem('school_assistant_history', JSON.stringify(history));
-  }, [history]);
+    async function fetchHistory() {
+      if (!selectedChild) return;
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('child_id', selectedChild.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (data) {
+        setHistory(data.map(item => ({
+          id: item.id,
+          question: item.question,
+          response: item.response,
+          date: item.created_at,
+          image_url: item.image_url
+        })));
+      }
+    }
+    fetchHistory();
+  }, [selectedChild]);
 
   useEffect(() => {
     if (transcript) {
@@ -77,14 +96,28 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
       const answer = await askGemini(question, 'assistant', gradeLevel, selectedImage || undefined);
       setResponse(answer);
 
-      const newItem: HistoryItem = {
-        id: Date.now().toString(),
-        question: question,
-        response: answer,
-        date: Date.now(),
-        image: selectedImage || undefined
-      };
-      setHistory(prev => [newItem, ...prev]);
+      if (selectedChild) {
+        const { data: newItem, error: insertError } = await supabase
+          .from('conversations')
+          .insert({
+            child_id: selectedChild.id,
+            question: question,
+            response: answer,
+            image_url: selectedImage || undefined
+          })
+          .select()
+          .single();
+
+        if (!insertError && newItem) {
+          setHistory(prev => [{
+            id: newItem.id,
+            question: newItem.question,
+            response: newItem.response,
+            date: newItem.created_at,
+            image_url: newItem.image_url
+          }, ...prev]);
+        }
+      }
     } catch (err) {
       setError("Je n'ai pas réussi à trouver la réponse. Réessaie !");
     } finally {
@@ -118,7 +151,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
       setVerificationFeedback(cleanFeedback);
 
       if (isCorrect) {
-        onEarnPoints?.(20);
+        onEarnPoints?.(20, 'assistant', 'General');
       }
     } catch (err) {
       console.error(err);
@@ -140,14 +173,15 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const loadHistoryItem = (item: HistoryItem) => {
     setQuestion(item.question);
     setResponse(item.response);
-    setSelectedImage(item.image || null);
+    setSelectedImage(item.image_url || null);
     setError('');
     setVerificationAnswer('');
     setVerificationFeedback('');
   };
 
-  const clearHistory = () => {
-    if (confirm('Veux-tu vraiment effacer tout ton historique ?')) {
+  const clearHistory = async () => {
+    if (confirm('Veux-tu vraiment effacer tout ton historique ?') && selectedChild) {
+      await supabase.from('conversations').delete().eq('child_id', selectedChild.id);
       setHistory([]);
     }
   };
@@ -401,7 +435,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
-                      {item.image ? <ImageIcon className="w-5 h-5 text-indigo-400" /> : <Clock className="w-5 h-5 text-slate-300" />}
+                      {item.image_url ? <ImageIcon className="w-5 h-5 text-indigo-400" /> : <Clock className="w-5 h-5 text-slate-300" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-700 group-hover:text-indigo-700 line-clamp-2 leading-snug">

@@ -6,6 +6,8 @@ import {
   Square, Circle as CircleIcon, Triangle, LineChart, Grid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 type Tool = 'pen' | 'eraser' | 'rainbow' | 'stamp-star' | 'stamp-heart' | 'stamp-moon' | 'line' | 'square' | 'circle' | 'triangle';
 
@@ -31,26 +33,27 @@ export default function DrawingBoard() {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [snapshot, setSnapshot] = useState<ImageData | null>(null);
   const [cachedRect, setCachedRect] = useState<DOMRect | null>(null);
+  const { selectedChild } = useAuth();
 
   // Initialize and check generation limit
   useEffect(() => {
-    const checkLimit = () => {
-      const today = new Date().toDateString();
-      const savedDate = localStorage.getItem('last_gen_date');
-      const savedCount = localStorage.getItem('gen_count');
+    const checkLimit = async () => {
+      if (!selectedChild) return;
 
-      if (savedDate !== today) {
-        // Reset for a new day
-        localStorage.setItem('last_gen_date', today);
-        localStorage.setItem('gen_count', '5');
-        setGenerationsLeft(5);
-      } else if (savedCount) {
-        setGenerationsLeft(parseInt(savedCount));
-      }
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('daily_child_stats')
+        .select('ai_generations_count')
+        .eq('child_id', selectedChild.id)
+        .eq('date', today)
+        .maybeSingle();
+
+      const usedCount = data?.ai_generations_count || 0;
+      setGenerationsLeft(Math.max(0, 5 - usedCount));
     };
 
     checkLimit();
-  }, [showGenModal]);
+  }, [showGenModal, selectedChild]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -368,7 +371,7 @@ export default function DrawingBoard() {
       const url = URL.createObjectURL(blob);
 
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (canvas && ctx) {
@@ -384,9 +387,19 @@ export default function DrawingBoard() {
           saveToHistory();
 
           // Update limit
-          const newCount = generationsLeft - 1;
-          setGenerationsLeft(newCount);
-          localStorage.setItem('gen_count', newCount.toString());
+          const newCount = 5 - generationsLeft + 1;
+          setGenerationsLeft(5 - newCount);
+
+          if (selectedChild) {
+            const today = new Date().toISOString().split('T')[0];
+            await supabase
+              .from('daily_child_stats')
+              .upsert({
+                child_id: selectedChild.id,
+                date: today,
+                ai_generations_count: newCount
+              }, { onConflict: 'child_id,date' });
+          }
         }
         setIsGenerating(false);
         setGenPrompt('');

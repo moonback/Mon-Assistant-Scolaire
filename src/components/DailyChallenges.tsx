@@ -4,37 +4,39 @@ import { BookOpen, Brain, ChevronRight, CheckCircle2, Sparkles, Lightbulb } from
 import { dailyChallengeService, DailyChallenges as DailyChallengesType } from '../services/dailyChallengeService';
 
 interface DailyChallengesProps {
+    childId: string;
     gradeLevel: string;
     onEarnPoints: (amount: number, activityType: string, subject: string) => void;
 }
 
-export default function DailyChallenges({ gradeLevel, onEarnPoints }: DailyChallengesProps) {
+export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: DailyChallengesProps) {
     const [challenges, setChallenges] = useState<DailyChallengesType | null>(null);
     const [loading, setLoading] = useState(true);
     const [revealProblem, setRevealProblem] = useState(false);
 
     useEffect(() => {
         async function fetchChallenges() {
+            if (!childId) return;
             setLoading(true);
-            const data = await dailyChallengeService.getChallenges(gradeLevel);
+            const data = await dailyChallengeService.getChallenges(childId, gradeLevel);
             setChallenges(data);
             setRevealProblem(data?.problemCompleted || false);
             setLoading(false);
         }
         fetchChallenges();
-    }, [gradeLevel]);
+    }, [childId, gradeLevel]);
 
-    const handleWordDone = () => {
-        if (challenges && !challenges.wordCompleted) {
-            dailyChallengeService.completeWord(gradeLevel);
+    const handleWordDone = async () => {
+        if (challenges?.id && !challenges.wordCompleted) {
+            await dailyChallengeService.completeWord(childId, challenges.id);
             setChallenges({ ...challenges, wordCompleted: true });
             onEarnPoints(5, 'daily_challenge', 'French');
         }
     };
 
-    const handleProblemDone = () => {
-        if (challenges && !challenges.problemCompleted) {
-            dailyChallengeService.completeProblem(gradeLevel);
+    const handleProblemDone = async () => {
+        if (challenges?.id && !challenges.problemCompleted) {
+            await dailyChallengeService.completeProblem(childId, challenges.id);
             setChallenges({ ...challenges, problemCompleted: true });
             onEarnPoints(10, 'daily_challenge', 'Math');
         }

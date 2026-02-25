@@ -53,6 +53,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
     <div className="space-y-6">
       {/* Daily Challenges */}
       <DailyChallenges
+        childId={selectedChild?.id || ''}
         gradeLevel={selectedChild?.grade_level || 'CM1'}
         onEarnPoints={onEarnPoints}
       />

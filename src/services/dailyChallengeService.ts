@@ -1,4 +1,5 @@
 import { askGemini } from './gemini';
+import { supabase } from '../lib/supabase';
 
 export interface DailyWord {
     word: string;
@@ -14,6 +15,7 @@ export interface DailyProblem {
 }
 
 export interface DailyChallenges {
+    id?: string;
     date: string;
     word: DailyWord;
     problem: DailyProblem;
@@ -24,57 +26,104 @@ export interface DailyChallenges {
 const STORAGE_KEY = 'daily_challenges';
 
 export const dailyChallengeService = {
-    async getChallenges(gradeLevel: string = 'CM1'): Promise<DailyChallenges | null> {
+    async getChallenges(childId: string, gradeLevel: string = 'CM1'): Promise<DailyChallenges | null> {
         const today = new Date().toISOString().split('T')[0];
-        const stored = localStorage.getItem(`${STORAGE_KEY}_${gradeLevel}`);
-
-        if (stored) {
-            const parsed = JSON.parse(stored) as DailyChallenges;
-            if (parsed.date === today) {
-                return parsed;
-            }
-        }
 
         try {
-            const [wordRes, problemRes] = await Promise.all([
-                askGemini("Génère le mot du jour.", 'wordOfTheDay', gradeLevel),
-                askGemini("Génère le problème du jour.", 'problemOfTheDay', gradeLevel)
-            ]);
+            // 1. Check if challenge exists for today/grade in Supabase
+            let { data: challenge, error: challengeError } = await supabase
+                .from('daily_challenges')
+                .select('*')
+                .eq('date', today)
+                .eq('grade_level', gradeLevel)
+                .maybeSingle();
 
-            const word = JSON.parse(wordRes) as DailyWord;
-            const problem = JSON.parse(problemRes) as DailyProblem;
+            // 2. If not, generate with AI and save to Supabase
+            if (!challenge) {
+                const [wordRes, problemRes] = await Promise.all([
+                    askGemini("Génère le mot du jour.", 'wordOfTheDay', gradeLevel),
+                    askGemini("Génère le problème du jour.", 'problemOfTheDay', gradeLevel)
+                ]);
 
-            const newChallenges: DailyChallenges = {
+                const word = JSON.parse(wordRes) as DailyWord;
+                const problem = JSON.parse(problemRes) as DailyProblem;
+
+                const { data: newChallenge, error: insertError } = await supabase
+                    .from('daily_challenges')
+                    .insert({
+                        date: today,
+                        grade_level: gradeLevel,
+                        word_data: word,
+                        problem_data: problem
+                    })
+                    .select()
+                    .single();
+
+                if (insertError) throw insertError;
+                challenge = newChallenge;
+            }
+
+            // 3. Check completion status for this child
+            const { data: status } = await supabase
+                .from('daily_challenge_status')
+                .select('*')
+                .eq('child_id', childId)
+                .eq('challenge_id', challenge.id)
+                .maybeSingle();
+
+            const result = {
+                id: challenge.id,
                 date: today,
-                word,
-                problem,
-                wordCompleted: false,
-                problemCompleted: false
+                word: challenge.word_data,
+                problem: challenge.problem_data,
+                wordCompleted: status?.word_completed || false,
+                problemCompleted: status?.problem_completed || false
             };
 
-            localStorage.setItem(`${STORAGE_KEY}_${gradeLevel}`, JSON.stringify(newChallenges));
-            return newChallenges;
+            // Update local fallback
+            localStorage.setItem(`${STORAGE_KEY}_${gradeLevel}`, JSON.stringify(result));
+
+            return result;
         } catch (error) {
-            console.error('Failed to generate daily challenges:', error);
+            console.error('Failed to sync daily challenges:', error);
+
+            // Fallback to localStorage if offline or error
+            const stored = localStorage.getItem(`${STORAGE_KEY}_${gradeLevel}`);
+            if (stored) {
+                const parsed = JSON.parse(stored) as DailyChallenges;
+                if (parsed.date === today) return parsed;
+            }
             return null;
         }
     },
 
-    completeWord(gradeLevel: string) {
-        const stored = localStorage.getItem(`${STORAGE_KEY}_${gradeLevel}`);
-        if (stored) {
-            const parsed = JSON.parse(stored) as DailyChallenges;
-            parsed.wordCompleted = true;
-            localStorage.setItem(`${STORAGE_KEY}_${gradeLevel}`, JSON.stringify(parsed));
+    async completeWord(childId: string, challengeId: string) {
+        try {
+            await supabase
+                .from('daily_challenge_status')
+                .upsert({
+                    child_id: childId,
+                    challenge_id: challengeId,
+                    word_completed: true,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'child_id,challenge_id' });
+        } catch (e) {
+            console.error('Failed to complete word:', e);
         }
     },
 
-    completeProblem(gradeLevel: string) {
-        const stored = localStorage.getItem(`${STORAGE_KEY}_${gradeLevel}`);
-        if (stored) {
-            const parsed = JSON.parse(stored) as DailyChallenges;
-            parsed.problemCompleted = true;
-            localStorage.setItem(`${STORAGE_KEY}_${gradeLevel}`, JSON.stringify(parsed));
+    async completeProblem(childId: string, challengeId: string) {
+        try {
+            await supabase
+                .from('daily_challenge_status')
+                .upsert({
+                    child_id: childId,
+                    challenge_id: challengeId,
+                    problem_completed: true,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'child_id,challenge_id' });
+        } catch (e) {
+            console.error('Failed to complete problem:', e);
         }
     }
 };
