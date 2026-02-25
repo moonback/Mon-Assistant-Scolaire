@@ -446,22 +446,17 @@ export default function ParentalSpace() {
                                             className="w-full p-5 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-500 outline-none transition-all font-bold appearance-none shadow-sm"
                                         >
                                             <optgroup label="Modèles Gratuits (Recommandés)">
-                                                <option value="google/gemini-2.0-flash-lite-preview-02-05:free">Gemini 2.0 Flash Lite (Rapide & Stable)</option>
-                                                <option value="upstage/solar-pro-3:free">Solar Pro (Performant)</option>
-                                                <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Excellent en Français)</option>
-                                            </optgroup>
-                                            <optgroup label="Autres modèles">
-                                                <option value="google/gemini-2.0-pro-exp-02-05:free">Gemini 2.0 Pro (Expérimental)</option>
-                                                <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron Nano</option>
+                                                <option value="z-ai/glm-4.7-flash">glm-4.7-flash</option>
+                                                <option value="deepseek/deepseek-v3.2">deepseek-v3.2</option>
                                             </optgroup>
                                         </select>
                                         <div className="bg-white p-5 rounded-2xl border-2 border-slate-100 flex items-center gap-3">
                                             <div className="flex-1">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Status OpenRouter</p>
-                                                <p className="text-sm font-bold text-emerald-600 flex items-center gap-2">
+                                                <div className="text-sm font-bold text-emerald-600 flex items-center gap-2">
                                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                                     Connecté
-                                                </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
