@@ -2,6 +2,7 @@ import React from 'react';
 import { Star, Menu, Clock, ShieldCheck, Lock, Moon } from 'lucide-react';
 import { TabItem } from '../../types/app';
 import { Child } from '../../lib/supabase';
+import ExpBar from './ExpBar';
 
 interface HeaderProps {
     activeTab: string;
@@ -77,10 +78,7 @@ export default function Header({ activeTab, tabs, selectedChild, timeLeft, setIs
                             </div>
                         )}
 
-                        <div className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 sm:flex shadow-sm">
-                            <span className="text-[10px] text-slate-400 font-black">NIVEAU</span>
-                            <span>{selectedChild?.grade_level}</span>
-                        </div>
+                        <ExpBar stars={selectedChild?.stars || 0} />
 
                         <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-1.5 text-sm shadow-sm">
                             <Star className="h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]" />

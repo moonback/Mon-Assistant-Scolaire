@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Moon, Clock } from 'lucide-react';
+import { Moon, Clock, Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import { Tab, ParentalTab } from './types/app';
@@ -11,22 +11,24 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import MobileNav from './components/layout/MobileNav';
 import ChildSelector from './components/auth/ChildSelector';
+import TimeTracker from './components/layout/TimeTracker';
 
-// Feature Components
-import Assistant from './components/Assistant';
-import Quiz from './components/Quiz';
-import Story from './components/Story';
-import Dictionary from './components/Dictionary';
-import MathGame from './components/MathGame';
-import DidYouKnow from './components/DidYouKnow';
-import AuthPage from './components/AuthPage';
-import Dashboard from './components/Dashboard';
-import DrawingBoard from './components/DrawingBoard';
-import HomeworkHelper from './components/HomeworkHelper';
-import ParentalSpace from './components/ParentalSpace';
-import ChildProfile from './components/ChildProfile';
-import DailyChallenges from './components/DailyChallenges';
-import Flashcards from './components/Flashcards';
+// Feature Components (Lazy loaded)
+const Assistant = lazy(() => import('./components/Assistant'));
+const Quiz = lazy(() => import('./components/Quiz'));
+const Story = lazy(() => import('./components/Story'));
+const Dictionary = lazy(() => import('./components/Dictionary'));
+const MathGame = lazy(() => import('./components/MathGame'));
+const DidYouKnow = lazy(() => import('./components/DidYouKnow'));
+const AuthPage = lazy(() => import('./components/AuthPage'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const DrawingBoard = lazy(() => import('./components/DrawingBoard'));
+const HomeworkHelper = lazy(() => import('./components/HomeworkHelper'));
+const ParentalSpace = lazy(() => import('./components/ParentalSpace'));
+const ChildProfile = lazy(() => import('./components/ChildProfile'));
+const DailyChallenges = lazy(() => import('./components/DailyChallenges'));
+const Flashcards = lazy(() => import('./components/Flashcards'));
+const StarMarket = lazy(() => import('./components/StarMarket'));
 
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -55,116 +57,14 @@ function AppContent() {
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  // Time Limit Enforcement & Tracking
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-    let isMounted = true;
+  // Setup handled via TimeTracker
+  const handleLimitReached = useCallback((message: string) => {
+    setSystemModal({ show: true, type: 'limit', message });
+  }, []);
 
-    // Don't enforce or track time if no child is selected OR if we are in the parental space
-    if (!selectedChild || activeTab === 'parental') {
-      setTimeLeft(null);
-      return;
-    }
-
-    const childId = selectedChild.id;
-    const today = new Date().toISOString().split('T')[0];
-
-    const fetchAndTimeTracking = async () => {
-      // 1. Fetch current time spent from Supabase
-      const { data } = await supabase
-        .from('daily_child_stats')
-        .select('time_spent_minutes')
-        .eq('child_id', childId)
-        .eq('date', today)
-        .maybeSingle();
-
-      if (!isMounted) return;
-
-      let timeSpent = data?.time_spent_minutes || 0;
-
-      const updateTime = () => {
-        if (!selectedChild) return false;
-
-        // Bedtime Enforcement
-        if (selectedChild.bedtime) {
-          const now = new Date();
-          const currentMinutes = now.getHours() * 60 + now.getMinutes();
-          const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
-          const bedtimeMinutes = bedHour * 60 + bedMin;
-          const wakeUpMinutes = 7 * 60; // 07:00 AM wakeup
-
-          let isSleepTime = false;
-          if (bedtimeMinutes > wakeUpMinutes) {
-            isSleepTime = currentMinutes >= bedtimeMinutes || currentMinutes < wakeUpMinutes;
-          } else {
-            isSleepTime = currentMinutes >= bedtimeMinutes && currentMinutes < wakeUpMinutes;
-          }
-
-          if (isSleepTime) {
-            setSystemModal({
-              show: true,
-              type: 'bedtime',
-              message: `🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`
-            });
-            setSelectedChild(null);
-            return true;
-          }
-        }
-
-        // Daily Limit Enforcement
-        if (selectedChild.daily_time_limit > 0) {
-          const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
-          setTimeLeft(remaining);
-
-          if (remaining <= 0) {
-            setSystemModal({
-              show: true,
-              type: 'limit',
-              message: `🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`
-            });
-            setSelectedChild(null);
-            return true;
-          }
-        } else {
-          setTimeLeft(null);
-        }
-        return false;
-      };
-
-      // Initial check
-      const blocked = updateTime();
-      if (blocked) return;
-
-      // Start interval
-      intervalId = setInterval(async () => {
-        timeSpent += 1;
-        const nowBlocked = updateTime();
-
-        if (nowBlocked) {
-          if (intervalId) clearInterval(intervalId);
-          return;
-        }
-
-        // Update Supabase
-        await supabase
-          .from('daily_child_stats')
-          .upsert({
-            child_id: childId,
-            date: today,
-            time_spent_minutes: timeSpent
-          }, { onConflict: 'child_id,date' });
-      }, 60000);
-    };
-
-    fetchAndTimeTracking();
-
-    return () => {
-      isMounted = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [selectedChild, activeTab, setSelectedChild]);
+  const handleBedtimeReached = useCallback((message: string) => {
+    setSystemModal({ show: true, type: 'bedtime', message });
+  }, []);
 
   // Daily Challenge Notifications
   useEffect(() => {
@@ -232,33 +132,113 @@ function AppContent() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-4 pb-10">
-            <div className="max-w-2xl space-y-1">
-              <h3 className="text-xl font-semibold text-slate-900">Activités</h3>
-              <p className="text-sm text-slate-500">Choisis une seule activité pour te concentrer.</p>
+          <div className="space-y-6 pb-10 max-w-4xl mx-auto">
+            <div className="text-center space-y-2 mb-8">
+              <h3 className="text-3xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
+              <p className="text-slate-500 font-medium">Choisis ton aventure du jour, {selectedChild?.name} !</p>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {tabs
-                .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
-                .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
-                .map((tab, idx) => (
-                  <motion.button
-                    key={tab.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.03, duration: 0.2 }}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={() => setActiveTab(tab.id)}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 text-left transition-shadow hover:shadow-sm"
-                  >
-                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-indigo-600">
-                      <tab.icon className="h-5 w-5" />
-                    </div>
-                    <h4 className="text-base font-semibold text-slate-900">{tab.label}</h4>
-                    <p className="mt-1 text-sm text-slate-500">{tab.desc}</p>
-                  </motion.button>
-                ))}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Mission du jour (Primary big button) - Maps to challenges */}
+              {!selectedChild?.blocked_topics?.includes('challenges') && (
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('challenges')}
+                  className="col-span-1 md:col-span-2 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-8 text-left shadow-lg shadow-indigo-200/50 flex flex-col md:flex-row items-center gap-6 border-4 border-white"
+                >
+                  <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0">
+                    <span className="text-4xl">🎯</span>
+                  </div>
+                  <div className="flex-1 text-white">
+                    <h4 className="text-2xl font-bold mb-2">Mission du Jour</h4>
+                    <p className="text-indigo-100 font-medium text-lg leading-relaxed">
+                      Gagne le maximum d'étoiles en relevant tes défis quotidiens !
+                    </p>
+                  </div>
+                </motion.button>
+              )}
+
+              {/* Parler à l'Assistant */}
+              {!selectedChild?.blocked_topics?.includes('assistant') && (
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('assistant')}
+                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-100 flex flex-col items-center text-center gap-4"
+                >
+                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500">
+                    <span className="text-3xl">🤖</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-800 mb-1">Cerveau Magique</h4>
+                    <p className="text-slate-500 text-sm font-medium">Pose tes questions à l'IA</p>
+                  </div>
+                </motion.button>
+              )}
+
+              {/* Boutique Magique */}
+              {!selectedChild?.blocked_topics?.includes('market') && (
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('market')}
+                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-100 flex flex-col items-center text-center gap-4"
+                >
+                  <div className="w-16 h-16 bg-yellow-50 rounded-2xl flex items-center justify-center text-yellow-500">
+                    <span className="text-3xl">🎁</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-800 mb-1">La Boutique</h4>
+                    <p className="text-slate-500 text-sm font-medium">Échange tes étoiles</p>
+                  </div>
+                </motion.button>
+              )}
+
+              {/* Réviser */}
+              {!selectedChild?.blocked_topics?.includes('flashcards') && (
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('flashcards')}
+                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-emerald-100 flex flex-col items-center text-center gap-4"
+                >
+                  <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500">
+                    <span className="text-3xl">📚</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-800 mb-1">Cartes Mémoire</h4>
+                    <p className="text-slate-500 text-sm font-medium">Révise en t'amusant</p>
+                  </div>
+                </motion.button>
+              )}
+            </div>
+
+            {/* Other activities section */}
+            <div className="pt-8 mt-4 border-t border-slate-100">
+              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Plus d'activités</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {tabs
+                  .filter(t => !['home', 'dashboard', 'parental', 'profile', 'challenges', 'assistant', 'flashcards', 'market'].includes(t.id))
+                  .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
+                  .map((tab, idx) => (
+                    <motion.button
+                      key={tab.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05, duration: 0.2 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setActiveTab(tab.id)}
+                      className="rounded-2xl bg-white p-4 text-center shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col items-center gap-3"
+                    >
+                      <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
+                        <tab.icon className="w-6 h-6" />
+                      </div>
+                      <span className="text-sm font-bold text-slate-700">{tab.label}</span>
+                    </motion.button>
+                  ))}
+              </div>
             </div>
           </div>
         );
@@ -274,12 +254,17 @@ function AppContent() {
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
       case 'profile': return <ChildProfile />;
+      case 'market': return <StarMarket {...commonProps} childId={selectedChild?.id || ''} />;
       case 'parental': return <ParentalSpace activeSubTab={parentalActiveTab} setActiveSubTab={setParentalActiveTab} onExit={() => setActiveTab('home')} />;
       default: return null;
     }
   };
 
-  if (!session) return <AuthPage />;
+  if (!session) return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>}>
+      <AuthPage />
+    </Suspense>
+  );
 
   const content = showChildSelector ? (
     <ChildSelector
@@ -334,7 +319,9 @@ function AppContent() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              {renderContent()}
+              <Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>}>
+                {renderContent()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
@@ -354,6 +341,12 @@ function AppContent() {
 
   return (
     <>
+      <TimeTracker
+        activeTab={activeTab}
+        setTimeLeft={setTimeLeft}
+        onLimitReached={handleLimitReached}
+        onBedtimeReached={handleBedtimeReached}
+      />
       {content}
 
       {/* System Status Modal (Time up / Bedtime) */}

@@ -49,7 +49,7 @@ export default function ChildSelector({ children, setSelectedChild, setActiveTab
                                 {child.avatar_url ? (
                                     <img src={child.avatar_url} alt={child.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    child.name.charAt(0).toUpperCase()
+                                    <span>{child.name.charAt(0).toUpperCase()}</span>
                                 )}
                             </div>
 
