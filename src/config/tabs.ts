@@ -14,6 +14,7 @@ export const tabs: TabItem[] = [
     { id: 'quiz', label: 'Quiz', icon: Brain, color: 'from-violet-500 to-purple-400', desc: 'Teste tes connaissances' },
     { id: 'math', label: 'Calcul', icon: Calculator, color: 'from-emerald-500 to-teal-400', desc: 'Deviens un pro des chiffres' },
     { id: 'drawing', label: 'L\'Atelier', icon: Palette, color: 'from-pink-500 to-rose-400', desc: 'Ton espace d\'artiste' },
+    { id: 'market', label: 'La Boutique', icon: Trophy, color: 'from-yellow-400 to-amber-500', desc: 'Échange tes étoiles' },
     { id: 'homework', label: 'Aide Photo', icon: Camera, color: 'from-blue-600 to-indigo-500', desc: 'Aide aux devoirs' },
     { id: 'story', label: 'Histoires', icon: Book, color: 'from-orange-500 to-amber-400', desc: 'Crée tes propres contes' },
     { id: 'dictionary', label: 'Dico', icon: BookA, color: 'from-cyan-500 to-sky-400', desc: 'Découvre des mots' },

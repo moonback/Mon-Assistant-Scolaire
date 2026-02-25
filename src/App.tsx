@@ -28,6 +28,7 @@ const ParentalSpace = lazy(() => import('./components/ParentalSpace'));
 const ChildProfile = lazy(() => import('./components/ChildProfile'));
 const DailyChallenges = lazy(() => import('./components/DailyChallenges'));
 const Flashcards = lazy(() => import('./components/Flashcards'));
+const StarMarket = lazy(() => import('./components/StarMarket'));
 
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -176,6 +177,24 @@ function AppContent() {
                 </motion.button>
               )}
 
+              {/* Boutique Magique */}
+              {!selectedChild?.blocked_topics?.includes('market') && (
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('market')}
+                  className="rounded-3xl bg-white p-6 text-left shadow-sm hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-100 flex flex-col items-center text-center gap-4"
+                >
+                  <div className="w-16 h-16 bg-yellow-50 rounded-2xl flex items-center justify-center text-yellow-500">
+                    <span className="text-3xl">🎁</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-800 mb-1">La Boutique</h4>
+                    <p className="text-slate-500 text-sm font-medium">Échange tes étoiles</p>
+                  </div>
+                </motion.button>
+              )}
+
               {/* Réviser */}
               {!selectedChild?.blocked_topics?.includes('flashcards') && (
                 <motion.button
@@ -200,7 +219,7 @@ function AppContent() {
               <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Plus d'activités</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {tabs
-                  .filter(t => !['home', 'dashboard', 'parental', 'profile', 'challenges', 'assistant', 'flashcards'].includes(t.id))
+                  .filter(t => !['home', 'dashboard', 'parental', 'profile', 'challenges', 'assistant', 'flashcards', 'market'].includes(t.id))
                   .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
                   .map((tab, idx) => (
                     <motion.button
@@ -235,6 +254,7 @@ function AppContent() {
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
       case 'profile': return <ChildProfile />;
+      case 'market': return <StarMarket {...commonProps} childId={selectedChild?.id || ''} />;
       case 'parental': return <ParentalSpace activeSubTab={parentalActiveTab} setActiveSubTab={setParentalActiveTab} onExit={() => setActiveTab('home')} />;
       default: return null;
     }
