@@ -69,7 +69,12 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       .select('*')
       .eq('id', userId)
       .single();
-    if (data) setProfile(data);
+    if (data) {
+      setProfile(data);
+      if (data.ai_model) {
+        localStorage.setItem('openrouter_model', data.ai_model);
+      }
+    }
   };
 
   const fetchChildren = async (userId: string) => {

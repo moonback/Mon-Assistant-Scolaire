@@ -19,6 +19,7 @@ export type Profile = {
   avatar_url: string;
   created_at: string;
   parent_pin: string | null;
+  ai_model: string | null;
 };
 
 export type Child = {

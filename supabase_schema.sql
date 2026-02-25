@@ -3,6 +3,7 @@
 
 -- 1. Update Profiles table
 ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS parent_pin text;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS ai_model text;
 -- Optionally remove old child-specific columns if you want to clean up
 -- ALTER TABLE public.profiles DROP COLUMN IF EXISTS grade_level;
 -- ALTER TABLE public.profiles DROP COLUMN IF EXISTS stars;

@@ -37,10 +37,17 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
 
     try {
       const json = await askGemini(finalTopic, 'quiz', gradeLevel);
+      console.log('Quiz response received:', json);
       const data = JSON.parse(json);
-      setQuestions(data);
+      const quizQuestions = data.questions || data;
+
+      if (Array.isArray(quizQuestions) && quizQuestions.length > 0) {
+        setQuestions(quizQuestions);
+      } else {
+        throw new Error("Format de quiz invalide");
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Erreur lors de la génération du quiz:', e);
     } finally {
       setLoading(false);
     }
@@ -232,7 +239,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                     >
                       <div className="flex items-center gap-4">
                         <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-colors ${selectedOption === null ? "bg-white text-slate-400 group-hover:text-indigo-600" :
-                            isCorrectAnswer ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-400"
+                          isCorrectAnswer ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-400"
                           }`}>
                           {String.fromCharCode(65 + idx)}
                         </span>

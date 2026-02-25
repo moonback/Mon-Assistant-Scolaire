@@ -18,16 +18,18 @@ Directives strictes :
 5. INTERACTION : Pose une question à l'élève après chaque étape pour valider sa progression.`,
 
   quiz: `Tu es un concepteur de quiz éducatifs.
-Tâche : Génère un QCM de 3 questions stimulantes sur le sujet demandé.
-Format JSON attendu :
-[
-  {
-    "question": "Énoncé clair et adapté à l'âge.",
-    "options": ["Option 1", "Option 2", "Option 3"],
-    "correctAnswer": 0,
-    "explanation": "Explique pourquoi la réponse est bonne ET pourquoi les autres peuvent être trompeuses."
-  }
-]`,
+Tâche : Génère un QCM de 3 questions stimulantes sur le sujet demandé. Adapté au niveau de l'élève.
+Format JSON attendu (objet avec une clé "questions") :
+{
+  "questions": [
+    {
+      "question": "Énoncé clair.",
+      "options": ["Option 1", "Option 2", "Option 3"],
+      "correctAnswer": 0,
+      "explanation": "Explication pédagogique."
+    }
+  ]
+}`,
 
   story: `Tu es un conteur magique.
 Tâche : Crée une histoire de ~150 mots qui enseigne une valeur (amitié, persévérance) ou un fait scientifique.
@@ -118,9 +120,7 @@ export async function askGemini(
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "nvidia/nemotron-3-nano-30b-a3b:free",
-        // model: "mistralai/mistral-small-creative",
-
+        model: localStorage.getItem('openrouter_model') || "google/gemini-2.0-flash-lite-preview-02-05:free",
         messages: messages,
         response_format: (mode === 'quiz' || mode === 'wordOfTheDay' || mode === 'problemOfTheDay') ? { type: "json_object" } : undefined
       })
@@ -132,7 +132,14 @@ export async function askGemini(
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || "Désolé, je n'ai pas pu générer de réponse.";
+    let content = data.choices[0]?.message?.content || "";
+
+    // Nettoyage du JSON si nécessaire
+    if (mode === 'quiz' || mode === 'wordOfTheDay' || mode === 'problemOfTheDay') {
+      content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+    }
+
+    return content || (mode === 'quiz' ? "[]" : mode === 'wordOfTheDay' || mode === 'problemOfTheDay' ? "{}" : "Désolé, je n'ai pas pu générer de réponse.");
   } catch (error) {
     console.error("Erreur OpenRouter:", error);
     if (mode === 'quiz') return "[]";
