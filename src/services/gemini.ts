@@ -136,7 +136,16 @@ export async function askGemini(
 
     // Nettoyage du JSON si nécessaire
     if (mode === 'quiz' || mode === 'wordOfTheDay' || mode === 'problemOfTheDay') {
-      content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+      const firstObj = content.indexOf('{');
+      const lastObj = content.lastIndexOf('}');
+      const firstArr = content.indexOf('[');
+      const lastArr = content.lastIndexOf(']');
+
+      if (firstObj !== -1 && lastObj !== -1 && (firstArr === -1 || firstObj < firstArr)) {
+        content = content.substring(firstObj, lastObj + 1);
+      } else if (firstArr !== -1 && lastArr !== -1) {
+        content = content.substring(firstArr, lastArr + 1);
+      }
     }
 
     return content || (mode === 'quiz' ? "[]" : mode === 'wordOfTheDay' || mode === 'problemOfTheDay' ? "{}" : "Désolé, je n'ai pas pu générer de réponse.");

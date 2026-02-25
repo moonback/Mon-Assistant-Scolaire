@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'motion/react';
-import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { motion, AnimatePresence } from 'motion/react';
+import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target, Award, TrendingUp, HelpCircle, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
 import { Progress, supabase } from '../lib/supabase';
 
 interface PedagogicalHubProps {
@@ -17,6 +18,7 @@ interface Mission {
   objective: string;
   points: number;
   subject: string;
+  autonomyBonus?: number;
 }
 
 interface MissionRecord {
@@ -29,6 +31,22 @@ interface ExplanationRecord {
   child_text: string;
   understanding_score: number | null;
   ai_feedback_summary: string | null;
+  created_at: string;
+}
+
+interface SRSCard {
+  id: string;
+  subject: string;
+  notion: string;
+  mastery_level: number;
+  next_review_at: string;
+}
+
+interface Milestone {
+  id: string;
+  title: string;
+  icon: string;
+  category: string;
   created_at: string;
 }
 
@@ -45,32 +63,28 @@ function normalizeSubject(stat: Progress) {
 }
 
 function masteryLabel(score: number) {
-  if (score >= 8) return { label: 'Consolidé', tone: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
-  if (score >= 6) return { label: 'Maîtrisé', tone: 'text-indigo-700 bg-indigo-50 border-indigo-200' };
-  if (score >= 4) return { label: 'En cours', tone: 'text-amber-700 bg-amber-50 border-amber-200' };
-  return { label: 'Découverte', tone: 'text-rose-700 bg-rose-50 border-rose-200' };
-}
-
-function nextReviewLabel(avg: number, seen: number) {
-  if (avg < 4) return 'Demain';
-  if (avg < 6 || seen < 3) return 'Dans 3 jours';
-  if (avg < 8) return 'Dans 7 jours';
-  return 'Dans 14 jours';
+  if (score >= 8) return { label: 'Consolidé', tone: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: Award };
+  if (score >= 6) return { label: 'Maîtrisé', tone: 'text-indigo-700 bg-indigo-50 border-indigo-200', icon: TrendingUp };
+  if (score >= 4) return { label: 'En cours', tone: 'text-amber-700 bg-amber-50 border-amber-200', icon: Target };
+  return { label: 'Découverte', tone: 'text-rose-700 bg-rose-50 border-rose-200', icon: Sparkles };
 }
 
 export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoints }: PedagogicalHubProps) {
+  const { selectedChild, refreshChildren } = useAuth();
   const today = new Date().toISOString().split('T')[0];
   const [completedMissionIds, setCompletedMissionIds] = useState<string[]>([]);
   const [savingMissionId, setSavingMissionId] = useState<string | null>(null);
   const [explanationText, setExplanationText] = useState('');
-  const [explanationPrompt, setExplanationPrompt] = useState('Explique avec tes mots comment tu vérifies que ta réponse est juste.');
+  const [explanationPrompt, setExplanationPrompt] = useState('Comment expliquerais-tu cette notion à un ami ?');
   const [explanationSaving, setExplanationSaving] = useState(false);
   const [latestExplanation, setLatestExplanation] = useState<ExplanationRecord | null>(null);
+  const [srsCards, setSrsCards] = useState<SRSCard[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
 
+  // 1. Mission Generation Logic (Smart Logic)
   const subjectInsights = useMemo(() => {
     const grouped = new Map<string, number[]>();
-
-    stats.forEach((stat) => {
+    stats.forEach(stat => {
       const subject = normalizeSubject(stat);
       const score = Number(stat.score || 0);
       const arr = grouped.get(subject) || [];
@@ -80,253 +94,169 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
     return Array.from(grouped.entries()).map(([subject, scores]) => {
       const avg = scores.reduce((a, b) => a + b, 0) / Math.max(scores.length, 1);
-      const lowScoreCount = scores.filter((s) => s <= 4).length;
-      return {
-        subject,
-        avg,
-        attempts: scores.length,
-        lowScoreCount,
-      };
+      const lowScoreCount = scores.filter(s => s <= 4).length;
+      return { subject, avg, attempts: scores.length, lowScoreCount };
     }).sort((a, b) => a.avg - b.avg);
   }, [stats]);
 
   const { weakestSubjects, strongestSubject } = useMemo(() => {
-    const weakest = subjectInsights.slice(0, 2).map((s) => s.subject);
+    const weakest = subjectInsights.slice(0, 2).map(s => s.subject);
     const strongest = subjectInsights.at(-1)?.subject || 'Compétences générales';
     return { weakestSubjects: weakest, strongestSubject: strongest };
   }, [subjectInsights]);
 
-  const missions = useMemo<Mission[]>(() => {
-    const consolidationSubject = strongestSubject;
-    const progressionSubject = weakestSubjects[0] || 'Maths';
-    const reactivationSubject = weakestSubjects[1] || 'Français';
+  const missions = useMemo<Mission[]>(() => [
+    {
+      id: `${today}-consolidation`,
+      title: 'Maîtrise & Confiance',
+      description: `Exercice sur ${strongestSubject}`,
+      objective: 'Valider tes acquis avec brio.',
+      points: 5,
+      subject: strongestSubject,
+      autonomyBonus: 2
+    },
+    {
+      id: `${today}-progression`,
+      title: 'Défi du Jour',
+      description: `Notion cible: ${weakestSubjects[0] || 'Maths'}`,
+      objective: 'Dépasser ta difficulté actuelle.',
+      points: 10,
+      subject: weakestSubjects[0] || 'Maths',
+      autonomyBonus: 5
+    },
+    {
+      id: `${today}-reactivation`,
+      title: 'Mémoire Flash',
+      description: `Rappel sur ${weakestSubjects[1] || 'Français'}`,
+      objective: 'Ne pas oublier ce que tu as appris hier.',
+      points: 7,
+      subject: weakestSubjects[1] || 'Français',
+      autonomyBonus: 3
+    }
+  ], [today, strongestSubject, weakestSubjects]);
 
-    return [
-      {
-        id: `${today}-consolidation`,
-        title: 'Consolidation rapide',
-        description: `3 questions courtes sur ${consolidationSubject}.`,
-        objective: 'Renforcer ce qui est déjà acquis pour sécuriser la confiance.',
-        points: 6,
-        subject: consolidationSubject,
-      },
-      {
-        id: `${today}-progression`,
-        title: 'Mission progression',
-        description: `1 exercice guidé sur ${progressionSubject} avec indice progressif.`,
-        objective: 'Travailler la compréhension sur la notion la plus fragile.',
-        points: 8,
-        subject: progressionSubject,
-      },
-      {
-        id: `${today}-reactivation`,
-        title: 'Réactivation intelligente',
-        description: `Carte mémoire + auto-correction sur ${reactivationSubject}.`,
-        objective: 'Réactiver les acquis sans lassitude via un format différent.',
-        points: 6,
-        subject: reactivationSubject,
-      },
-    ];
-  }, [today, strongestSubject, weakestSubjects]);
-
+  // 2. Data Loading
   useEffect(() => {
-    const loadMissionState = async () => {
+    const loadPedagogicalData = async () => {
       if (!childId) return;
 
-      const { data, error } = await supabase
-        .from('pedagogical_daily_missions')
-        .select('completed_mission_ids')
-        .eq('child_id', childId)
-        .eq('date', today)
-        .maybeSingle<MissionRecord>();
+      // Load Missions
+      const { data: mData } = await supabase.from('pedagogical_daily_missions').select('completed_mission_ids').eq('child_id', childId).eq('date', today).maybeSingle();
+      if (mData) setCompletedMissionIds(mData.completed_mission_ids);
 
-      if (error) {
-        console.error('Failed to load mission state:', error);
-        setCompletedMissionIds([]);
-        return;
-      }
+      // Load SRS
+      const { data: sData } = await supabase.from('pedagogical_srs_cards').select('*').eq('child_id', childId).order('next_review_at', { ascending: true }).limit(5);
+      if (sData) setSrsCards(sData);
 
-      if (data?.completed_mission_ids) {
-        setCompletedMissionIds(data.completed_mission_ids);
-        return;
-      }
+      // Load milestones
+      const { data: mlData } = await supabase.from('pedagogical_milestones').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(3);
+      if (mlData) setMilestones(mlData);
 
-      const { error: insertError } = await supabase
-        .from('pedagogical_daily_missions')
-        .insert({
-          child_id: childId,
-          date: today,
-          grade_level: gradeLevel,
-          generated_missions: missions,
-          completed_mission_ids: [],
-        });
-
-      if (insertError) {
-        console.error('Failed to initialize mission row:', insertError);
-      }
-
-      setCompletedMissionIds([]);
+      // Load latest explanation
+      const { data: eData } = await supabase.from('pedagogical_explanations').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (eData) setLatestExplanation(eData);
     };
 
-    loadMissionState();
-  }, [childId, today, gradeLevel, missions]);
+    loadPedagogicalData();
+  }, [childId, today]);
 
-
-  useEffect(() => {
-    const prompts = [
-      `Explique en une ou deux phrases comment tu résous un exercice de ${weakestSubjects[0] || 'maths'}.`,
-      `Tu as fait une erreur en ${weakestSubjects[0] || 'maths'} : comment la corriges-tu ?`,
-      `Décris ta méthode pas à pas pour réussir en ${strongestSubject}.`,
-    ];
-    setExplanationPrompt(prompts[Math.floor(Math.random() * prompts.length)]);
-  }, [weakestSubjects, strongestSubject]);
-
-  useEffect(() => {
-    const loadLatestExplanation = async () => {
-      if (!childId) return;
-
-      const { data, error } = await supabase
-        .from('pedagogical_explanations')
-        .select('id, prompt_text, child_text, understanding_score, ai_feedback_summary, created_at')
-        .eq('child_id', childId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle<ExplanationRecord>();
-
-      if (error) {
-        console.error('Failed to load latest explanation:', error);
-        return;
-      }
-
-      setLatestExplanation(data || null);
-    };
-
-    loadLatestExplanation();
-  }, [childId]);
-
-  const spacedReviewPlan = useMemo(() => {
-    return subjectInsights.slice(0, 4).map((item) => ({
-      ...item,
-      nextReview: nextReviewLabel(item.avg, item.attempts),
-    }));
-  }, [subjectInsights]);
-
+  // 3. Actions
   const completeMission = async (mission: Mission) => {
     if (completedMissionIds.includes(mission.id) || !childId) return;
-
-    const next = [...completedMissionIds, mission.id];
-    setCompletedMissionIds(next);
     setSavingMissionId(mission.id);
 
-    const { error } = await supabase
-      .from('pedagogical_daily_missions')
-      .upsert({
-        child_id: childId,
-        date: today,
-        grade_level: gradeLevel,
-        generated_missions: missions,
-        completed_mission_ids: next,
-      }, { onConflict: 'child_id,date' });
+    const nextIds = [...completedMissionIds, mission.id];
+    const { error } = await supabase.from('pedagogical_daily_missions').upsert({
+      child_id: childId, date: today, grade_level: gradeLevel,
+      generated_missions: missions, completed_mission_ids: nextIds
+    }, { onConflict: 'child_id,date' });
 
-    if (error) {
-      console.error('Failed to persist mission completion:', error);
-      setCompletedMissionIds((prev) => prev.filter((id) => id !== mission.id));
-      setSavingMissionId(null);
-      return;
+    if (!error) {
+      setCompletedMissionIds(nextIds);
+      const totalPoints = mission.points + (mission.autonomyBonus || 0);
+      onEarnPoints(totalPoints, 'pedagogy_mission', mission.subject);
+
+      // Auto-milestone for completing all 3
+      if (nextIds.length === 3) {
+        await supabase.from('pedagogical_milestones').insert({
+          child_id: childId, title: 'Grand Chelem Quotidien', icon: '🔥', category: 'regularity'
+        });
+      }
     }
-
-    await supabase.from('pedagogical_mission_events').insert({
-      child_id: childId,
-      date: today,
-      mission_id: mission.id,
-      mission_subject: mission.subject,
-      points_awarded: mission.points,
-      grade_level: gradeLevel,
-    });
-
-    onEarnPoints(mission.points, 'pedagogy_mission', mission.subject);
     setSavingMissionId(null);
   };
 
-
   const submitExplanation = async () => {
     if (!childId || !explanationText.trim()) return;
-
-    const text = explanationText.trim();
-    const hasReasoning = /parce que|donc|d'abord|ensuite|puis|j'ai vérifié/i.test(text);
-    const lengthScore = Math.min(6, Math.floor(text.length / 25));
-    const understandingScore = Math.min(10, lengthScore + (hasReasoning ? 4 : 2));
-
-    const feedback = understandingScore >= 8
-      ? 'Très bien ! Ton explication est claire et montre ton raisonnement.'
-      : understandingScore >= 6
-        ? 'Bonne base. Ajoute davantage les étapes de ta méthode.'
-        : 'Essaye de détailler: ce que tu fais d’abord, puis comment tu vérifies.';
-
     setExplanationSaving(true);
 
-    const { data, error } = await supabase
-      .from('pedagogical_explanations')
-      .insert({
-        child_id: childId,
-        prompt_text: explanationPrompt,
-        child_text: text,
-        understanding_score: understandingScore,
-        ai_feedback_summary: feedback,
-      })
-      .select('id, prompt_text, child_text, understanding_score, ai_feedback_summary, created_at')
-      .single<ExplanationRecord>();
+    const text = explanationText.trim();
+    const hasReasoning = /parce que|donc|pourquoi|car/i.test(text);
+    const score = Math.min(10, Math.floor(text.length / 15) + (hasReasoning ? 5 : 2));
 
-    if (error) {
-      console.error('Failed to save explanation:', error);
-      setExplanationSaving(false);
-      return;
+    const { data, error } = await supabase.from('pedagogical_explanations').insert({
+      child_id: childId, prompt_text: explanationPrompt, child_text: text,
+      understanding_score: score, ai_feedback_summary: score >= 8 ? 'Explication brillante !' : 'Continue à détailler ton raisonnement.'
+    }).select().single();
+
+    if (data && !error) {
+      setLatestExplanation(data);
+      setExplanationText('');
+      onEarnPoints(5, 'pedagogy_explanation');
     }
-
-    setLatestExplanation(data);
-    setExplanationText('');
     setExplanationSaving(false);
-    onEarnPoints(4, 'pedagogy_explanation', weakestSubjects[0] || 'Compréhension');
   };
 
-  const completionRate = Math.round((completedMissionIds.length / missions.length) * 100);
-
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="space-y-8">
+      {/* 1. Daily Missions Section */}
+      <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
-              <CalendarCheck2 className="h-4 w-4 text-indigo-600" />
-              Mission quotidienne intelligente
+            <h3 className="flex items-center gap-2 text-2xl font-black text-slate-800 tracking-tight">
+              <CalendarCheck2 className="h-6 w-6 text-indigo-600" /> Missions du Jour
             </h3>
-            <p className="text-sm text-slate-500">Plan personnalisé pour {gradeLevel} : consolidation, progression et réactivation.</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Programme personnalisé de {gradeLevel}</p>
           </div>
-          <span className="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">{completionRate}% terminé</span>
+          <div className="flex flex-col items-end">
+            <div className="flex gap-1">
+              {missions.map(m => (
+                <div key={m.id} className={`w-3 h-3 rounded-full ${completedMissionIds.includes(m.id) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-100'}`} />
+              ))}
+            </div>
+            <span className="text-[10px] font-black text-slate-400 mt-2 uppercase">{completedMissionIds.length}/3 TERMINÉES</span>
+          </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
-          {missions.map((mission, i) => {
-            const done = completedMissionIds.includes(mission.id);
-            const isSaving = savingMissionId === mission.id;
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {missions.map((m, idx) => {
+            const isDone = completedMissionIds.includes(m.id);
             return (
               <motion.div
-                key={mission.id}
-                initial={{ opacity: 0, y: 6 }}
+                key={m.id}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                transition={{ delay: idx * 0.1 }}
+                className={`relative group p-6 rounded-[2rem] border-2 transition-all ${isDone ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-50 hover:border-indigo-100 hover:bg-white'}`}
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{mission.subject}</p>
-                <h4 className="mt-1 text-sm font-semibold text-slate-900">{mission.title}</h4>
-                <p className="mt-1 text-xs text-slate-600">{mission.description}</p>
-                <p className="mt-2 text-xs text-slate-500">🎯 {mission.objective}</p>
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDone ? 'text-emerald-600' : 'text-indigo-600'}`}>{m.subject}</span>
+                  {isDone && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                </div>
+                <h4 className="font-black text-slate-800 text-lg mb-2">{m.title}</h4>
+                <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">{m.description}</p>
+                <div className="bg-white/50 rounded-xl p-3 mb-4 border border-white/50 italic text-[10px] text-slate-400">
+                  🎯 {m.objective}
+                </div>
                 <button
-                  onClick={() => completeMission(mission)}
-                  disabled={done || isSaving}
-                  className={`mt-3 w-full rounded-lg px-3 py-2 text-xs font-semibold ${done ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300'}`}
+                  onClick={() => completeMission(m)}
+                  disabled={isDone || savingMissionId === m.id}
+                  className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isDone
+                    ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                    : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-95'
+                    }`}
                 >
-                  {done ? `Terminé +${mission.points} pts` : isSaving ? 'Enregistrement...' : `Marquer terminé (+${mission.points})`}
+                  {isDone ? 'Ménage Fait !' : savingMissionId === m.id ? 'Magie en cours...' : `C'est Parti ! (+${m.points + (m.autonomyBonus || 0)})`}
                 </button>
               </motion.div>
             );
@@ -334,148 +264,167 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
-            <Gauge className="h-4 w-4 text-indigo-600" />
-            Maîtrise par niveaux
-          </h3>
-
-          <div className="space-y-2">
-            {subjectInsights.length === 0 && <p className="text-sm text-slate-500">Pas assez de données pour calculer les niveaux.</p>}
-            {subjectInsights.slice(0, 5).map((item) => {
-              const mastery = masteryLabel(item.avg);
-              return (
-                <div key={item.subject} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{item.subject}</p>
-                    <p className="text-xs text-slate-500">{item.attempts} activités • moyenne {item.avg.toFixed(1)}/10</p>
-                  </div>
-                  <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${mastery.tone}`}>{mastery.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
-            <RefreshCcw className="h-4 w-4 text-indigo-600" />
-            Révision espacée anti-lassitude
-          </h3>
-
-          <div className="space-y-2">
-            {spacedReviewPlan.length === 0 && <p className="text-sm text-slate-500">Les prochaines révisions apparaîtront après quelques activités.</p>}
-            {spacedReviewPlan.map((item) => (
-              <div key={item.subject} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-slate-900">{item.subject}</p>
-                  <span className="text-xs font-semibold text-indigo-700">{item.nextReview}</span>
-                </div>
-                <p className="text-xs text-slate-500">Format conseillé: quiz court, mini-jeu, puis explication “avec tes mots”.</p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Stats Column */}
+        <div className="lg:col-span-12 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Mastery Table */}
+            <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
+              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
+                <Gauge className="h-5 w-5 text-indigo-600" /> Tableau de Maîtrise
+              </h3>
+              <div className="space-y-3">
+                {subjectInsights.slice(0, 4).map(item => {
+                  const m = masteryLabel(item.avg);
+                  return (
+                    <div key={item.subject} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-50">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${m.tone.split(' ')[1]}`}>
+                          <m.icon className={`h-5 w-5 ${m.tone.split(' ')[0]}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800">{item.subject}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{item.attempts} ACTIVITÉS</p>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase border ${m.tone}`}>{m.label}</span>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
+            </section>
 
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-900">
-          <BookCheck className="h-4 w-4 text-indigo-600" />
-          Atelier “Explique avec tes mots”
-        </h3>
-        <p className="mb-3 text-sm text-slate-600">{explanationPrompt}</p>
-        <textarea
-          value={explanationText}
-          onChange={(e) => setExplanationText(e.target.value)}
-          placeholder="J'ai trouvé... parce que..."
-          className="h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 outline-none focus:border-indigo-400"
-        />
-        <button
-          onClick={submitExplanation}
-          disabled={explanationSaving || !explanationText.trim()}
-          className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:bg-indigo-300"
-        >
-          {explanationSaving ? 'Enregistrement...' : 'Envoyer mon explication (+4)'}
-        </button>
-
-        {latestExplanation && (
-          <div className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-            <p className="text-xs font-semibold text-indigo-700">Dernière explication • score compréhension: {latestExplanation.understanding_score ?? '-'} / 10</p>
-            <p className="mt-1 text-xs text-indigo-800">{latestExplanation.ai_feedback_summary}</p>
-          </div>
-        )}
-      </section>
-
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
-            <ShieldAlert className="h-4 w-4 text-indigo-600" />
-            Détection des difficultés
-          </h3>
-
-          {subjectInsights.filter((s) => s.lowScoreCount >= 2).length === 0 ? (
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">Aucune difficulté persistante détectée pour le moment.</p>
-          ) : (
-            <div className="space-y-2">
-              {subjectInsights.filter((s) => s.lowScoreCount >= 2).map((s) => (
-                <div key={s.subject} className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-                  <p className="text-sm font-semibold text-rose-800">{s.subject}</p>
-                  <p className="text-xs text-rose-700">{s.lowScoreCount} erreurs récurrentes détectées. Proposer 4 micro-sessions de remédiation.</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
-            <BookCheck className="h-4 w-4 text-indigo-600" />
-            Plan parent / enseignant (hebdo)
-          </h3>
-
-          <div className="space-y-3">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Objectifs prioritaires (7 jours)</p>
-              <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-slate-700">
-                <li>Consolider {weakestSubjects[0] || 'Maths'} avec 10 minutes par jour.</li>
-                <li>Maintenir {strongestSubject} avec une mission “expliquer la méthode” 2 fois/semaine.</li>
-              </ul>
-            </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              <p className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4" /> Feedback adulte conseillé</p>
-              <p className="mt-1 text-xs">“Tu as fait des efforts, explique-moi comment tu as réfléchi.”</p>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-900">
-          <BrainCircuit className="h-4 w-4 text-indigo-600" />
-          Portefeuille de progrès long terme
-        </h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Compétence la plus solide</p>
-            <p className="text-sm font-semibold text-slate-900">{strongestSubject}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Compétence à renforcer</p>
-            <p className="text-sm font-semibold text-slate-900">{weakestSubjects[0] || 'Maths'}</p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Objectif du mois</p>
-            <p className="text-sm font-semibold text-slate-900">Atteindre 70% de missions terminées</p>
+            {/* SRS Section */}
+            <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
+              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
+                <RefreshCcw className="h-5 w-5 text-indigo-600" /> Révision Espacée
+              </h3>
+              <div className="space-y-4">
+                {srsCards.length > 0 ? srsCards.map(card => (
+                  <div key={card.id} className="flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-slate-100">
+                    <div>
+                      <p className="text-sm font-black text-slate-800">{card.notion}</p>
+                      <p className="text-[10px] font-bold text-indigo-500 uppercase">{card.subject}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Prochain rappel</p>
+                      <p className="text-xs font-black text-slate-800">{new Date(card.next_review_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-10">
+                    <Zap className="h-8 w-8 text-slate-200 mx-auto mb-3" />
+                    <p className="text-xs font-bold text-slate-400 uppercase">Tes prochaines révisions arriveront ici bientôt !</p>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         </div>
-      </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-indigo-50/60 p-4">
-        <p className="flex items-center gap-2 text-sm font-semibold text-indigo-800"><Target className="h-4 w-4" /> Apprentissage actif intégré</p>
-        <p className="mt-1 text-xs text-indigo-700">Dans chaque mission, l’enfant doit faire, expliquer puis corriger : la progression récompense l’effort et la compréhension, pas seulement la bonne réponse.</p>
-      </section>
+        {/* Workspace & Insights */}
+        <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Explanation Workshop */}
+          <section className="md:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800">
+                <BookCheck className="h-5 w-5 text-indigo-600" /> Atelier "Explique avec tes mots"
+              </h3>
+              {latestExplanation && <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full uppercase">SCORE: {latestExplanation.understanding_score}/10</span>}
+            </div>
+            <p className="text-sm text-slate-500 font-bold mb-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50 italic">
+              <Sparkles className="h-4 w-4 inline mr-2 text-indigo-600" /> "{explanationPrompt}"
+            </p>
+            <textarea
+              value={explanationText}
+              onChange={(e) => setExplanationText(e.target.value)}
+              placeholder="Écris ton explication ici... (Astuce: utilise 'parce que' pour gagner plus de points !)"
+              className="w-full h-32 p-6 rounded-3xl bg-slate-50 border-2 border-slate-50 focus:border-indigo-100 outline-none text-slate-800 font-medium transition-all"
+            />
+            <button
+              onClick={submitExplanation}
+              disabled={explanationSaving || !explanationText.trim()}
+              className="mt-4 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all"
+            >
+              {explanationSaving ? 'Analyse par l\'IA...' : 'Valider mon explication (+5 Étoiles)'}
+            </button>
+            {latestExplanation?.ai_feedback_summary && (
+              <div className="mt-6 flex gap-4 p-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-100">
+                <BrainCircuit className="h-6 w-6 shrink-0" />
+                <p className="text-xs font-bold leading-relaxed">{latestExplanation.ai_feedback_summary}</p>
+              </div>
+            )}
+          </section>
+
+          {/* Portfolio Snapshot */}
+          <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
+            <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
+              <Award className="h-5 w-5 text-indigo-600" /> Mon Portfolio
+            </h3>
+            <div className="space-y-6">
+              {milestones.map(m => (
+                <div key={m.id} className="flex gap-4 group">
+                  <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-xl shadow-sm group-hover:rotate-12 transition-transform">
+                    {m.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-800">{m.title}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">{new Date(m.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
+                  </div>
+                </div>
+              ))}
+              {milestones.length === 0 && <p className="text-xs font-bold text-slate-400 text-center py-10 uppercase italic">Tes premiers trophées apparaitront ici !</p>}
+
+              <div className="pt-6 border-t border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Statistiques de Survie</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black">
+                    <span className="text-slate-500 uppercase">AUTONOMIE</span>
+                    <span className="text-indigo-600">85%</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full w-[85%] bg-indigo-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Weekly Support Section */}
+        <div className="lg:col-span-12">
+          <section className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+            <TrendingUp className="absolute -right-10 -bottom-10 w-60 h-60 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div>
+                <span className="px-4 py-1.5 bg-indigo-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none mb-4 inline-block">Plan Parent-Enfant Hebdo</span>
+                <h3 className="text-3xl font-black tracking-tight mb-4">Objectifs de la Semaine</h3>
+                <div className="space-y-4 mt-6">
+                  <div className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-black">1</div>
+                    <p className="text-sm font-bold">Dominer les {weakestSubjects[0] || 'Maths'} (10 min/jour)</p>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center font-black">2</div>
+                    <p className="text-sm font-bold">Expliquer 3 méthodes différentes à tes parents</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col justify-center">
+                <div className="bg-white/5 rounded-[2rem] p-8 border border-white/10">
+                  <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-2">Conseil pour l'adulte</p>
+                  <p className="text-sm italic font-medium leading-relaxed opacity-90">
+                    "Demandez à {selectedChild?.name} de vous expliquer SON erreur. Ne donnez pas la solution tout de suite, valorisez le chemin plutôt que le résultat."
+                  </p>
+                  <button className="mt-6 flex items-center gap-2 text-xs font-black uppercase text-indigo-300 hover:text-white transition-colors">
+                    Voir le plan complet <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

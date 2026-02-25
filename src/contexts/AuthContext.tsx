@@ -85,10 +85,12 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
 
     if (data) {
       setChildren(data);
-      // Sync selected child if it exists
+      // Sync selected child if it exists, but only if data actually changed
       if (selectedChild) {
         const updated = data.find(c => c.id === selectedChild.id);
-        if (updated) setSelectedChildState(updated);
+        if (updated && JSON.stringify(updated) !== JSON.stringify(selectedChild)) {
+          setSelectedChildState(updated);
+        }
       }
     }
     setLoading(false);

@@ -45,8 +45,22 @@ export const dailyChallengeService = {
                     askGemini("Génère le problème du jour.", 'problemOfTheDay', gradeLevel)
                 ]);
 
-                const word = JSON.parse(wordRes) as DailyWord;
-                const problem = JSON.parse(problemRes) as DailyProblem;
+                let word: DailyWord;
+                let problem: DailyProblem;
+
+                try {
+                    word = JSON.parse(wordRes) as DailyWord;
+                } catch (e) {
+                    console.error("Failed to parse word JSON:", wordRes);
+                    word = { word: "Curiosité", definition: "Désir d'apprendre.", example: "La curiosité est une qualité.", synonyms: ["Intérêt", "Envie"] };
+                }
+
+                try {
+                    problem = JSON.parse(problemRes) as DailyProblem;
+                } catch (e) {
+                    console.error("Failed to parse problem JSON:", problemRes);
+                    problem = { question: "Combien font 2 + 2 ?", answer: "4", explanation: "C'est la base !" };
+                }
 
                 const { data: newChallenge, error: insertError } = await supabase
                     .from('daily_challenges')

@@ -101,14 +101,37 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
             <p className="text-sm text-slate-500">Vue rapide par activité.</p>
           </div>
 
-          <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2ff" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="score" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={42} />
+          <div className="h-[260px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                />
+                <Bar
+                  dataKey="score"
+                  fill="#6366f1"
+                  radius={[6, 6, 0, 0]}
+                  barSize={40}
+                  isAnimationActive={true}
+                  animationDuration={1500}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
