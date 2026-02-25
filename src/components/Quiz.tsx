@@ -7,9 +7,12 @@ import { supabase } from '../lib/supabase';
 
 interface Question {
   question: string;
+  type?: 'qcm' | 'open';
   options: string[];
   correctAnswer: number;
+  correctAnswerText?: string;
   explanation: string;
+  funFact?: string;
 }
 
 interface QuizProps {
@@ -27,6 +30,9 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
   const [showResult, setShowResult] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [openAnswer, setOpenAnswer] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
 
   const wrongTopicsRef = React.useRef<string[]>([]);
 
@@ -39,6 +45,8 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     setShowResult(false);
     setSelectedOption(null);
     setIsCorrect(null);
+    setOpenAnswer('');
+    setAiFeedback(null);
     wrongTopicsRef.current = [];
 
     try {
@@ -55,6 +63,29 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       console.error('Erreur lors de la génération du quiz:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((c) => c + 1);
+      setSelectedOption(null);
+      setIsCorrect(null);
+      setOpenAnswer('');
+      setAiFeedback(null);
+    } else {
+      setShowResult(true);
+      if (selectedChild && wrongTopicsRef.current.length > 0) {
+        const currentPoints = selectedChild.weak_points || [];
+        const newPoints = wrongTopicsRef.current.filter(t => !currentPoints.includes(t));
+        if (newPoints.length > 0) {
+          const updatedPoints = [...currentPoints, ...newPoints];
+          supabase.from('children')
+            .update({ weak_points: updatedPoints })
+            .eq('id', selectedChild.id)
+            .then(() => refreshChildren());
+        }
+      }
     }
   };
 
@@ -75,26 +106,41 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       }
     }
 
-    setTimeout(() => {
-      if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion((c) => c + 1);
-        setSelectedOption(null);
-        setIsCorrect(null);
+    setTimeout(handleNext, 1800);
+  };
+
+  const submitOpenAnswer = async () => {
+    if (!openAnswer.trim() || aiLoading) return;
+
+    setAiLoading(true);
+    try {
+      const prompt = `Question : ${questions[currentQuestion].question}
+      Réponse de l'enfant : ${openAnswer}
+      Réponse attendue : ${questions[currentQuestion].correctAnswerText}`;
+
+      const resultJson = await askGemini(prompt, 'ai_evaluation', gradeLevel);
+      const result = JSON.parse(resultJson);
+
+      setIsCorrect(result.isCorrect);
+      setAiFeedback(result.feedback);
+
+      if (result.isCorrect) {
+        const earned = Math.max(5, result.score);
+        setScore((s) => s + (earned / 10)); // Simple calculation for score display
+        onEarnPoints?.(earned, 'ai_quiz', topic || 'Général');
       } else {
-        setShowResult(true);
-        if (selectedChild && wrongTopicsRef.current.length > 0) {
-          const currentPoints = selectedChild.weak_points || [];
-          const newPoints = wrongTopicsRef.current.filter(t => !currentPoints.includes(t));
-          if (newPoints.length > 0) {
-            const updatedPoints = [...currentPoints, ...newPoints];
-            supabase.from('children')
-              .update({ weak_points: updatedPoints })
-              .eq('id', selectedChild.id)
-              .then(() => refreshChildren());
-          }
+        const currentTopic = topic || 'Culture générale';
+        if (!wrongTopicsRef.current.includes(currentTopic)) {
+          wrongTopicsRef.current.push(currentTopic);
         }
       }
-    }, 1800);
+    } catch (e) {
+      console.error(e);
+      // Fallback in case of AI error
+      setIsCorrect(true);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const currentProgress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
@@ -209,37 +255,86 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
 
             <h3 className="mb-4 text-lg font-semibold text-slate-900">{questions[currentQuestion].question}</h3>
 
-            <div className="space-y-2">
-              {questions[currentQuestion].options.map((option, idx) => {
-                const isSelected = selectedOption === idx;
-                const isCorrectAnswer = idx === questions[currentQuestion].correctAnswer;
+            {questions[currentQuestion].type === 'open' ? (
+              <div className="space-y-4">
+                <textarea
+                  value={openAnswer}
+                  onChange={(e) => setOpenAnswer(e.target.value)}
+                  disabled={isCorrect !== null || aiLoading}
+                  placeholder="Tape ta réponse ici..."
+                  className="w-full h-32 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 outline-none focus:border-indigo-300 focus:bg-white resize-none"
+                />
 
-                let style = 'border-slate-200 bg-white text-slate-700';
-                if (selectedOption !== null) {
-                  if (isCorrectAnswer) style = 'border-emerald-200 bg-emerald-50 text-emerald-800';
-                  else if (isSelected) style = 'border-red-200 bg-red-50 text-red-700';
-                  else style = 'border-slate-200 bg-slate-50 text-slate-500';
-                }
-
-                return (
+                {isCorrect === null ? (
                   <button
-                    key={idx}
-                    onClick={() => handleAnswer(idx)}
-                    disabled={selectedOption !== null}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left text-sm transition-colors ${style}`}
+                    onClick={submitOpenAnswer}
+                    disabled={!openAnswer.trim() || aiLoading}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 transition-all"
                   >
-                    <span>{option}</span>
-                    {selectedOption !== null &&
-                      (isCorrectAnswer ? <CheckCircle className="h-4 w-4" /> : isSelected ? <XCircle className="h-4 w-4" /> : null)}
+                    {aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
+                    Valider ma réponse
                   </button>
-                );
-              })}
-            </div>
+                ) : (
+                  <div className={`rounded-xl border p-4 ${isCorrect ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {isCorrect ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      )}
+                      <span className={`font-bold ${isCorrect ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {isCorrect ? 'Excellent !' : 'Pas tout à fait...'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700 font-medium">{aiFeedback}</p>
+                    <button
+                      onClick={handleNext}
+                      className="mt-4 w-full py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50"
+                    >
+                      Question suivante
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {questions[currentQuestion].options.map((option, idx) => {
+                  const isSelected = selectedOption === idx;
+                  const isCorrectAnswer = idx === questions[currentQuestion].correctAnswer;
 
-            {selectedOption !== null && (
+                  let style = 'border-slate-200 bg-white text-slate-700';
+                  if (selectedOption !== null) {
+                    if (isCorrectAnswer) style = 'border-emerald-200 bg-emerald-50 text-emerald-800';
+                    else if (isSelected) style = 'border-red-200 bg-red-50 text-red-700';
+                    else style = 'border-slate-200 bg-slate-50 text-slate-500';
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleAnswer(idx)}
+                      disabled={selectedOption !== null}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left text-sm transition-colors ${style}`}
+                    >
+                      <span>{option}</span>
+                      {selectedOption !== null &&
+                        (isCorrectAnswer ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : isSelected ? <XCircle className="h-4 w-4 text-red-500" /> : null)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {(selectedOption !== null || (questions[currentQuestion].type === 'open' && isCorrect !== null)) && (
               <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs text-slate-500">Explication</p>
-                <p className="mt-1 text-sm text-slate-700">{questions[currentQuestion].explanation}</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Explication</p>
+                <p className="text-sm text-slate-700">{questions[currentQuestion].explanation}</p>
+                {questions[currentQuestion].funFact && (
+                  <div className="mt-2 pt-2 border-t border-slate-200 flex items-start gap-2">
+                    <span className="text-lg">💡</span>
+                    <p className="text-xs text-slate-500 italic">{questions[currentQuestion].funFact}</p>
+                  </div>
+                )}
               </div>
             )}
           </motion.section>
