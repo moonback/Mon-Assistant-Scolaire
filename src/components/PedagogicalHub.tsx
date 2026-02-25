@@ -69,6 +69,13 @@ function masteryLabel(score: number) {
   return { label: 'Découverte', tone: 'text-rose-700 bg-rose-50 border-rose-200', icon: Sparkles };
 }
 
+interface WeeklyPlan {
+  id: string;
+  objectives: string[];
+  recommended_activities: any[];
+  parent_feedback_scripts: any[];
+}
+
 export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoints }: PedagogicalHubProps) {
   const { selectedChild, refreshChildren } = useAuth();
   const today = new Date().toISOString().split('T')[0];
@@ -80,8 +87,10 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
   const [latestExplanation, setLatestExplanation] = useState<ExplanationRecord | null>(null);
   const [srsCards, setSrsCards] = useState<SRSCard[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [weeklyPlan, setWeeklyPlan] = useState<WeeklyPlan | null>(null);
+  const [showFullPlan, setShowFullPlan] = useState(false);
 
-  // 1. Mission Generation Logic (Smart Logic)
+  // ... subjectInsights and missions definitions ...
   const subjectInsights = useMemo(() => {
     const grouped = new Map<string, number[]>();
     stats.forEach(stat => {
@@ -140,25 +149,54 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
     const loadPedagogicalData = async () => {
       if (!childId) return;
 
-      // Load Missions
-      const { data: mData } = await supabase.from('pedagogical_daily_missions').select('completed_mission_ids').eq('child_id', childId).eq('date', today).maybeSingle();
-      if (mData) setCompletedMissionIds(mData.completed_mission_ids);
+      // Monday of current week
+      const now = new Date();
+      const day = now.getDay() || 7;
+      const monday = new Date(now.setDate(now.getDate() - day + 1)).toISOString().split('T')[0];
 
-      // Load SRS
-      const { data: sData } = await supabase.from('pedagogical_srs_cards').select('*').eq('child_id', childId).order('next_review_at', { ascending: true }).limit(5);
-      if (sData) setSrsCards(sData);
+      const [missionRes, srsRes, milestoneRes, explanationRes, planRes] = await Promise.all([
+        supabase.from('pedagogical_daily_missions').select('completed_mission_ids').eq('child_id', childId).eq('date', today).maybeSingle(),
+        supabase.from('pedagogical_srs_cards').select('*').eq('child_id', childId).order('next_review_at', { ascending: true }).limit(5),
+        supabase.from('pedagogical_milestones').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(3),
+        supabase.from('pedagogical_explanations').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('pedagogical_weekly_plans').select('*').eq('child_id', childId).eq('week_start_date', monday).maybeSingle()
+      ]);
 
-      // Load milestones
-      const { data: mlData } = await supabase.from('pedagogical_milestones').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(3);
-      if (mlData) setMilestones(mlData);
+      if (missionRes.data) setCompletedMissionIds(missionRes.data.completed_mission_ids);
+      if (srsRes.data) setSrsCards(srsRes.data);
+      if (milestoneRes.data) setMilestones(milestoneRes.data);
+      if (explanationRes.data) setLatestExplanation(explanationRes.data);
 
-      // Load latest explanation
-      const { data: eData } = await supabase.from('pedagogical_explanations').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (eData) setLatestExplanation(eData);
+      if (planRes.data) {
+        setWeeklyPlan(planRes.data);
+      } else {
+        // Generate plan if missing
+        const defaultPlan = {
+          child_id: childId,
+          week_start_date: monday,
+          objectives: [
+            `Améliorer la maîtrise en ${weakestSubjects[0] || 'Mathématiques'}`,
+            `Pratiquer la lecture active (15 min/jour)`,
+            `Renforcer l'autonomie en ${strongestSubject}`
+          ],
+          recommended_activities: [
+            { title: "Défi Flash", desc: "3 minutes pour trouver 5 mots en rapport avec le thème de la semaine." },
+            { title: "Calcul Mental", desc: "Pratiquer les tables de multiplication sous forme de jeu pendant le repas." },
+            { title: "Exploration Libre", desc: "Laisser 20 minutes d'utilisation libre de l'assistant pour poser des questions de curiosité." }
+          ],
+          parent_feedback_scripts: [
+            { tip: "Encouragez l'effort plutôt que le résultat final.", context: "Difficulté" },
+            { tip: "Demandez 'Comment as-tu trouvé cette réponse ?' même si c'est juste.", context: "Curiosité" },
+            { tip: "Célébrez les petites victoires avec un high-five !", context: "Motivation" }
+          ]
+        };
+        const { data: newPlan } = await supabase.from('pedagogical_weekly_plans').insert(defaultPlan).select().single();
+        if (newPlan) setWeeklyPlan(newPlan);
+      }
     };
 
     loadPedagogicalData();
-  }, [childId, today]);
+  }, [childId, today, weakestSubjects, strongestSubject]);
 
   // 3. Actions
   const completeMission = async (mission: Mission) => {
@@ -400,23 +438,29 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                 <span className="px-4 py-1.5 bg-indigo-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none mb-4 inline-block">Plan Parent-Enfant Hebdo</span>
                 <h3 className="text-3xl font-black tracking-tight mb-4">Objectifs de la Semaine</h3>
                 <div className="space-y-4 mt-6">
-                  <div className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-black">1</div>
-                    <p className="text-sm font-bold">Dominer les {weakestSubjects[0] || 'Maths'} (10 min/jour)</p>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center font-black">2</div>
-                    <p className="text-sm font-bold">Expliquer 3 méthodes différentes à tes parents</p>
-                  </div>
+                  {weeklyPlan?.objectives?.map((obj, idx) => (
+                    <div key={idx} className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black ${idx === 0 ? 'bg-emerald-500' : idx === 1 ? 'bg-indigo-500' : 'bg-amber-500'}`}>{idx + 1}</div>
+                      <p className="text-sm font-bold">{obj}</p>
+                    </div>
+                  )) || (
+                      <div className="animate-pulse space-y-4">
+                        <div className="h-16 bg-white/5 rounded-2xl" />
+                        <div className="h-16 bg-white/5 rounded-2xl" />
+                      </div>
+                    )}
                 </div>
               </div>
               <div className="flex flex-col justify-center">
                 <div className="bg-white/5 rounded-[2rem] p-8 border border-white/10">
                   <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-2">Conseil pour l'adulte</p>
                   <p className="text-sm italic font-medium leading-relaxed opacity-90">
-                    "Demandez à {selectedChild?.name} de vous expliquer SON erreur. Ne donnez pas la solution tout de suite, valorisez le chemin plutôt que le résultat."
+                    {weeklyPlan?.parent_feedback_scripts?.[0]?.tip || `"Demandez à ${selectedChild?.name} de vous expliquer SON erreur. Ne donnez pas la solution tout de suite, valorisez le chemin plutôt que le résultat."`}
                   </p>
-                  <button className="mt-6 flex items-center gap-2 text-xs font-black uppercase text-indigo-300 hover:text-white transition-colors">
+                  <button
+                    onClick={() => setShowFullPlan(true)}
+                    className="mt-6 flex items-center gap-2 text-xs font-black uppercase text-indigo-300 hover:text-white transition-colors"
+                  >
                     Voir le plan complet <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -425,6 +469,92 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
           </section>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showFullPlan && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFullPlan(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-[3rem] shadow-2xl p-10"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Plan Hebdomadaire Complet</h2>
+                  <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Soutien pédagogique & Accompagnement</p>
+                </div>
+                <button
+                  onClick={() => setShowFullPlan(false)}
+                  className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-8">
+                  <section>
+                    <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                      <Target className="h-5 w-5 text-indigo-600" /> Objectifs Prioritaires
+                    </h3>
+                    <div className="space-y-3">
+                      {weeklyPlan?.objectives.map((obj, i) => (
+                        <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex gap-4 items-start">
+                          <span className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">{i + 1}</span>
+                          <p className="text-sm font-bold text-slate-700">{obj}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5 text-indigo-600" /> Scripts & Retours Parents
+                    </h3>
+                    <div className="space-y-3">
+                      {weeklyPlan?.parent_feedback_scripts.map((script: any, i: number) => (
+                        <div key={i} className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+                          <p className="text-[10px] font-black text-indigo-500 uppercase mb-1">{script.context}</p>
+                          <p className="text-sm italic font-medium text-slate-700">"{script.tip}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+
+                <div className="space-y-8">
+                  <section>
+                    <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-indigo-600" /> Activités Recommandées
+                    </h3>
+                    <div className="space-y-4">
+                      {weeklyPlan?.recommended_activities.map((act: any, i: number) => (
+                        <div key={i} className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 group hover:border-indigo-200 transition-all">
+                          <h4 className="font-black text-slate-800 mb-2">{act.title}</h4>
+                          <p className="text-xs text-slate-500 font-medium leading-relaxed">{act.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className="p-8 rounded-[2rem] bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
+                    <h4 className="font-black mb-2">Besoin d'aide ?</h4>
+                    <p className="text-xs opacity-90 leading-relaxed">Ce plan est mis à jour chaque lundi en fonction des progrès réels constatés par l'IA.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
