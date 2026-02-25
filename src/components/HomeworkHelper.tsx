@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Image as ImageIcon, Sparkles, X, ChevronRight, Brain, Lightbulb, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { askGemini } from '../services/gemini';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HomeworkHelperProps {
     onEarnPoints?: (amount: number, activityType: string, subject?: string) => void | Promise<void>;
@@ -9,6 +10,7 @@ interface HomeworkHelperProps {
 }
 
 export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: HomeworkHelperProps) {
+    const { selectedChild } = useAuth();
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [question, setQuestion] = useState('');
     const [response, setResponse] = useState('');
@@ -39,7 +41,7 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
 
         try {
             const prompt = question || "Peux-tu m'aider à comprendre cet exercice ? Explique-moi les étapes sans me donner la réponse tout de suite.";
-            const answer = await askGemini(prompt, 'homework', gradeLevel, selectedImage);
+            const answer = await askGemini(prompt, 'homework', gradeLevel, selectedImage, undefined, selectedChild?.weak_points);
             setResponse(answer);
             onEarnPoints?.(15, 'homework', 'Général'); // Points for using the tool
         } catch (err) {

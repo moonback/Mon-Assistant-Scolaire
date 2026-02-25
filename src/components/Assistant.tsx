@@ -107,8 +107,8 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
 
   // ── System prompt for Gemini Live ──
   const liveSystemPrompt = useMemo(() =>
-    buildAssistantSystemPrompt(selectedChild?.grade_level || gradeLevel, childContext),
-    [selectedChild?.grade_level, gradeLevel, childContext]
+    buildAssistantSystemPrompt(selectedChild?.grade_level || gradeLevel, childContext, selectedChild?.weak_points),
+    [selectedChild?.grade_level, selectedChild?.weak_points, gradeLevel, childContext]
   );
 
   // ── Voice input → textarea ──
@@ -138,7 +138,7 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
     setVerificationAnswer(''); setVerificationFeedback('');
     stopSpeaking();
     try {
-      const answer = await askGemini(question, 'assistant', gradeLevel, selectedImage || undefined, childContext);
+      const answer = await askGemini(question, 'assistant', gradeLevel, selectedImage || undefined, childContext, selectedChild?.weak_points);
       setResponse(answer);
       if (selectedChild) {
         const { data: newItem, error: insertError } = await supabase.from('conversations')
@@ -165,7 +165,7 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
     setCheckingVerification(true);
     try {
       const prompt = `Contexte : Question élève : "${question}" — Ta réponse : "${response}"\nRéponse vérification de l'élève : "${verificationAnswer}"\nTâche : Dis si c'est bon. Commence par [CORRECT] ou [INCORRECT].`;
-      const feedback = await askGemini(prompt, 'assistant', gradeLevel, undefined, childContext);
+      const feedback = await askGemini(prompt, 'assistant', gradeLevel, undefined, childContext, selectedChild?.weak_points);
       const isCorrect = feedback.includes('[CORRECT]');
       setVerificationFeedback(feedback.replace('[CORRECT]', '').replace('[INCORRECT]', '').trim());
       if (isCorrect) onEarnPoints?.(20, 'assistant', 'Général');

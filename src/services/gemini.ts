@@ -84,8 +84,8 @@ Règles :
 - Retourner UNIQUEMENT le tableau JSON, sans texte autour.`
 };
 
-export function buildAssistantSystemPrompt(gradeLevel: string, childContext?: string): string {
-  return `${SYSTEM_INSTRUCTIONS['assistant']}
+export function buildAssistantSystemPrompt(gradeLevel: string, childContext?: string, weakPoints?: string[]): string {
+  let prompt = `${SYSTEM_INSTRUCTIONS['assistant']}
 
 DIRECTIVES POUR LA VOIX (IMPORTANT) :
 - LANGUE : RÉPONDS TOUJOURS EN FRANÇAIS.
@@ -97,6 +97,11 @@ CONTEXTE DE L'ÉLÈVE :
 - Niveau : ${gradeLevel}.
 ${gradeLevel === 'CP' || gradeLevel === 'CE1' ? '- Phrases TRÈS courtes.' : ''}
 ${childContext ? `\n--- INFOS SUR L'ENFANT ---\n${childContext}\n---` : ''}`;
+
+  if (weakPoints && weakPoints.length > 0) {
+    prompt += `\n\n🎯 ATTENTION PARTICULIÈRE : L'élève a des difficultés avec ces notions : ${weakPoints.join(', ')}. Au fil de tes explications, adapte ta pédagogie pour l'aider à surmonter ces points faibles si l'occasion se présente.`;
+  }
+  return prompt;
 }
 
 export async function askGemini(
@@ -104,7 +109,8 @@ export async function askGemini(
   mode: Mode = 'assistant',
   gradeLevel: string = 'CM1',
   image?: string, // Base64 image string (data:image/jpeg;base64,...)
-  childContext?: string // Optional child profile context
+  childContext?: string, // Optional child profile context
+  weakPoints?: string[] // Optional array of concepts the child struggles with
 ): Promise<string> {
   try {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
@@ -112,14 +118,18 @@ export async function askGemini(
       throw new Error("La clé API OpenRouter n'est pas configurée.");
     }
 
-    const systemInstruction = mode === 'assistant' && childContext
-      ? buildAssistantSystemPrompt(gradeLevel, childContext)
+    let systemInstruction = mode === 'assistant' && childContext
+      ? buildAssistantSystemPrompt(gradeLevel, childContext, weakPoints)
       : `${SYSTEM_INSTRUCTIONS[mode]}
     
     IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
     ${gradeLevel === 'CP' || gradeLevel === 'CE1' ? 'Utilise des phrases très courtes et des mots très simples.' : ''}
     ${gradeLevel === 'CM2' || gradeLevel === '6ème' ? 'Tu peux aller un peu plus loin dans les explications, mais reste clair.' : ''}
     `;
+
+    if (mode !== 'assistant' && weakPoints && weakPoints.length > 0) {
+      systemInstruction += `\n\n🎯 ATTENTION PARTICULIÈRE : L'élève a des difficultés avec ces notions : ${weakPoints.join(', ')}. Au fil de tes explications, adapte ta pédagogie pour l'aider à surmonter ces points faibles si l'occasion se présente.`;
+    }
 
     const messages = [
       {

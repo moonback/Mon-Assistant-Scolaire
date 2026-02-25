@@ -18,7 +18,7 @@ L'objectif de **Mon Assistant Scolaire** est de devenir le compagnon éducatif I
 - [ ] **Optimisation Gemini Live** : Stabilité de la connexion vocale et réduction de la latence.
 - [ ] **Mode Hors-ligne** : Cache local des flashcards et des données synchronisées via SQLite.
 - [ ] **Système de Badges** : Plus de 50 badges à collectionner selon les réalisations.
-- [ ] **Adaptabilité de l'IA** : L'assistant apprend des erreurs passées de l'enfant pour insister sur les points faibles.
+- [x] **Adaptabilité de l'IA** : L'assistant apprend des erreurs passées de l'enfant pour insister sur les points faibles.
 - [ ] **Design System Premium** : Finalisation du passage à Tailwind 4 et animations micro-interactions.
 
 ---

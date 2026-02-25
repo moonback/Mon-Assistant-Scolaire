@@ -36,6 +36,7 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
     const [childTimeLimit, setChildTimeLimit] = useState(30);
     const [childBedtime, setChildBedtime] = useState('20:00');
     const [childBlockedTopics, setChildBlockedTopics] = useState<string[]>([]);
+    const [childWeakPoints, setChildWeakPoints] = useState<string[]>([]);
     const [rewardGoals, setRewardGoals] = useState<any[]>([]);
     const [stats, setStats] = useState<Progress[]>([]);
     const [dailyStats, setDailyStats] = useState<any[]>([]);
@@ -108,6 +109,7 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                 bedtime: childBedtime,
                 reward_goals: rewardGoals,
                 blocked_topics: childBlockedTopics,
+                weak_points: childWeakPoints,
                 avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${childName}`
             };
 
@@ -161,6 +163,7 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
         setChildTimeLimit(30);
         setChildBedtime('20:00');
         setChildBlockedTopics([]);
+        setChildWeakPoints([]);
         setRewardGoals([]);
     };
 
@@ -171,6 +174,7 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
         setChildTimeLimit(child.daily_time_limit);
         setChildBedtime(child.bedtime || '20:00');
         setChildBlockedTopics(child.blocked_topics || []);
+        setChildWeakPoints(child.weak_points || []);
         setRewardGoals(child.reward_goals || []);
         setShowAddChild(true);
     };
@@ -610,7 +614,35 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                                     </div>
                                 </div>
 
-                                <button onClick={saveChild} disabled={loading || !childName} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-semibold text-xl shadow-sm  active:scale-95 transition-all">
+                                <div className="space-y-4 border-t border-slate-100 pt-8">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Points faibles de l'enfant (Identifiés par l'IA)</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {childWeakPoints.map(wp => (
+                                            <span key={wp} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold flex items-center gap-2 border border-red-100">
+                                                {wp}
+                                                <button type="button" onClick={() => setChildWeakPoints(prev => prev.filter(p => p !== wp))} className="hover:text-red-800 p-0.5 rounded-full hover:bg-red-100 transition-colors"><X className="w-3 h-3" /></button>
+                                            </span>
+                                        ))}
+                                        <input
+                                            type="text"
+                                            placeholder="Ajouter une notion (ex: Tables de 7)..."
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const val = e.currentTarget.value.trim();
+                                                    if (val && !childWeakPoints.includes(val)) {
+                                                        setChildWeakPoints(prev => [...prev, val]);
+                                                        e.currentTarget.value = '';
+                                                    }
+                                                }
+                                            }}
+                                            className="px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-400 font-semibold"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">L'IA adaptera sa pédagogie pour faire travailler ces notions en priorité.</p>
+                                </div>
+
+                                <button onClick={saveChild} disabled={loading || !childName} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-semibold text-xl shadow-sm  active:scale-95 transition-all mt-8">
                                     {loading ? 'Enregistrement...' : 'Sauvegarder le Profil'}
                                 </button>
                             </div>

@@ -33,6 +33,7 @@ export type Child = {
   bedtime?: string;
   reward_goals?: any[];
   blocked_topics: string[];
+  weak_points?: string[];
   created_at: string;
 };
 

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { askGemini } from '../services/gemini';
 import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, ChevronRight, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface Question {
   question: string;
@@ -16,6 +18,7 @@ interface QuizProps {
 }
 
 export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
+  const { selectedChild, refreshChildren } = useAuth();
   const [topic, setTopic] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
@@ -24,6 +27,8 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
   const [showResult, setShowResult] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+
+  const wrongTopicsRef = React.useRef<string[]>([]);
 
   const startQuiz = async (selectedTopic?: string) => {
     const finalTopic = selectedTopic || topic || 'Culture générale';
@@ -34,9 +39,10 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     setShowResult(false);
     setSelectedOption(null);
     setIsCorrect(null);
+    wrongTopicsRef.current = [];
 
     try {
-      const json = await askGemini(finalTopic, 'quiz', gradeLevel);
+      const json = await askGemini(finalTopic, 'quiz', gradeLevel, undefined, undefined, selectedChild?.weak_points);
       const data = JSON.parse(json);
       const quizQuestions = data.questions || data;
 
@@ -62,6 +68,11 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     if (correct) {
       setScore((s) => s + 1);
       onEarnPoints?.(10, 'quiz', topic || 'Général');
+    } else {
+      const currentTopic = topic || 'Culture générale';
+      if (!wrongTopicsRef.current.includes(currentTopic)) {
+        wrongTopicsRef.current.push(currentTopic);
+      }
     }
 
     setTimeout(() => {
@@ -71,6 +82,17 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
         setIsCorrect(null);
       } else {
         setShowResult(true);
+        if (selectedChild && wrongTopicsRef.current.length > 0) {
+          const currentPoints = selectedChild.weak_points || [];
+          const newPoints = wrongTopicsRef.current.filter(t => !currentPoints.includes(t));
+          if (newPoints.length > 0) {
+            const updatedPoints = [...currentPoints, ...newPoints];
+            supabase.from('children')
+              .update({ weak_points: updatedPoints })
+              .eq('id', selectedChild.id)
+              .then(() => refreshChildren());
+          }
+        }
       }
     }, 1800);
   };
