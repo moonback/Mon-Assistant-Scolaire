@@ -415,18 +415,24 @@ export default function DrawingBoard() {
 
   return (
     <div className="mx-auto h-[84vh] max-w-7xl pb-6">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 mb-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Atelier d'Art 🎨</h1>
+          <p className="text-slate-500 font-semibold text-sm">Libère ton imagination sur ton tableau magique !</p>
+        </div>
+      </header>
+
       <motion.section
         ref={containerRef}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white ${
-          isFullscreen ? 'rounded-none' : ''
-        }`}
+        className={`relative flex h-full flex-col overflow-hidden rounded-[2.5rem] border-none bg-white shadow-xl shadow-slate-200/50 ${isFullscreen ? 'rounded-none' : ''
+          }`}
       >
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-3 md:p-4">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-4 md:p-6 bg-slate-50/30">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900 md:text-base">Atelier</h2>
-            <p className="text-xs text-slate-500">Tableau blanc fluide et outils essentiels.</p>
+            <h2 className="text-base font-black text-slate-900 tracking-tight">Outils Magiques</h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Éditeur Fluide</p>
           </div>
           <div className="flex items-center gap-1.5">
             <button onClick={undo} disabled={historyStep <= 0} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
@@ -444,9 +450,8 @@ export default function DrawingBoard() {
                 <button
                   key={t.id}
                   onClick={() => setTool(t.id)}
-                  className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-xs ${
-                    tool === t.id ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'
-                  }`}
+                  className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-xs ${tool === t.id ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'
+                    }`}
                 >
                   <t.icon className="h-4 w-4" />
                   <span className="hidden lg:inline">{t.label}</span>
@@ -499,11 +504,10 @@ export default function DrawingBoard() {
           </aside>
 
           <div
-            className={`relative min-h-[360px] ${
-              showGrid
+            className={`relative min-h-[360px] ${showGrid
                 ? 'bg-[linear-gradient(to_right,rgba(148,163,184,0.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.2)_1px,transparent_1px)] bg-[size:24px_24px]'
                 : 'bg-white'
-            }`}
+              }`}
           >
             <canvas
               ref={canvasRef}
@@ -537,6 +541,6 @@ export default function DrawingBoard() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }

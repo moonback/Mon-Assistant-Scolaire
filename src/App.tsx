@@ -146,10 +146,12 @@ function AppContent() {
       case 'home':
         return (
           <div className="space-y-6 pb-10 max-w-8xl mx-auto">
-            <div className="text-center space-y-2 mb-6">
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
-              <p className="text-slate-500 font-semibold text-sm">Choisis ton aventure du jour, {selectedChild?.name} !</p>
-            </div>
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Ton Bureau Magique ✨</h1>
+                <p className="text-slate-500 font-semibold text-sm">Choisis ton aventure du jour, {selectedChild?.name} !</p>
+              </div>
+            </header>
 
             <SiblingCompetition />
             <ParentalMissions />
@@ -158,38 +160,42 @@ function AppContent() {
               {/* Mission du jour */}
               {!selectedChild?.blocked_topics?.includes('challenges') && (
                 <motion.button
-                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileHover={{ y: -4, scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab('challenges')}
-                  className="col-span-1 md:col-span-2 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-8 md:p-10 text-left shadow-xl shadow-indigo-200/60 flex flex-col md:flex-row items-center gap-6 border-4 border-white"
+                  className="col-span-1 md:col-span-2 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 p-8 md:p-10 text-left shadow-2xl shadow-indigo-200/50 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group"
                 >
-                  <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-white/20 transition-colors" />
+                  <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner border border-white/30 relative z-10">
                     <span className="text-4xl">🎯</span>
                   </div>
-                  <div className="flex-1 text-white text-center md:text-left">
-                    <h4 className="text-xl font-black mb-1">Mission du Jour</h4>
-                    <p className="text-white/80 font-semibold text-base leading-relaxed">
+                  <div className="flex-1 text-white relative z-10">
+                    <h3 className="text-xl font-black mb-1 tracking-tight">Mission du Jour</h3>
+                    <p className="text-white/80 font-bold text-base leading-relaxed max-w-md">
                       Gagne le maximum d'étoiles en relevant tes défis quotidiens !
                     </p>
                   </div>
-                  <div className="shrink-0 text-white/80 text-3xl">→</div>
+                  <div className="shrink-0 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white text-2xl relative z-10 group-hover:bg-white/20 transition-colors">
+                    →
+                  </div>
                 </motion.button>
               )}
 
               {/* Cerveau Magique */}
               {!selectedChild?.blocked_topics?.includes('assistant') && (
                 <motion.button
-                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileHover={{ y: -5 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('assistant')}
-                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-200 flex flex-col items-center text-center gap-4"
+                  className="premium-card p-7 flex flex-col items-center text-center gap-5 border-none shadow-sm"
                 >
-                  <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-2xl">🤖</span>
+                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-blue-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-3xl relative z-10">🤖</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-slate-800 mb-0.5">Cerveau Magique</h4>
-                    <p className="text-slate-500 font-semibold text-xs">Pose toutes tes questions !</p>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Cerveau Magique</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pose toutes tes questions !</p>
                   </div>
                 </motion.button>
               )}
@@ -197,17 +203,18 @@ function AppContent() {
               {/* Boutique */}
               {!selectedChild?.blocked_topics?.includes('market') && (
                 <motion.button
-                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileHover={{ y: -5 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('market')}
-                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-200 flex flex-col items-center text-center gap-4"
+                  className="premium-card p-7 flex flex-col items-center text-center gap-5 border-none shadow-sm"
                 >
-                  <div className="w-14 h-14 bg-yellow-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-2xl">🎁</span>
+                  <div className="w-16 h-16 bg-yellow-50 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-yellow-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-3xl relative z-10">🎁</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-slate-800 mb-0.5">La Boutique</h4>
-                    <p className="text-slate-500 font-semibold text-xs">Échange tes étoiles !</p>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">La Boutique</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Échange tes étoiles !</p>
                   </div>
                 </motion.button>
               )}
@@ -215,17 +222,18 @@ function AppContent() {
               {/* Cartes Mémoire */}
               {!selectedChild?.blocked_topics?.includes('flashcards') && (
                 <motion.button
-                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileHover={{ y: -5 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('flashcards')}
-                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-emerald-200 flex flex-col items-center text-center gap-4"
+                  className="premium-card p-7 flex flex-col items-center text-center gap-5 border-none shadow-sm"
                 >
-                  <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-2xl">📚</span>
+                  <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-emerald-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-3xl relative z-10">📚</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-slate-800 mb-0.5">Cartes Mémoire</h4>
-                    <p className="text-slate-500 font-semibold text-xs">Révise en t'amusant !</p>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Cartes Mémoire</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Révise en t'amusant !</p>
                   </div>
                 </motion.button>
               )}
@@ -233,17 +241,18 @@ function AppContent() {
               {/* Calcul Mental */}
               {!selectedChild?.blocked_topics?.includes('math') && (
                 <motion.button
-                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileHover={{ y: -5 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab('math')}
-                  className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-teal-200 flex flex-col items-center text-center gap-4"
+                  className="premium-card p-7 flex flex-col items-center text-center gap-5 border-none shadow-sm"
                 >
-                  <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-2xl">🔢</span>
+                  <div className="w-16 h-16 bg-teal-50 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-teal-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-3xl relative z-10">🔢</span>
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-slate-800 mb-0.5">Calcul Mental</h4>
-                    <p className="text-slate-500 font-semibold text-xs">Deviens un champion !</p>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Calcul Mental</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deviens un champion !</p>
                   </div>
                 </motion.button>
               )}
@@ -259,18 +268,18 @@ function AppContent() {
                   .map((tab, idx) => (
                     <motion.button
                       key={tab.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05, duration: 0.2 }}
-                      whileHover={{ scale: 1.06, y: -3 }}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                      whileHover={{ scale: 1.05, y: -4 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setActiveTab(tab.id)}
-                      className="rounded-2xl bg-white p-5 text-center shadow-sm hover:shadow-lg transition-all border-2 border-slate-100 hover:border-indigo-100 flex flex-col items-center gap-3"
+                      className="premium-card p-5 flex flex-col items-center gap-4 border-none shadow-sm"
                     >
-                      <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
-                        <tab.icon className="w-7 h-7" />
+                      <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 shadow-inner group-hover:bg-indigo-100 transition-colors">
+                        <tab.icon className="w-6 h-6" />
                       </div>
-                      <span className="text-base font-black text-slate-700">{tab.label}</span>
+                      <span className="text-sm font-black text-slate-700 tracking-tight">{tab.label}</span>
                     </motion.button>
                   ))}
               </div>

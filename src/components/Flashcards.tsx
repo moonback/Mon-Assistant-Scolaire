@@ -189,79 +189,79 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
     // ───────────────────────────────────────────────
     if (phase === 'select') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 p-6 md:p-10">
-                <div className="max-w-7xl mx-auto">
-                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-200">
-                                <Layers className="h-6 w-6 text-white" />
+            <div className="max-w-7xl mx-auto space-y-8">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Mes Flashcards 📚</h1>
+                        <p className="text-slate-500 font-semibold text-sm">Écris ta réponse avant de voir le corrigé.</p>
+                    </div>
+                </header>
+
+                {dueCount > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                        className="mb-8 p-6 rounded-[2.5rem] bg-gradient-to-r from-amber-500 to-orange-500 text-white cursor-pointer shadow-xl shadow-orange-100 flex items-center justify-between group overflow-hidden relative"
+                        onClick={startReviewSession}
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+                            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner border border-white/30">
+                                <Zap className="h-7 w-7 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-black text-slate-900 tracking-tight">Mes Flashcards</h1>
-                                <p className="text-xs text-slate-500 font-semibold">Écris ta réponse avant de voir le corrigé 🧠</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-0.5">⚡ Révisions prioritaires</p>
+                                <h3 className="font-black text-xl tracking-tight">{dueCount} notion{dueCount > 1 ? 's' : ''} à consolider</h3>
+                                <p className="text-xs font-bold opacity-90">Ne les laisse pas s'échapper de ton cerveau !</p>
                             </div>
                         </div>
+                        <ArrowRight className="h-8 w-8 opacity-40 shrink-0 group-hover:translate-x-2 transition-transform" />
                     </motion.div>
+                )}
 
-                    {dueCount > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                            className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white cursor-pointer shadow-lg shadow-orange-200"
-                            onClick={startReviewSession}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">⚡ Révisions urgentes</p>
-                                    <h3 className="font-black text-lg">{dueCount} carte{dueCount > 1 ? 's' : ''} à revoir maintenant</h3>
-                                    <p className="text-xs opacity-90 mt-1">Ces notions risquent de disparaître de ta mémoire !</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* Collection Button */}
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }}
+                        onClick={async () => {
+                            setPhase('loading');
+                            const coll = await getCollection(childId);
+                            setCollectionCards(coll);
+                            setPhase('collection');
+                        }}
+                        className="premium-card p-7 text-left flex flex-col items-center justify-center gap-5 border-none shadow-sm group bg-slate-900 overflow-hidden relative"
+                    >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 blur-2xl" />
+                        <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl shadow-inner relative z-10">
+                            📚
+                        </div>
+                        <div className="text-center relative z-10">
+                            <p className="font-black text-white text-base tracking-tight mb-0.5">Ma Collection</p>
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Voir tes cartes</p>
+                        </div>
+                    </motion.button>
+
+                    {subjects.map((subject, i) => {
+                        const th = getTheme(subject);
+                        return (
+                            <motion.button
+                                key={subject}
+                                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.07 }}
+                                whileHover={{ y: -5 }} whileTap={{ scale: 0.97 }}
+                                onClick={() => startSession(subject)}
+                                className="premium-card p-7 text-left flex flex-col items-center justify-center gap-5 border-none shadow-sm group"
+                            >
+                                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${th.color} flex items-center justify-center text-3xl shadow-lg shadow-slate-100 group-hover:scale-110 transition-transform duration-500`}>
+                                    {th.icon}
                                 </div>
-                                <ArrowRight className="h-8 w-8 opacity-80 shrink-0" />
-                            </div>
-                        </motion.div>
-                    )}
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {/* Collection Button */}
-                        <motion.button
-                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                            whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.97 }}
-                            onClick={async () => {
-                                setPhase('loading');
-                                const coll = await getCollection(childId);
-                                setCollectionCards(coll);
-                                setPhase('collection');
-                            }}
-                            className="p-6 rounded-3xl bg-slate-900 border-2 border-slate-800 hover:shadow-xl transition-all text-left flex flex-col justify-between"
-                        >
-                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl mb-4 text-white">
-                                📚
-                            </div>
-                            <div>
-                                <p className="font-black text-white">Ma Collection</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Voir tes cartes apprises</p>
-                            </div>
-                        </motion.button>
-
-                        {subjects.map((subject, i) => {
-                            const th = getTheme(subject);
-                            return (
-                                <motion.button
-                                    key={subject}
-                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.07 }}
-                                    whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.97 }}
-                                    onClick={() => startSession(subject)}
-                                    className="p-6 rounded-3xl bg-white border-2 border-slate-100 hover:border-transparent hover:shadow-xl transition-all text-left group"
-                                >
-                                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${th.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>
-                                        {th.icon}
-                                    </div>
-                                    <p className="font-black text-slate-800">{subject}</p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">5 cartes générées par IA</p>
-                                </motion.button>
-                            );
-                        })}
-                    </div>
+                                <div className="text-center">
+                                    <p className="font-black text-slate-900 text-base tracking-tight mb-0.5">{subject}</p>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">5 nouvelles cartes</p>
+                                </div>
+                            </motion.button>
+                        );
+                    })}
                 </div>
             </div>
         );
@@ -293,40 +293,47 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 p-6 overflow-y-auto">
                 <div className="max-w-2xl mx-auto">
-                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        className="bg-white rounded-[3rem] shadow-2xl shadow-teal-100 p-10 text-center mb-6"
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                        className="premium-card p-10 text-center mb-8 border-none shadow-sm relative overflow-hidden"
                     >
-                        <div className="text-6xl mb-4">{pct >= 80 ? '🏆' : pct >= 50 ? '⭐' : '💪'}</div>
-                        <h2 className="text-2xl font-black text-slate-900 mb-1">Session terminée !</h2>
-                        <p className="text-slate-500 font-semibold text-sm mb-6">{selectedSubject}</p>
-                        <div className="flex gap-4 mb-6">
-                            <div className="flex-1 p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
-                                <p className="text-3xl font-black text-emerald-600">{successCount}</p>
-                                <p className="text-[10px] font-black uppercase text-emerald-400">Réussies</p>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
+
+                        <div className="text-6xl mb-6 relative z-10 drop-shadow-md">{pct >= 80 ? '🏆' : pct >= 50 ? '⭐' : '💪'}</div>
+                        <h2 className="text-2xl font-black text-slate-900 mb-1 tracking-tight relative z-10">Session terminée !</h2>
+                        <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-8 relative z-10">{selectedSubject}</p>
+
+                        <div className="grid grid-cols-3 gap-4 mb-8 relative z-10">
+                            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100/50 shadow-inner">
+                                <p className="text-2xl font-black text-emerald-600 tracking-tight">{successCount}</p>
+                                <p className="text-[10px] font-black uppercase text-emerald-400 leading-none mt-1">Réussies</p>
                             </div>
-                            <div className="flex-1 p-4 rounded-2xl bg-rose-50 border border-rose-100">
-                                <p className="text-3xl font-black text-rose-600">{results.length - successCount}</p>
-                                <p className="text-[10px] font-black uppercase text-rose-400">À revoir</p>
+                            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100/50 shadow-inner">
+                                <p className="text-2xl font-black text-rose-600 tracking-tight">{results.length - successCount}</p>
+                                <p className="text-[10px] font-black uppercase text-rose-400 leading-none mt-1">À revoir</p>
                             </div>
-                            <div className="flex-1 p-4 rounded-2xl bg-amber-50 border border-amber-100">
-                                <p className="text-3xl font-black text-amber-600">+{sessionPoints}</p>
-                                <p className="text-[10px] font-black uppercase text-amber-400">Points</p>
+                            <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100/50 shadow-inner">
+                                <div className="flex items-center justify-center gap-1">
+                                    <p className="text-2xl font-black text-indigo-600 tracking-tight">+{sessionPoints}</p>
+                                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase text-indigo-400 leading-none mt-1">Points</p>
                             </div>
                         </div>
-                        <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-6">
+
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-8 shadow-inner relative z-10">
                             <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                                 transition={{ duration: 1, delay: 0.3 }}
-                                className="h-full bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full"
+                                className="h-full bg-indigo-500 rounded-full"
                             />
                         </div>
-                        <p className="text-sm font-bold text-slate-500 mb-8">{pct}% de réussite</p>
-                        <div className="flex gap-3">
+
+                        <div className="flex gap-4 relative z-10">
                             <button onClick={() => startSession(selectedSubject)}
-                                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-teal-200 hover:scale-[1.02] transition-transform">
+                                className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95">
                                 <RefreshCcw className="h-4 w-4 inline mr-2" /> Rejouer
                             </button>
                             <button onClick={() => setPhase('select')}
-                                className="flex-1 py-4 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition">
+                                className="flex-1 py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">
                                 Choisir
                             </button>
                         </div>
@@ -365,20 +372,20 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
         return (
             <div className="min-h-screen bg-slate-50 p-6 md:p-10">
                 <div className="max-w-4xl mx-auto">
-                    <header className="flex items-center justify-between mb-8">
+                    <header className="flex items-center justify-between mb-10">
                         <div>
-                            <button onClick={() => setPhase('select')} className="text-slate-500 text-sm font-bold hover:text-slate-800 mb-2 block">
+                            <button onClick={() => setPhase('select')} className="text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-indigo-600 mb-2 block transition-colors">
                                 ← Retour
                             </button>
-                            <h1 className="text-2xl font-black text-slate-900">Ma Collection 📚</h1>
-                            <p className="text-xs text-slate-500 font-semibold">Toutes les notions que tu as déjà travaillées.</p>
+                            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Ma Collection ✨</h1>
+                            <p className="text-slate-500 font-semibold text-sm">Tes trésors de connaissances appris avec Magic.</p>
                         </div>
-                        <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
-                                <Star className="h-6 w-6 fill-amber-500" />
+                        <div className="premium-card px-6 py-4 border-none shadow-sm flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 shadow-inner">
+                                <Star className="h-6 w-6 fill-amber-400" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Total Réussites</p>
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1.5">Mérite Total</p>
                                 <p className="text-xl font-black text-slate-900 leading-none">
                                     {collectionCards.reduce((acc, card) => acc + (card.success_count || 0), 0)} ⭐
                                 </p>
@@ -403,8 +410,9 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col justify-between"
+                                        className="premium-card p-8 border-none shadow-sm flex flex-col justify-between group overflow-hidden relative"
                                     >
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-2xl -mr-12 -mt-12 opacity-50 group-hover:bg-indigo-100 transition-colors" />
                                         <div>
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${th.color} text-white text-[10px] font-black uppercase tracking-widest`}>
@@ -416,20 +424,21 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                                     ))}
                                                 </div>
                                             </div>
-                                            <h3 className="text-base font-black text-slate-800 mb-2 leading-tight">{card.front || card.notion}</h3>
-                                            <p className="text-xs text-slate-600 font-semibold line-clamp-2 italic mb-1">
+                                            <h3 className="text-base font-black text-slate-900 mb-2 leading-tight tracking-tight relative z-10">{card.front || card.notion}</h3>
+                                            <p className="text-xs text-slate-500 font-semibold line-clamp-2 italic mb-1 relative z-10">
                                                 {card.back || 'Pas encore de corrigé détaillé.'}
                                             </p>
-                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2 space-y-2">
+                                            <div className="bg-slate-50/50 p-4 rounded-2xl border border-white mt-4 space-y-3 relative z-10 shadow-inner">
                                                 <div>
-                                                    <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Ta dernière réponse :</p>
+                                                    <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Dernier essai</p>
                                                     <p className="text-xs font-bold text-indigo-600 italic">"{card.last_answer || '(vide)'}"</p>
                                                 </div>
-                                                <div className="flex items-center justify-between pt-2 border-t border-slate-200/50">
-                                                    <p className="text-[10px] font-black uppercase text-slate-400">Étoiles gagnées :</p>
-                                                    <p className="text-xs font-black text-amber-600 flex items-center gap-1">
-                                                        {card.success_count || 0} <Star className="h-3 w-3 fill-amber-500" />
-                                                    </p>
+                                                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Émerveillement</p>
+                                                    <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full">
+                                                        <span className="text-xs font-black text-amber-600">{card.success_count || 0}</span>
+                                                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -472,16 +481,16 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
             <div className="max-w-2xl mx-auto">
 
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <button onClick={() => setPhase('select')} className="text-slate-500 text-sm font-bold hover:text-slate-800 transition">
+                <div className="flex items-center justify-between mb-8">
+                    <button onClick={() => setPhase('select')} className="text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-indigo-600 transition-colors">
                         ← Retour
                     </button>
                     <div className="text-center">
                         <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{selectedSubject}</p>
-                        <p className="font-black text-slate-700">{currentIndex + 1} / {cards.length}</p>
+                        <p className="font-black text-slate-900 tracking-tight">{currentIndex + 1} / {cards.length}</p>
                     </div>
-                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                    <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
                     </div>
                 </div>
 
@@ -497,53 +506,56 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                         {cardStep === 'question' && (
                             <div className="space-y-4">
                                 {/* Question card */}
-                                <div className={`rounded-[2.5rem] bg-gradient-to-br ${theme.color} text-white shadow-2xl p-8`}>
-                                    <div className="flex items-center gap-2 mb-5 opacity-70">
+                                <div className={`relative rounded-[2.5rem] bg-gradient-to-br ${theme.color} text-white shadow-2xl p-10 overflow-hidden`}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+                                    <div className="flex items-center gap-2 mb-6 opacity-70 relative z-10">
                                         <Brain className="h-4 w-4" />
                                         <p className="text-[10px] font-black uppercase tracking-widest">Question n°{currentIndex + 1}</p>
                                     </div>
-                                    <p className="text-lg font-black leading-relaxed">{currentCard?.front}</p>
+                                    <p className="text-xl font-black leading-tight tracking-tight relative z-10">{currentCard?.front}</p>
                                 </div>
 
                                 {/* Answer input area */}
-                                <div className="bg-white rounded-3xl border-2 border-slate-100 p-5 shadow-sm">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <PenLine className="h-4 w-4 text-teal-500" />
-                                        <p className="text-xs font-black uppercase text-slate-500 tracking-widest">Écris ta réponse</p>
+                                <div className="premium-card p-8 border-none shadow-sm space-y-6">
+                                    <div className="flex items-center gap-2">
+                                        <PenLine className="h-4 w-4 text-indigo-500" />
+                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Ton intelligence</p>
                                     </div>
                                     <textarea
                                         ref={textareaRef}
                                         value={childAnswer}
                                         onChange={e => setChildAnswer(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey && childAnswer.trim()) handleReveal(); }}
-                                        placeholder="Écris ce que tu penses être la bonne réponse... (Ctrl+Entrée)"
-                                        className="w-full h-28 resize-none outline-none text-slate-800 font-semibold placeholder:text-slate-300 text-xs leading-relaxed"
+                                        placeholder="Écris ta réponse ici... (Ctrl + Entrée)"
+                                        className="w-full h-32 resize-none outline-none text-slate-800 font-bold placeholder:text-slate-300 text-sm leading-relaxed bg-slate-50/50 rounded-2xl p-6 border-2 border-transparent focus:border-indigo-100 focus:bg-white transition-all shadow-inner"
                                     />
-                                    <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
+                                    <div className="flex items-center justify-between pt-2">
                                         {/* Hint button */}
-                                        {!showHint ? (
-                                            <button
-                                                onClick={() => setShowHint(true)}
-                                                className="flex items-center gap-1.5 text-amber-500 text-xs font-bold hover:text-amber-600 transition"
-                                            >
-                                                <Lightbulb className="h-3.5 w-3.5" /> Voir un indice
-                                            </button>
-                                        ) : (
-                                            <p className="text-xs text-amber-600 font-bold italic">💡 {currentCard?.hint}</p>
-                                        )}
+                                        <div className="min-h-[24px]">
+                                            {!showHint ? (
+                                                <button
+                                                    onClick={() => setShowHint(true)}
+                                                    className="flex items-center gap-2 text-amber-500 text-[10px] font-black uppercase tracking-widest hover:text-amber-600 transition"
+                                                >
+                                                    <Lightbulb className="h-4 w-4" /> Un indice ?
+                                                </button>
+                                            ) : (
+                                                <p className="text-xs text-amber-600 font-bold italic">💡 {currentCard?.hint}</p>
+                                            )}
+                                        </div>
 
                                         {/* Reveal button */}
                                         <motion.button
-                                            whileHover={{ scale: 1.04 }}
+                                            whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.97 }}
                                             onClick={handleReveal}
                                             disabled={!childAnswer.trim()}
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${childAnswer.trim()
-                                                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-200'
-                                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${childAnswer.trim()
+                                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                                                : 'bg-slate-50 text-slate-300 cursor-not-allowed border border-slate-100'
                                                 }`}
                                         >
-                                            <Eye className="h-4 w-4" /> Voir la réponse
+                                            <Eye className="h-4 w-4" /> Voir la magie
                                         </motion.button>
                                     </div>
                                 </div>
@@ -593,33 +605,29 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                     <AnimatePresence>
                                         {(isValidating || aiFeedback) && (
                                             <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className={`p-5 rounded-[2.5rem] border-2 flex items-center gap-4 ${isValidating
-                                                    ? 'bg-slate-50 border-slate-100 animate-pulse'
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className={`p-6 rounded-[2.5rem] border-none shadow-sm flex items-center gap-5 relative overflow-hidden group transition-all ${isValidating
+                                                    ? 'bg-slate-50/50'
                                                     : aiFeedback?.isCorrect
-                                                        ? 'bg-emerald-50 border-emerald-100/50'
-                                                        : 'bg-amber-50 border-amber-100/50'}`}
+                                                        ? 'bg-emerald-50/50'
+                                                        : 'bg-amber-50/50'}`}
                                             >
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${isValidating
-                                                    ? 'bg-slate-200'
+                                                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 opacity-30 ${isValidating ? 'bg-slate-200' : aiFeedback?.isCorrect ? 'bg-emerald-200' : 'bg-amber-200'}`} />
+
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner relative z-10 ${isValidating
+                                                    ? 'bg-white'
                                                     : aiFeedback?.isCorrect
                                                         ? 'bg-emerald-500'
                                                         : 'bg-amber-500'}`}>
-                                                    {isValidating ? <RefreshCcw className="h-6 w-6 text-slate-400 animate-spin" /> :
-                                                        aiFeedback?.isCorrect ? <CheckCircle2 className="h-6 w-6 text-white" /> : <Brain className="h-6 w-6 text-white" />}
+                                                    {isValidating ? <RefreshCcw className="h-7 w-7 text-indigo-400 animate-spin" /> :
+                                                        aiFeedback?.isCorrect ? <CheckCircle2 className="h-7 w-7 text-white" /> : <Brain className="h-7 w-7 text-white" />}
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">L'avis de Magic ✨</p>
+                                                <div className="flex-1 relative z-10">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">L'avis de Magic ✨</p>
                                                     <div className="space-y-2">
-                                                        {history.slice(0, -1).map((h, i) => (
-                                                            <div key={i} className="text-[10px] text-slate-400 font-medium border-l-2 border-slate-100 pl-2 py-1 italic">
-                                                                <p>Toi: {h.child}</p>
-                                                                <p>Magic: {h.ai}</p>
-                                                            </div>
-                                                        ))}
-                                                        <p className={`text-sm font-black ${isValidating ? 'text-slate-400' : 'text-slate-800'}`}>
-                                                            {isValidating ? 'Analyse de ta réponse...' : aiFeedback?.feedback}
+                                                        <p className={`text-sm font-black tracking-tight leading-tight ${isValidating ? 'text-slate-400' : 'text-slate-900'}`}>
+                                                            {isValidating ? 'Magic analyse ta réponse...' : aiFeedback?.feedback}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -654,16 +662,16 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                                 </div>
                                             )}
 
-                                            <div className="space-y-3">
+                                            <div className="space-y-4">
                                                 <button
                                                     onClick={() => handleRate(aiFeedback.isCorrect)}
-                                                    className={`w-full py-4 rounded-[2.5rem] font-black text-sm uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${aiFeedback.isCorrect
-                                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-200'
-                                                        : 'bg-slate-900 text-white shadow-slate-200'
+                                                    className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${aiFeedback.isCorrect
+                                                        ? 'bg-indigo-600 text-white shadow-indigo-100'
+                                                        : 'bg-slate-900 text-white shadow-slate-100'
                                                         }`}
                                                 >
-                                                    {aiFeedback.isCorrect ? 'Super, Suivant !' : 'D\'accord, Suivant'}
-                                                    <ArrowRight className="h-5 w-5" />
+                                                    {aiFeedback.isCorrect ? 'C\'est gagné ! Suivant' : 'J\'ai compris ! Suivant'}
+                                                    <ArrowRight className="h-4 w-4" />
                                                 </button>
 
                                                 {/* Small override for the child */}

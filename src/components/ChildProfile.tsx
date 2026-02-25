@@ -51,8 +51,8 @@ export default function ChildProfile() {
         className="relative group pt-4"
       >
         <div className="absolute -left-4 top-0 w-1 h-12 bg-indigo-600 rounded-full group-hover:h-16 transition-all duration-300" />
-        <h1 className="flex items-center gap-3 text-3xl font-black text-slate-800 tracking-tight">
-          <User className="h-8 w-8 text-indigo-600" /> Mon Espace Magique
+        <h1 className="flex items-center gap-3 text-2xl font-black text-slate-900 tracking-tight">
+          <User className="h-7 w-7 text-indigo-600" /> Mon Espace Magique
         </h1>
         <p className="text-slate-500 font-bold ml-11 uppercase text-xs tracking-[0.2em] mt-1">
           Personnalise ton aventure, {selectedChild?.name} !
@@ -65,9 +65,9 @@ export default function ChildProfile() {
           {/* Main Avatar Card */}
           <motion.div
             whileHover={{ y: -5 }}
-            className="rounded-[3rem] bg-white p-8 shadow-xl shadow-slate-200/50 border border-slate-100 text-center relative overflow-hidden"
+            className="premium-card p-10 border-none shadow-sm text-center relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-110 transition-transform" />
 
             <motion.div
               layoutId="profile-avatar"
@@ -95,7 +95,7 @@ export default function ChildProfile() {
               </motion.div>
             </motion.div>
 
-            <h2 className="text-3xl font-black text-slate-800 mb-2">{selectedChild?.name}</h2>
+            <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{selectedChild?.name}</h2>
             <div className="flex flex-col items-center gap-3">
               <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-200">
                 <GraduationCap className="h-4 w-4" /> Niveau {currentLevel}
@@ -107,22 +107,27 @@ export default function ChildProfile() {
           </motion.div>
 
           {/* Experience Progress */}
-          <div className="rounded-[2.5rem] bg-white p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-wider">
-                <Zap className="h-4 w-4 text-yellow-500" /> Expérience
-              </h3>
-              <span className="text-xs font-black text-indigo-600">{progressToNextLevel}/100</span>
-            </div>
-            <div className="h-4 overflow-hidden rounded-full bg-slate-100 p-1 border border-slate-50">
+          <div className="premium-card p-8 border-none shadow-sm h-full">
+            <header className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 uppercase tracking-widest">
+                  <Zap className="h-4 w-4 text-amber-500 fill-amber-500" /> Expérience
+                </h3>
+                <span className="text-sm font-black text-indigo-600">{progressToNextLevel}%</span>
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none outline-none">Vers le niveau {currentLevel + 1}</p>
+            </header>
+
+            <div className="h-4 overflow-hidden rounded-full bg-slate-50 p-1 border border-white shadow-inner">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progressToNextLevel}%` }}
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-sm"
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-lg shadow-indigo-100"
               />
             </div>
-            <p className="mt-3 text-[10px] text-slate-400 font-bold uppercase text-center tracking-tight">
-              Encore {100 - progressToNextLevel} points pour le prochain niveau !
+            <p className="mt-4 text-[10px] text-slate-400 font-black uppercase text-center tracking-widest flex items-center justify-center gap-2">
+              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+              Encore {100 - progressToNextLevel} étoiles !
             </p>
           </div>
         </div>
@@ -130,13 +135,14 @@ export default function ChildProfile() {
         {/* Right Column: Avatar Selection & Achievements */}
         <div className="lg:col-span-8 space-y-8">
           {/* Avatar Shop/Selector */}
-          <section className="rounded-[3rem] bg-white p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
-            <div className="flex items-center justify-between mb-8">
+          <section className="premium-card p-10 border-none shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
+            <div className="flex items-center justify-between mb-8 relative z-10">
               <div>
-                <h3 className="flex items-center gap-3 text-xl font-black text-slate-800">
+                <h3 className="flex items-center gap-3 text-xl font-black text-slate-900 tracking-tight">
                   <Camera className="h-6 w-6 text-indigo-600" /> Atelier des Avatars
                 </h3>
-                <p className="text-xs font-bold text-slate-400 uppercase mt-1 tracking-wider">Choisis ton nouveau look magique</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none outline-none mt-1">Personnalisation Magique</p>
               </div>
               <AnimatePresence>
                 {success && (
@@ -152,7 +158,7 @@ export default function ChildProfile() {
               </AnimatePresence>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
               {avatars.map((av, idx) => (
                 <motion.button
                   key={av.seed}
@@ -161,24 +167,27 @@ export default function ChildProfile() {
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => updateAvatar(av.seed)}
                   disabled={loading}
-                  whileHover={{ y: -5, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`relative group rounded-[2rem] border-2 p-4 text-center transition-all ${selectedChild?.avatar_url?.includes(av.seed)
-                    ? 'bg-indigo-50 border-indigo-200 shadow-lg shadow-indigo-100'
-                    : 'bg-slate-50 border-slate-50 hover:border-indigo-200 hover:bg-white'
+                  whileHover={{ y: -8, scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`relative group rounded-[2.5rem] border-2 p-6 text-center transition-all duration-500 shadow-sm ${selectedChild?.avatar_url?.includes(av.seed)
+                    ? 'bg-indigo-600 border-indigo-400 shadow-xl shadow-indigo-200'
+                    : 'bg-slate-50 border-white hover:border-indigo-100 hover:bg-white hover:shadow-lg hover:shadow-slate-100'
                     }`}
                 >
-                  <div className={`mx-auto mb-3 h-16 w-16 overflow-hidden rounded-2xl border-2 transition-transform group-hover:rotate-6 ${selectedChild?.avatar_url?.includes(av.seed) ? 'border-white shadow-md' : 'border-white/50'
+                  <div className={`mx-auto mb-4 h-20 w-20 overflow-hidden rounded-[1.5rem] border-4 transition-all duration-500 group-hover:rotate-6 group-hover:scale-110 ${selectedChild?.avatar_url?.includes(av.seed) ? 'border-indigo-400 shadow-lg' : 'border-white shadow-inner'
                     }`}>
                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${av.seed}`} alt={av.name} className="h-full w-full object-cover" />
                   </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${selectedChild?.avatar_url?.includes(av.seed) ? 'text-indigo-600' : 'text-slate-500'
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${selectedChild?.avatar_url?.includes(av.seed) ? 'text-white' : 'text-slate-500'
                     }`}>{av.name}</span>
 
                   {selectedChild?.avatar_url?.includes(av.seed) && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white">
-                      <Zap className="h-3 w-3 fill-current" />
-                    </div>
+                    <motion.div
+                      layoutId="selected-avatar-check"
+                      className="absolute -top-3 -right-3 w-8 h-8 bg-white text-indigo-600 rounded-xl flex items-center justify-center shadow-lg border-2 border-indigo-100"
+                    >
+                      <Sparkles className="h-4 w-4 fill-current" />
+                    </motion.div>
                   )}
                 </motion.button>
               ))}
