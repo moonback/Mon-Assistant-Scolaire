@@ -119,7 +119,14 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
   const operatorLabel = operator === 'x' ? '×' : operator;
 
   return (
-    <div className="mx-auto max-w-xl space-y-5 pb-8">
+    <div className="mx-auto max-w-7xl space-y-8 pb-8">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Calcul Mental 🔢</h1>
+          <p className="text-slate-500 font-semibold text-sm">Deviens un champion du calcul !</p>
+        </div>
+      </header>
+
       {/* Score bar */}
       <div className="premium-card p-5 border-none shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-2">

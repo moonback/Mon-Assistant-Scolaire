@@ -170,7 +170,7 @@ export default function StarMarket({ childId }: StarMarketProps) {
                 {availableGoals.length === 0 && (
                     <div className="bg-white p-12 rounded-[3rem] border-4 border-dashed border-slate-200 text-center flex flex-col items-center">
                         <Gift className="w-16 h-16 text-slate-300 mb-4" />
-                        <h3 className="text-2xl font-black text-slate-700 mb-2">Boutique vide !</h3>
+                        <h2 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Boutique vide !</h2>
                         <p className="text-slate-500 font-medium">Demande à tes parents d'ajouter de nouvelles récompenses. ✨</p>
                     </div>
                 )}
@@ -178,21 +178,35 @@ export default function StarMarket({ childId }: StarMarketProps) {
                 {/* Claimed History */}
                 {claimedGoals.length > 0 && (
                     <div className="pt-10 border-t border-slate-100">
-                        <h4 className="flex items-center gap-3 text-base font-black text-slate-800 tracking-tight mb-6 px-4">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                            Mes Trésors Obtenus
-                        </h4>
+                        <header className="mb-6 px-4">
+                            <h2 className="flex items-center gap-3 text-xl font-black text-slate-900 tracking-tight">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                Mes Trésors Obtenus
+                            </h2>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">L'étagère de tes victoires</p>
+                        </header>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
                             {claimedGoals.map((goal, idx) => (
-                                <div key={goal.id} className="bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 flex flex-col items-center text-center group hover:bg-white hover:border-emerald-100 hover:shadow-xl hover:shadow-emerald-50 transition-all">
-                                    <span className="text-3xl mb-3 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all group-hover:scale-110 duration-300">{goal.icon || '🎁'}</span>
-                                    <p className="font-bold text-slate-600 text-xs leading-tight flex-1">{goal.label}</p>
+                                <motion.div
+                                    key={goal.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    className="bg-slate-50 border-2 border-white rounded-[2rem] p-6 flex flex-col items-center text-center group hover:bg-white hover:border-emerald-100 hover:shadow-xl hover:shadow-emerald-50/30 transition-all duration-500 shadow-inner"
+                                >
+                                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 grayscale group-hover:grayscale-0 opacity-70 group-hover:opacity-100">
+                                        {goal.icon || '🎁'}
+                                    </div>
+                                    <h3 className="font-black text-slate-900 text-[11px] uppercase tracking-tight leading-tight flex-1 mb-3">{goal.label}</h3>
                                     {goal.claimed_at && (
-                                        <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-4">
-                                            {new Date(goal.claimed_at).toLocaleDateString()}
-                                        </p>
+                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full">
+                                            <Sparkles className="w-2.5 h-2.5 text-emerald-500" />
+                                            <p className="text-[9px] uppercase font-black tracking-widest text-emerald-600">
+                                                {new Date(goal.claimed_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
                                     )}
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
                     </div>

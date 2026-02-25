@@ -147,7 +147,14 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
   const currentProgress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 pb-8">
+    <div className="mx-auto max-w-7xl space-y-8 pb-8">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Générateur de Quiz ✨</h1>
+          <p className="text-slate-500 font-semibold text-sm">Choisis ton sujet et teste tes connaissances !</p>
+        </div>
+      </header>
+
       <AnimatePresence mode="wait">
         {!questions.length && !loading ? (
           <motion.section
@@ -157,13 +164,13 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
             exit={{ opacity: 0, y: -8 }}
             className="premium-card p-8 border-none shadow-sm"
           >
-            <div className="mb-6 flex items-start gap-4">
+            <div className="mb-8 flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shrink-0 shadow-inner">
                 <Brain className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-base font-black text-slate-900 tracking-tight">Générateur de Quiz ✨</h2>
-                <p className="text-xs font-semibold text-slate-500">Choisis ton sujet et teste tes connaissances !</p>
+                <h3 className="text-base font-black text-slate-900 tracking-tight leading-none mb-1.5">Nouveau Challenge</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Intelligence Artificielle</p>
               </div>
             </div>
 
@@ -215,7 +222,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-indigo-600">
               <Trophy className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900">Quiz terminé</h3>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Quiz terminé</h2>
             <p className="mt-1 text-sm text-slate-500">Score: {score} / {questions.length}</p>
 
             <div className="mt-8 grid grid-cols-2 gap-4">
@@ -258,7 +265,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
               <div className="h-full rounded-full bg-indigo-600 transition-all duration-200" style={{ width: `${currentProgress}%` }} />
             </div>
 
-            <h3 className="mb-4 text-base font-black text-slate-800 leading-relaxed">{questions[currentQuestion].question}</h3>
+            <h3 className="mb-4 text-base font-black text-slate-900 leading-relaxed tracking-tight">{questions[currentQuestion].question}</h3>
 
             {questions[currentQuestion].type === 'open' ? (
               <div className="space-y-4">

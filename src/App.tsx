@@ -146,10 +146,12 @@ function AppContent() {
       case 'home':
         return (
           <div className="space-y-6 pb-10 max-w-8xl mx-auto">
-            <div className="text-center md:text-left space-y-2 mb-8">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Ton Bureau Magique ✨</h3>
-              <p className="text-slate-500 font-semibold text-sm">Choisis ton aventure du jour, {selectedChild?.name} !</p>
-            </div>
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Ton Bureau Magique ✨</h1>
+                <p className="text-slate-500 font-semibold text-sm">Choisis ton aventure du jour, {selectedChild?.name} !</p>
+              </div>
+            </header>
 
             <SiblingCompetition />
             <ParentalMissions />
@@ -168,7 +170,7 @@ function AppContent() {
                     <span className="text-4xl">🎯</span>
                   </div>
                   <div className="flex-1 text-white relative z-10">
-                    <h4 className="text-xl font-black mb-1 tracking-tight">Mission du Jour</h4>
+                    <h3 className="text-xl font-black mb-1 tracking-tight">Mission du Jour</h3>
                     <p className="text-white/80 font-bold text-base leading-relaxed max-w-md">
                       Gagne le maximum d'étoiles en relevant tes défis quotidiens !
                     </p>
@@ -192,7 +194,7 @@ function AppContent() {
                     <span className="text-3xl relative z-10">🤖</span>
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Cerveau Magique</h4>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Cerveau Magique</h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pose toutes tes questions !</p>
                   </div>
                 </motion.button>
@@ -211,7 +213,7 @@ function AppContent() {
                     <span className="text-3xl relative z-10">🎁</span>
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">La Boutique</h4>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">La Boutique</h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Échange tes étoiles !</p>
                   </div>
                 </motion.button>
@@ -230,7 +232,7 @@ function AppContent() {
                     <span className="text-3xl relative z-10">📚</span>
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Cartes Mémoire</h4>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Cartes Mémoire</h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Révise en t'amusant !</p>
                   </div>
                 </motion.button>
@@ -249,7 +251,7 @@ function AppContent() {
                     <span className="text-3xl relative z-10">🔢</span>
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Calcul Mental</h4>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Calcul Mental</h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deviens un champion !</p>
                   </div>
                 </motion.button>

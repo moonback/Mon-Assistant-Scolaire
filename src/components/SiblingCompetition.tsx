@@ -85,9 +85,9 @@ export default function SiblingCompetition() {
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                     <Swords className="h-5 w-5 text-indigo-600" /> Duels de Famille
-                </h3>
+                </h2>
                 <button
                     onClick={() => setShowDuelModal(true)}
                     className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-xl transition-colors"

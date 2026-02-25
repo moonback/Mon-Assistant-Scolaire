@@ -59,20 +59,13 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-12">
-            <div className="text-center space-y-4 pt-4">
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-xl shadow-indigo-100"
-                >
-                    <Camera className="w-8 h-8" />
-                </motion.div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Scanner Devoirs ✨</h2>
-                <p className="text-slate-500 font-semibold text-sm max-w-md mx-auto leading-relaxed">
-                    Prends ton exercice en photo et je t'aiderai à le comprendre !
-                </p>
-            </div>
+        <div className="max-w-7xl mx-auto space-y-8 pb-12">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+                <div className="space-y-1">
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Aide aux Devoirs ✨</h1>
+                    <p className="text-slate-500 font-semibold text-sm">Scanner tes exercices pour une explication magique !</p>
+                </div>
+            </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 {/* Left Side: Upload / Preview */}

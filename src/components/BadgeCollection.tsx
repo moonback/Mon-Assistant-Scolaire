@@ -14,27 +14,25 @@ export default function BadgeCollection({ earnedBadgeIds }: BadgeCollectionProps
 
     return (
         <section className="space-y-8">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="flex items-center gap-3 text-2xl font-black text-slate-800 tracking-tight">
-                        <Award className="h-7 w-7 text-indigo-600" /> Collection de Badges
-                    </h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase mt-1 tracking-widest">
-                        {earnedBadgeIds.length} / {BADGE_DEFINITIONS.length} Badges débloqués
-                    </p>
-                </div>
-            </div>
+            <header className="mb-8">
+                <h2 className="flex items-center gap-3 text-2xl font-black text-slate-900 tracking-tight">
+                    <Award className="h-7 w-7 text-indigo-600" /> Collection de Badges
+                </h2>
+                <p className="text-sm font-semibold text-slate-500 mt-1">
+                    {earnedBadgeIds.length} / {BADGE_DEFINITIONS.length} Badges débloqués sur ton parcours.
+                </p>
+            </header>
 
             <div className="space-y-10">
                 {categories.map(category => (
                     <div key={category} className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 bg-slate-50 w-fit px-3 py-1 rounded-full border border-slate-100 italic">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 bg-indigo-50/50 w-fit px-4 py-1.5 rounded-full border border-indigo-100 shadow-sm">
                             {category === 'progression' ? '📊 Progression' :
                                 category === 'consistency' ? '📅 Assiduité' :
                                     category === 'excellence' ? '✨ Excellence' :
                                         category === 'curiosity' ? '🔍 Curiosité' :
                                             category === 'social' ? '🤝 Social' : category}
-                        </h4>
+                        </h3>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {BADGE_DEFINITIONS.filter(b => b.category === category).map((badge, idx) => {
@@ -49,8 +47,8 @@ export default function BadgeCollection({ earnedBadgeIds }: BadgeCollectionProps
                                         whileHover={{ y: -5, scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         className={`relative group p-4 rounded-3xl border-2 transition-all aspect-square flex flex-col items-center justify-center text-center ${isEarned
-                                                ? 'bg-white border-indigo-100 shadow-xl shadow-indigo-100/30'
-                                                : 'bg-slate-50 border-slate-100 grayscale opacity-60'
+                                            ? 'bg-white border-indigo-100 shadow-xl shadow-indigo-100/30'
+                                            : 'bg-slate-50 border-slate-100 grayscale opacity-60'
                                             }`}
                                     >
                                         <div className={`text-4xl mb-2 transition-transform duration-500 ${isEarned ? 'group-hover:rotate-12 group-hover:scale-125' : ''}`}>

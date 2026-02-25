@@ -254,9 +254,9 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
       <section className="premium-card p-8 border-none shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">
+            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">
               Missions du Jour ✨
-            </h3>
+            </h2>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none outline-none">{gradeLevel} • Objectifs Quotidiens</p>
           </div>
           <div className="flex flex-col items-end">
@@ -284,7 +284,7 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">{m.subject}</span>
                   {isDone && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                 </div>
-                <h4 className="font-black text-slate-900 text-sm mb-1 tracking-tight">{m.title}</h4>
+                <h3 className="font-black text-slate-900 text-sm mb-1 tracking-tight">{m.title}</h3>
                 <p className="text-[10px] text-slate-500 font-bold mb-4 leading-relaxed line-clamp-2">{m.description}</p>
                 <div className="bg-white/50 rounded-xl p-3 mb-4 border border-white/50 italic text-[10px] text-slate-400">
                   🎯 {m.objective}
@@ -311,8 +311,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Mastery Table */}
             <section className="premium-card p-6 border-none shadow-sm h-full">
-              <h3 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
-                <Gauge className="h-3.5 w-3.5 text-indigo-500" /> Tableau de Maîtrise
+              <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 tracking-tight mb-6">
+                <Gauge className="h-4 w-4 text-indigo-500" /> Tableau de Maîtrise
               </h3>
               <div className="space-y-3">
                 {subjectInsights.slice(0, 4).map(item => {
@@ -337,8 +337,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
             {/* SRS Section */}
             <section className="premium-card p-6 border-none shadow-sm h-full">
-              <h3 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
-                <RefreshCcw className="h-3.5 w-3.5 text-indigo-500" /> Révision Espacée
+              <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 tracking-tight mb-6">
+                <RefreshCcw className="h-4 w-4 text-indigo-500" /> Révision Espacée
               </h3>
               <div className="space-y-3">
                 {srsCards.length > 0 ? srsCards.slice(0, 3).map(card => (
@@ -363,14 +363,14 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
             {/* Diagnostic */}
             <section className="premium-card p-6 border-none shadow-sm h-full">
-              <h3 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
-                <ShieldAlert className="h-3.5 w-3.5 text-amber-500" /> Diagnostic IA
+              <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 tracking-tight mb-6">
+                <ShieldAlert className="h-4 w-4 text-amber-500" /> Diagnostic IA
               </h3>
               {subjectInsights.some(item => item.lowScoreCount > 0) ? (
                 <div className="space-y-3">
                   {subjectInsights.filter(item => item.lowScoreCount > 0).slice(0, 1).map(item => (
                     <div key={item.subject} className="p-4 rounded-xl bg-amber-50/50 border border-white shadow-inner">
-                      <h4 className="font-black text-slate-900 text-xs mb-1 tracking-tight">{item.subject}</h4>
+                      <h4 className="font-black text-slate-900 text-sm mb-1 tracking-tight">{item.subject}</h4>
                       <p className="text-[10px] text-slate-400 font-bold mb-3 uppercase tracking-tighter">Point d'attention</p>
                       <div className="bg-white/80 p-3 rounded-xl border border-amber-100/50 italic text-[10px] text-amber-600 leading-relaxed font-bold">
                         "Reprends les bases via l'Atelier 'Explique avec tes mots'."
@@ -396,8 +396,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
           <section className="md:col-span-2 premium-card p-8 border-none shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
             <div className="flex items-center justify-between mb-6 relative z-10">
-              <h3 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                <BookCheck className="h-3.5 w-3.5 text-indigo-500" /> Atelier "Explique avec tes mots"
+              <h3 className="flex items-center gap-2 text-base font-black text-slate-900 tracking-tight">
+                <BookCheck className="h-5 w-5 text-indigo-500" /> Atelier "Explique avec tes mots"
               </h3>
               {latestExplanation && <span className="text-[10px] font-black text-emerald-500 bg-emerald-50/50 px-3 py-1 rounded-full uppercase tracking-widest">Score: {latestExplanation.understanding_score}/10</span>}
             </div>
@@ -427,8 +427,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
           {/* Portfolio Snapshot */}
           <section className="premium-card p-6 border-none shadow-sm h-full">
-            <h3 className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
-              <Award className="h-3.5 w-3.5 text-indigo-500" /> Mon Portfolio
+            <h3 className="flex items-center gap-2 text-base font-black text-slate-900 tracking-tight mb-6">
+              <Award className="h-5 w-5 text-indigo-500" /> Mon Portfolio
             </h3>
             <div className="space-y-4">
               {milestones.slice(0, 3).map(m => (

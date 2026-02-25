@@ -113,8 +113,8 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
 
           <div className="mb-8 relative z-10">
-            <h2 className="flex items-center gap-2 text-base font-black text-slate-900 tracking-tight">
-              <TrendingUp className="h-4 w-4 text-indigo-600" />
+            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
+              <TrendingUp className="h-5 w-5 text-indigo-600" />
               Répartition des points
             </h2>
             <p className="text-xs font-semibold text-slate-400">Ton investissement par matière.</p>
@@ -168,10 +168,10 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           className="premium-card p-6 border-none shadow-sm"
         >
           <div className="mb-6">
-            <h3 className="flex items-center gap-2 text-base font-black text-slate-900 tracking-tight">
-              <Clock className="h-4 w-4 text-indigo-600" />
-              Dernières découvertes
-            </h3>
+            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
+              <Clock className="h-5 w-5 text-indigo-600" />
+              Historique des sessions
+            </h2>
             <p className="text-xs font-semibold text-slate-400">Tes 5 activités les plus récentes.</p>
           </div>
 

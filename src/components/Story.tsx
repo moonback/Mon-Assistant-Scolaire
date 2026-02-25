@@ -29,15 +29,22 @@ export default function Story() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 pb-8">
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-slate-200 bg-white p-6">
-        <div className="mb-5 flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-indigo-600">
-            <Book className="h-5 w-5" />
+    <div className="mx-auto max-w-4xl space-y-8 pb-12">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Conte Magique 📖</h1>
+          <p className="text-slate-500 font-semibold text-sm">Crée des aventures extraordinaires avec l'IA !</p>
+        </div>
+      </header>
+
+      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="premium-card p-8 border-none shadow-sm">
+        <div className="mb-8 flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-inner">
+            <Book className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-sm font-black text-slate-800 tracking-tight">Conte Magique</h2>
-            <p className="text-xs font-semibold text-slate-500">Décris un héros et un lieu pour créer une aventure.</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Nouvelle Histoire</h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Configure ton aventure</p>
           </div>
         </div>
 
@@ -80,9 +87,14 @@ export default function Story() {
 
       <AnimatePresence mode="wait">
         {story && (
-          <motion.section key="story" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-800 tracking-tight">Ton aventure magique</h3>
+          <motion.section key="story" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="premium-card p-8 border-none shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
+
+            <div className="mb-6 flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-indigo-600 rounded-full" />
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Ton aventure magique</h3>
+              </div>
               <button
                 onClick={() => {
                   if (isSpeaking) {
@@ -91,14 +103,23 @@ export default function Story() {
                     speak(story.replace(/[*_#`]/g, ''));
                   }
                 }}
-                className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600"
-                title={isSpeaking ? "Arrêter" : "Écouter"}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${isSpeaking ? 'bg-red-50 border-red-100 text-red-600' : 'bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-600'}`}
               >
-                {isSpeaking ? <StopCircle className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                {isSpeaking ? (
+                  <>
+                    <StopCircle className="h-3.5 w-3.5" /> Arrêter
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="h-3.5 w-3.5" /> Écouter
+                  </>
+                )}
               </button>
             </div>
 
-            <p className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-6 text-xs font-semibold leading-relaxed text-slate-700 shadow-inner">{story}</p>
+            <div className="rounded-3xl border border-white bg-slate-50/50 p-8 text-sm font-semibold leading-relaxed text-slate-700 shadow-inner mb-6 relative z-10 whitespace-pre-wrap">
+              {story}
+            </div>
 
             <button
               onClick={() => {
@@ -107,9 +128,9 @@ export default function Story() {
                 setPlace('');
                 stop();
               }}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:border-indigo-200 hover:text-indigo-600 transition-all relative z-10"
             >
-              <RefreshCw className="h-4 w-4" /> Nouvelle histoire
+              <RefreshCw className="h-3.5 w-3.5" /> Nouvelle aventure
             </button>
           </motion.section>
         )}
