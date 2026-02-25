@@ -9,12 +9,17 @@ import {
 import { supabase, Progress, Child } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-type Tab = 'overview' | 'children' | 'rewards' | 'security';
+import { ParentalTab as Tab } from '../types/app';
 
-export default function ParentalSpace() {
+interface ParentalSpaceProps {
+    activeSubTab: Tab;
+    setActiveSubTab: (tab: Tab) => void;
+    onExit: () => void;
+}
+
+export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab: setActiveTab, onExit }: ParentalSpaceProps) {
     const { profile, children, session, refreshProfile, refreshChildren } = useAuth();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -187,51 +192,25 @@ export default function ParentalSpace() {
                     <button onClick={handleAuth} className="w-full magical-gradient text-white font-black py-4 rounded-xl shadow-lg hover:scale-105 transition-all outline-none">
                         Accéder au Tableau de Bord
                     </button>
-                    <button onClick={() => window.history.back()} className="text-slate-400 text-xs font-bold uppercase hover:text-indigo-600 transition-colors">Retour à l'accueil</button>
+                    <button onClick={onExit} className="text-slate-400 text-xs font-bold uppercase hover:text-indigo-600 transition-colors">Retour à l'accueil</button>
                 </div>
             </div>
         );
     }
 
-    const menuItems = [
-        { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
-        { id: 'children', label: 'Mes Enfants', icon: Users },
-        { id: 'rewards', label: 'Récompenses', icon: Gift },
-        { id: 'security', label: 'Sécurité', icon: SettingsIcon },
-    ];
 
     return (
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 pb-20">
-            {/* Sidebar Navigation */}
-            <aside className="lg:w-64 flex-shrink-0">
-                <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 sticky top-24">
-                    <div className="flex items-center gap-3 mb-8 px-2">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                            <ShieldCheck className="w-6 h-6" />
-                        </div>
-                        <span className="font-black text-slate-800 text-lg">Famille</span>
-                    </div>
-                    <nav className="space-y-1">
-                        {menuItems.map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveTab(item.id as Tab)}
-                                className={`w-full flex items-center gap-3 p-4 rounded-2xl font-black text-xs uppercase tracking-wider transition-all ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
-                            >
-                                <item.icon className="w-5 h-5" />
-                                {item.label}
-                            </button>
-                        ))}
-                        <div className="pt-4 mt-4 border-t border-slate-100">
-                            <button onClick={() => setIsAuthenticated(false)} className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-xs uppercase tracking-wider text-red-400 hover:bg-red-50 hover:text-red-600 transition-all">
-                                <Lock className="w-5 h-5" /> Quitter
-                            </button>
-                        </div>
-                    </nav>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
+        <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700">
+            <div className="flex justify-end mb-4">
+                <button
+                    onClick={onExit}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-100 transition-all border border-red-100 shadow-sm"
+                >
+                    <Lock className="w-3.5 h-3.5" />
+                    Quitter la zone parent
+                </button>
+            </div>
+            {/* Main Content Area - Sidebar removed as it's now in main layout */}
             <main className="flex-1 space-y-8">
                 {activeTab === 'overview' && (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">

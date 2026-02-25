@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
-import { Tab } from './types/app';
+import { Tab, ParentalTab } from './types/app';
 import { tabs } from './config/tabs';
 
 // Layout Components
@@ -28,6 +28,7 @@ import ChildProfile from './components/ChildProfile';
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [parentalActiveTab, setParentalActiveTab] = useState<ParentalTab>('overview');
   const [showConfetti, setShowConfetti] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -236,7 +237,7 @@ function AppContent() {
       case 'dictionary': return <Dictionary />;
       case 'fact': return <DidYouKnow />;
       case 'profile': return <ChildProfile />;
-      case 'parental': return <ParentalSpace />;
+      case 'parental': return <ParentalSpace activeSubTab={parentalActiveTab} setActiveSubTab={setParentalActiveTab} onExit={() => setActiveTab('home')} />;
       default: return null;
     }
   };
@@ -278,6 +279,8 @@ function AppContent() {
         setIsCollapsed={setIsSidebarCollapsed}
         selectedChild={selectedChild}
         setSelectedChild={setSelectedChild}
+        parentalActiveTab={parentalActiveTab}
+        setParentalActiveTab={setParentalActiveTab}
       />
 
       <div className={`flex-1 flex flex-col transition-all duration-500 ease-in-out ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
@@ -310,6 +313,8 @@ function AppContent() {
         tabs={tabs.filter(t => !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id))}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        parentalActiveTab={parentalActiveTab}
+        setParentalActiveTab={setParentalActiveTab}
       />
     </div>
   );
