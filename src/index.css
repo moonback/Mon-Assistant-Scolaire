@@ -1,20 +1,25 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --primary: #6366f1;
-    --primary-light: #818cf8;
-    --secondary: #ec4899;
-    --accent: #f59e0b;
-    --background: #f8fafc;
-    --card: #ffffff;
-    --text: #1e293b;
-  }
+@theme {
+  --color-primary: #6366f1;
+  --color-primary-light: #818cf8;
+  --color-secondary: #ec4899;
+  --color-accent: #f59e0b;
+  --color-background: #f8fafc;
+  --color-card: #ffffff;
+  --color-text: #1e293b;
 
+  --font-family-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2.25rem;
+}
+
+@layer base {
   body {
-    font-family: 'Outfit', sans-serif;
-    background-color: var(--background);
-    color: var(--text);
+    background-color: var(--color-background);
+    color: var(--color-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -29,25 +34,38 @@
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
   }
 
-  .glass-card-dark {
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  }
-
-  .magical-gradient {
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-  }
-
-  .interactive-card {
+  .premium-card {
+    background: white;
+    border-radius: var(--radius-2xl);
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .interactive-card:hover {
-    transform: translateY(-4px) scale(1.01);
+  .premium-card:hover {
+    transform: translateY(-4px);
     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    border-color: var(--color-primary-light);
+  }
+
+  .magical-glow {
+    position: relative;
+  }
+
+  .magical-glow::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    filter: blur(8px);
+  }
+
+  .magical-glow:hover::after {
+    opacity: 0.2;
   }
 
   .premium-input {
@@ -61,7 +79,7 @@
   }
 
   .premium-input:focus {
-    border-color: #818cf8;
+    border-color: var(--color-primary-light);
     background-color: white;
     box-shadow: 0 0 0 8px #e0e7ff;
   }
