@@ -30,7 +30,7 @@ Ce document présente la feuille de route pour le développement futur de l'appl
 ## 🌍 Phase 5 : Expansion & Contenu (v2.0)
 - [ ] **Mode Hors-ligne (PWA)** : Rendre l'application installable et fonctionnelle sans internet (pour les jeux locaux).
 - [ ] **Multi-langues** : Support de l'anglais et de l'espagnol pour l'apprentissage des langues.
-- [ ] **Défis quotidiens** : "Le mot du jour", "Le problème du jour" notifiés chaque matin.
+- [x] **Défis quotidiens** : "Le mot du jour", "Le problème du jour" notifiés chaque matin.
 - [ ] **Mode Multijoueur** : Défier un ami ou un parent sur un quiz de culture générale.
 
 ## 🛠️ Technique & Infrastructure

@@ -1,4 +1,4 @@
-type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact' | 'homework';
+type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact' | 'homework' | 'wordOfTheDay' | 'problemOfTheDay';
 
 const SYSTEM_INSTRUCTIONS: Record<Mode, string> = {
   assistant: `Tu es un assistant pédagogique bienveillant pour des enfants de l'école primaire (6-11 ans).
@@ -42,7 +42,26 @@ Donne 1 ou 2 synonymes simples.`,
 
   fact: `Tu es un professeur curieux.
 Donne une anecdote ou un fait surprenant ("Le saviez-vous ?") adapté aux enfants sur le thème demandé ou au hasard si aucun thème n'est donné.
-Sois bref et amusant.`
+Sois bref et amusant.`,
+
+  wordOfTheDay: `Tu es un professeur de français passionné.
+Choisis un mot intéressant, enrichissant mais accessible pour un enfant.
+Format JSON attendu :
+{
+  "word": "Le mot",
+  "definition": "Une définition simple et claire.",
+  "example": "Une phrase d'exemple.",
+  "synonyms": ["synonyme1", "synonyme2"]
+}`,
+
+  problemOfTheDay: `Tu es un génie des mathématiques et de la logique qui adore poser des défis.
+Crée un petit problème de mathématiques ou une énigme logique adaptée au niveau scolaire de l'enfant.
+Format JSON attendu :
+{
+  "question": "L'énoncé du problème ou de l'énigme.",
+  "answer": "La réponse courte et précise.",
+  "explanation": "Une explication simple du raisonnement."
+}`
 };
 
 export async function askGemini(
@@ -102,7 +121,7 @@ export async function askGemini(
         // model: "mistralai/mistral-small-creative",
 
         messages: messages,
-        response_format: mode === 'quiz' ? { type: "json_object" } : undefined
+        response_format: (mode === 'quiz' || mode === 'wordOfTheDay' || mode === 'problemOfTheDay') ? { type: "json_object" } : undefined
       })
     });
 
@@ -116,6 +135,7 @@ export async function askGemini(
   } catch (error) {
     console.error("Erreur OpenRouter:", error);
     if (mode === 'quiz') return "[]";
+    if (mode === 'wordOfTheDay' || mode === 'problemOfTheDay') return "{}";
     return "Oups ! Une erreur s'est produite. Vérifie ta connexion.";
   }
 }

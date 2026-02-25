@@ -111,6 +111,37 @@ function AppContent() {
     return () => clearInterval(interval);
   }, [selectedChild, setSelectedChild]);
 
+  // Daily Challenge Notifications
+  useEffect(() => {
+    if (!selectedChild || !('Notification' in window)) return;
+
+    const checkNotification = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const notificationKey = `daily_notif_${selectedChild.id}_${today}`;
+      const alreadyShown = localStorage.getItem(notificationKey);
+
+      if (!alreadyShown) {
+        if (Notification.permission === 'default') {
+          await Notification.requestPermission();
+        }
+
+        if (Notification.permission === 'granted') {
+          // Check if it's morning (before 12:00)
+          const hour = new Date().getHours();
+          if (hour >= 7 && hour < 12) {
+            new Notification('☀️ Bonjour !', {
+              body: `Tes nouveaux défis du jour sont prêts ! Viens découvrir le mot et le problème du jour.`,
+              icon: '/icons/icon-192x192.png'
+            });
+            localStorage.setItem(notificationKey, 'true');
+          }
+        }
+      }
+    };
+
+    checkNotification();
+  }, [selectedChild]);
+
   // Points/Stars Logic
   const addStars = useCallback(async (amount: number, activityType: string, subject: string = 'General') => {
     if (!selectedChild || !session) return;
@@ -173,7 +204,7 @@ function AppContent() {
             </div>
           </div>
         );
-      case 'dashboard': return <Dashboard />;
+      case 'dashboard': return <Dashboard onEarnPoints={addStars} />;
       case 'assistant': return <Assistant {...commonProps} />;
       case 'quiz': return <Quiz {...commonProps} />;
       case 'math': return <MathGame onEarnPoints={addStars} />;

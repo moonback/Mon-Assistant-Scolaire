@@ -4,8 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 import { Trophy, Star, TrendingUp, Calendar, Target, Zap, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
+import DailyChallenges from './DailyChallenges';
 
-export default function Dashboard() {
+interface DashboardProps {
+  onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
+}
+
+export default function Dashboard({ onEarnPoints }: DashboardProps) {
   const { selectedChild } = useAuth();
   const [stats, setStats] = useState<Progress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +51,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Daily Challenges */}
+      <DailyChallenges
+        gradeLevel={selectedChild?.grade_level || 'CM1'}
+        onEarnPoints={onEarnPoints}
+      />
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
