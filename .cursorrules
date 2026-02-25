@@ -1,0 +1,63 @@
+# Cursor Rules - Mon Assistant Scolaire (Family AI)
+
+## 🎯 Project Context
+Mon Assistant Scolaire is a premium educational platform for children (6-11 years) powered by Google Gemini. It features multi-child management, AI-driven homework help, voice interactions, and parental controls.
+
+## 🛠 Tech Stack
+- **Frontend**: React 19 (Functional Components, Hooks), Vite, TypeScript.
+- **Styling**: Tailwind CSS 4, Framer Motion for animations.
+- **Backend/Storage**: Supabase (Auth & PostgreSQL), RLS.
+- **Desktop**: Electron.
+- **AI**: Gemini 1.5 Pro/Flash (via OpenRouter and Native SDK for audio).
+- **Charts**: Recharts.
+
+## 📐 Code Style & Conventions
+- **Naming**:
+  - Components: `PascalCase` (e.g., `ChildDashboard.tsx`).
+  - Variables/Functions: `camelCase` (e.g., `handleEarnPoints`).
+  - Styles: Tailwind classes only (avoid CSS modules unless necessary).
+  - Files: `src/components/ComponentName.tsx`, `src/hooks/useHookName.ts`.
+- **Typing**: Use TypeScript strictly. Avoid `any`. Prefer `interface` over `type` for object definitions.
+- **Component Structure**:
+  - Use `export const ComponentName: React.FC<Props> = ({ ... }) => { ... }`.
+  - Destructure props in the function signature.
+  - Keep components modular and reusable.
+
+## 🏛 Architecture Patterns
+- **State Management**: Use React Context API for global state (Auth, Active Child, Speech status). Avoid Redux or specialized libraries unless the complexity explodes.
+- **Data Access**: Use the `supabase` client from `src/lib/supabase.ts`. Implement logic in custom hooks or services in `src/services/`.
+- **AI Logic**: Centralized in `src/services/gemini.ts` and `src/hooks/useGeminiLive.ts`.
+- **Desktop**: Communication via Electron IPC if system access is needed (not common for this app).
+
+## ✅ Best Practices
+- **Design**: Aim for "Premium & Playful". Use gradients, rounded corners, glassmorphism, and smooth transitions.
+- **Error Handling**: 
+  - Wrap API calls in `try/catch`. 
+  - Use toast notifications or friendly UI messages for errors (no raw technical alerts for kids).
+- **Internationalization**: Primary language is French. Use French for all UI text and AI system prompts.
+- **Security**: 
+  - Never hardcode API keys. Use `import.meta.env`.
+  - Always verify PIN in the parental space using the `profiles` table.
+- **Performance**: Optimize images and use `useMemo`/`useCallback` for heavy calculations or memoizing function references passed to children.
+
+## 🛠 Common Tasks & Workflows
+- **New Feature**: 
+  1. Create a component in `src/components/`.
+  2. Add logic to a hook if stateful.
+  3. Update `App.tsx` routes if needed.
+- **New API Endpoint (Supabase)**:
+  1. Update `supabase_schema.sql`.
+  2. Apply migration in Supabase Console.
+  3. Update TS types in `src/lib/supabase.ts`.
+- **AI Prompt Update**: Modify `SYSTEM_INSTRUCTIONS` in `src/services/gemini.ts`.
+
+## 🚫 Things to Avoid
+- Don't use `any`.
+- Don't use standard `alert()` or `confirm()`; use custom themed modals.
+- Don't give direct answers in AI prompts (focus on "Socratic Method").
+- Avoid bloated components; split them into sub-components.
+
+## 📖 Documentation
+- Comment complex business logic.
+- Document system prompts and their intent.
+- Keep `DB_SCHEMA.md` and `API_DOCS.md` updated when changing the backend.
