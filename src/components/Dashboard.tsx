@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Trophy, Star, TrendingUp, Calendar, Target, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import DailyChallenges from './DailyChallenges';
+import PedagogicalHub from './PedagogicalHub';
 
 interface DashboardProps {
   onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
@@ -81,6 +82,14 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           </motion.div>
         ))}
       </div>
+
+
+      <PedagogicalHub
+        childId={selectedChild?.id || ''}
+        gradeLevel={selectedChild?.grade_level || 'CM1'}
+        stats={stats}
+        onEarnPoints={onEarnPoints}
+      />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
