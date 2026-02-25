@@ -99,9 +99,9 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
     const saveChild = async () => {
         if (!session) return;
         setLoading(true);
+        setError('');
         try {
-            const payload = {
-                parent_id: session.user.id,
+            const payload: any = {
                 name: childName,
                 grade_level: childGrade,
                 daily_time_limit: childTimeLimit,
@@ -110,16 +110,27 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                 blocked_topics: childBlockedTopics,
                 avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${childName}`
             };
+
+            let result;
             if (editingChild) {
-                await supabase.from('children').update(payload).eq('id', editingChild.id);
+                result = await supabase.from('children').update(payload).eq('id', editingChild.id);
             } else {
-                await supabase.from('children').insert([payload]);
+                // For insert, we need the parent_id
+                payload.parent_id = session.user.id;
+                payload.stars = 0; // Initialize stars
+                result = await supabase.from('children').insert([payload]);
             }
+
+            if (result.error) {
+                console.error('Supabase Error:', result.error);
+                throw new Error(result.error.message);
+            }
+
             setSuccess('Modifications enregistrées ! ✨');
             await refreshChildren();
             resetChildForm();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Une erreur est survenue lors de l\'enregistrement.');
         } finally {
             setLoading(false);
         }
@@ -127,8 +138,19 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
 
     const deleteChild = async (id: string) => {
         if (!window.confirm('Supprimer ce profil ?')) return;
-        await supabase.from('children').delete().eq('id', id);
-        await refreshChildren();
+        setLoading(true);
+        setError('');
+        try {
+            const { error: err } = await supabase.from('children').delete().eq('id', id);
+            if (err) throw err;
+            await refreshChildren();
+            setSuccess('Profil supprimé ! 👋');
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err: any) {
+            setError(err.message || 'Impossible de supprimer ce profil.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const resetChildForm = () => {
@@ -179,21 +201,22 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                 </div>
                 <h2 className="text-3xl font-semibold text-slate-800 mb-2">Espace Parents</h2>
                 <p className="text-slate-500 font-bold mb-8 text-sm uppercase tracking-wide">Zone Sécurisée</p>
-                <div className="space-y-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }} className="space-y-6">
                     <input
                         type="password"
                         maxLength={4}
                         value={pin}
                         onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                         placeholder="PIN"
+                        autoComplete="current-password"
                         className="w-full text-center text-4xl tracking-wide font-semibold p-5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none transition-all"
                     />
                     {error && <p className="text-red-500 font-bold text-xs">{error}</p>}
-                    <button onClick={handleAuth} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-xl shadow-sm  transition-all outline-none">
+                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-xl shadow-sm  transition-all outline-none">
                         Accéder au Tableau de Bord
                     </button>
-                    <button onClick={onExit} className="text-slate-400 text-xs font-bold uppercase hover:text-indigo-600 transition-colors">Retour à l'accueil</button>
-                </div>
+                    <button type="button" onClick={onExit} className="text-slate-400 text-xs font-bold uppercase hover:text-indigo-600 transition-colors w-full">Retour à l'accueil</button>
+                </form>
             </div>
         );
     }
@@ -385,19 +408,20 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                                         <p className="text-xs text-slate-400 font-bold uppercase mt-1">Requis pour accéder à cet espace</p>
                                     </div>
                                 </div>
-                                <div className="flex flex-col md:flex-row gap-4">
+                                <form onSubmit={(e) => { e.preventDefault(); saveParentSettings(); }} className="flex flex-col md:flex-row gap-4">
                                     <input
                                         type="password"
                                         maxLength={4}
                                         value={newPin}
                                         onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
                                         placeholder="0000"
+                                        autoComplete="new-password"
                                         className="flex-1 p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-indigo-500 outline-none transition-all font-semibold text-2xl tracking-wide text-center"
                                     />
-                                    <button onClick={saveParentSettings} className="px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl shadow-sm  transition-all">
+                                    <button type="submit" className="px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl shadow-sm  transition-all">
                                         Sauvegarder
                                     </button>
-                                </div>
+                                </form>
                             </div>
 
                             <div className="pt-10 border-t border-slate-100 space-y-8">

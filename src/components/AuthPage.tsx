@@ -110,6 +110,7 @@ export default function AuthPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-medium"
                       placeholder="Ex: Léo"
+                      autoComplete="name"
                       required
                     />
                   </div>
@@ -144,6 +145,7 @@ export default function AuthPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-medium"
                 placeholder="parent@email.com"
+                autoComplete="email"
                 required
               />
             </div>
@@ -159,6 +161,7 @@ export default function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border-2 border-slate-100 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-medium"
                 placeholder="••••••••"
+                autoComplete={isSignUp ? "new-password" : "current-password"}
                 required
               />
             </div>

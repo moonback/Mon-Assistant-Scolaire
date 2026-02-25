@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Moon, Clock } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import { Tab, ParentalTab } from './types/app';
@@ -32,6 +33,11 @@ function AppContent() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [systemModal, setSystemModal] = useState<{
+    show: boolean;
+    type: 'limit' | 'bedtime';
+    message: string;
+  }>({ show: false, type: 'limit', message: '' });
 
   const showChildSelector = !selectedChild && activeTab !== 'parental';
 
@@ -85,7 +91,11 @@ function AppContent() {
           }
 
           if (isSleepTime) {
-            alert(`🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`);
+            setSystemModal({
+              show: true,
+              type: 'bedtime',
+              message: `🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`
+            });
             setSelectedChild(null);
             return;
           }
@@ -97,7 +107,11 @@ function AppContent() {
           setTimeLeft(remaining);
 
           if (remaining <= 0) {
-            alert(`🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`);
+            setSystemModal({
+              show: true,
+              type: 'limit',
+              message: `🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`
+            });
             setSelectedChild(null);
           }
         } else {
@@ -247,18 +261,14 @@ function AppContent() {
 
   if (!session) return <AuthPage />;
 
-  if (showChildSelector) {
-    return (
-      <ChildSelector
-        children={children}
-        setSelectedChild={setSelectedChild}
-        setActiveTab={setActiveTab}
-        signOut={signOut}
-      />
-    );
-  }
-
-  return (
+  const content = showChildSelector ? (
+    <ChildSelector
+      children={children}
+      setSelectedChild={setSelectedChild}
+      setActiveTab={setActiveTab}
+      signOut={signOut}
+    />
+  ) : (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col md:flex-row font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* Confetti Overlay */}
       <AnimatePresence>
@@ -320,6 +330,60 @@ function AppContent() {
         setParentalActiveTab={setParentalActiveTab}
       />
     </div>
+  );
+
+  return (
+    <>
+      {content}
+
+      {/* System Status Modal (Time up / Bedtime) */}
+      <AnimatePresence>
+        {systemModal.show && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              onClick={() => setSystemModal({ ...systemModal, show: false })}
+            />
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              className="bg-white rounded-[2.5rem] p-10 w-full max-w-lg relative z-10 shadow-2xl border border-white/20 text-center"
+            >
+              <div className={`mx-auto w-24 h-24 rounded-3xl flex items-center justify-center mb-8 ${systemModal.type === 'bedtime' ? 'bg-indigo-50 text-indigo-600' : 'bg-red-50 text-red-600'
+                }`}>
+                {systemModal.type === 'bedtime' ? (
+                  <Moon className="w-12 h-12" />
+                ) : (
+                  <Clock className="w-12 h-12" />
+                )}
+              </div>
+
+              <h2 className="text-3xl font-black text-slate-800 mb-4 leading-tight">
+                {systemModal.type === 'bedtime' ? 'Bonne nuit ! 🌙' : 'Pause nécessaire ! 🛑'}
+              </h2>
+
+              <p className="text-slate-600 font-bold text-lg mb-10 leading-relaxed">
+                {systemModal.message}
+              </p>
+
+              <button
+                onClick={() => setSystemModal({ ...systemModal, show: false })}
+                className={`w-full py-5 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all ${systemModal.type === 'bedtime'
+                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+                  : 'bg-red-600 hover:bg-red-700 text-white shadow-red-200'
+                  }`}
+              >
+                C'est compris !
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
