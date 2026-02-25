@@ -121,29 +121,34 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
   return (
     <div className="mx-auto max-w-xl space-y-5 pb-8">
       {/* Score bar */}
-      <div className="flex items-center justify-between bg-white rounded-2xl border border-slate-200 px-5 py-3 shadow-sm">
+      <div className="premium-card p-5 border-none shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-          <span className="text-base font-black text-slate-800">{score * 5} étoiles</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Flame className={`h-4 w-4 ${streak >= 3 ? 'text-orange-500' : 'text-slate-300'}`} />
-          <span className={`text-xs font-black ${streak >= 3 ? 'text-orange-500' : 'text-slate-400'}`}>
-            {streak > 0 ? `${streak} d'affilée !` : 'Série: 0'}
-          </span>
-        </div>
-        {gradeLevel && (
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-indigo-50 rounded-xl text-xs font-black text-indigo-600 uppercase tracking-wider">
-            <Zap className="h-3 w-3" />
-            {gradeLevel}
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shadow-inner">
+            <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
           </div>
-        )}
+          <div>
+            <p className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1 tracking-widest">Gains</p>
+            <p className="text-sm font-black text-slate-900 leading-none tracking-tight">{score * 5} étoiles</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-xl transition-all ${streak >= 3 ? 'bg-orange-50 text-orange-500 scale-110 shadow-sm' : 'bg-slate-50 text-slate-300'}`}>
+            <Flame className="h-5 w-5" />
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1 tracking-widest">Série</p>
+            <p className={`text-sm font-black leading-none tracking-tight ${streak >= 3 ? 'text-orange-500' : 'text-slate-900'}`}>
+              {streak} d'affilée
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Main problem card */}
       <motion.div
-        className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-center relative overflow-hidden"
+        className="premium-card p-10 border-none shadow-sm text-center relative overflow-hidden"
       >
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
         {/* Streak bonus flash */}
         <AnimatePresence>
           {showStreakBonus && (
@@ -165,29 +170,32 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
         <AnimatePresence mode="wait">
           <motion.div
             key={`${num1}-${num2}-${operator}`}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="mb-8"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="mb-10 relative z-10"
           >
-            <p className="text-4xl font-black text-slate-900 tracking-tight">
-              {num1} <span className="text-indigo-500">{operatorLabel}</span> {num2} <span className="text-slate-400">=</span> <span className="text-slate-300">?</span>
+            <p className="text-5xl font-black text-slate-900 tracking-tight flex items-center justify-center gap-5">
+              <span>{num1}</span>
+              <span className="text-indigo-500 text-4xl">{operatorLabel}</span>
+              <span>{num2}</span>
+              <span className="text-slate-300">=</span>
             </p>
           </motion.div>
         </AnimatePresence>
 
         <form onSubmit={checkAnswer} className="space-y-4">
-          <div className="relative">
+          <div className="relative z-10">
             <input
               type="number"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Ta réponse..."
-              className={`w-full rounded-2xl border-2 px-6 py-4 text-center text-3xl font-black outline-none transition-all ${status === 'correct'
-                  ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                  : status === 'wrong'
-                    ? 'border-red-400 bg-red-50 text-red-700'
-                    : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-indigo-400 focus:bg-white focus:shadow-lg'
+              placeholder="..."
+              className={`w-full rounded-2xl border-4 px-6 py-5 text-center text-4xl font-black outline-none transition-all shadow-inner ${status === 'correct'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : status === 'wrong'
+                  ? 'border-red-200 bg-red-50 text-red-700'
+                  : 'border-slate-50 bg-slate-50 text-slate-900 focus:border-indigo-200 focus:bg-white focus:shadow-xl'
                 }`}
               autoFocus
               disabled={status !== 'idle'}
@@ -234,22 +242,32 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
             disabled={!answer || status !== 'idle'}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            className="w-full rounded-2xl bg-indigo-600 py-4 text-base font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-700"
+            className="w-full rounded-xl bg-indigo-600 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-700 relative z-10"
           >
-            {status === 'correct' ? '✅ Bravo !' : status === 'wrong' ? '❌ Suivant...' : '✅ Vérifier'}
+            {status === 'correct' ? 'Excellent !' : status === 'wrong' ? 'On ne baisse pas les bras !' : 'Vérifier la réponse'}
           </motion.button>
         </form>
       </motion.div>
 
       {/* Tips */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-black text-slate-700 mb-1 uppercase tracking-widest">💡 Astuce</p>
-          <p className="text-xs font-semibold text-slate-500 leading-relaxed">Prends le temps de réfléchir, la rapidité vient avec la pratique !</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="premium-card p-5 border-none shadow-sm flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 shrink-0 shadow-inner">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest">Astuce</p>
+            <p className="text-xs font-bold text-slate-600 leading-relaxed">Pense aux dizaines d'abord !</p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-black text-slate-700 mb-1 uppercase tracking-widest">🎯 Objectif</p>
-          <p className="text-xs font-semibold text-slate-500 leading-relaxed">Enchaîne 3 bonnes réponses pour un bonus de série !</p>
+        <div className="premium-card p-5 border-none shadow-sm flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0 shadow-inner">
+            <Flame className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest">Série</p>
+            <p className="text-xs font-bold text-slate-600 leading-relaxed">3 réponses justes = Bonus !</p>
+          </div>
         </div>
       </div>
     </div>

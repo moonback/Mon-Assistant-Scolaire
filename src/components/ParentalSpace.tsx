@@ -8,7 +8,7 @@ import ParentalOverview from './parental/ParentalOverview';
 import ParentalChildren from './parental/ParentalChildren';
 import ParentalRewards from './parental/ParentalRewards';
 import ParentalSecurity from './parental/ParentalSecurity';
-import ParentalCompetitions from './parental/ParentalCompetitions.tsx';
+import ParentalCompetitions from './parental/ParentalCompetitions';
 
 interface ParentalSpaceProps {
     activeSubTab: Tab;

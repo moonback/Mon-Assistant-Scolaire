@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Gift, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Trophy, Gift, Sparkles, CheckCircle2, AlertCircle, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -58,21 +58,21 @@ export default function StarMarket({ childId }: StarMarketProps) {
         <div className="space-y-8 max-w-5xl mx-auto pb-10">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-yellow-600 font-bold tracking-wider uppercase text-[10px]">
+                    <div className="flex items-center gap-2 text-indigo-600 font-black tracking-widest uppercase text-[10px]">
                         <Trophy className="w-3.5 h-3.5" />
-                        La Boutique aux Étoiles
+                        Boutique Magique
                     </div>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                        Échange tes <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-500">récompenses</span>
+                        Échange tes <span className="text-gradient">récompenses</span> ✨
                     </h1>
-                    <p className="text-slate-500 font-semibold text-sm">Découvre ce que tes parents ont préparé pour toi !</p>
+                    <p className="text-slate-500 font-semibold text-sm">Récompense tes efforts avec tes étoiles !</p>
                 </div>
 
-                <div className="bg-white px-5 py-3 rounded-[2rem] border-2 border-yellow-100 shadow-xl shadow-yellow-100/50 flex flex-col items-center shrink-0">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mon Solde</span>
+                <div className="glass-card px-6 py-3 rounded-[2rem] border-none flex flex-col items-center shrink-0 shadow-lg shadow-indigo-100/50">
+                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Mon Solde</span>
                     <div className="flex items-center gap-2">
-                        <span className="text-3xl font-black text-yellow-500">{child.stars}</span>
-                        <span className="text-2xl">⭐</span>
+                        <span className="text-3xl font-black text-slate-900">{child.stars}</span>
+                        <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
                     </div>
                 </div>
             </header>
@@ -105,58 +105,59 @@ export default function StarMarket({ childId }: StarMarketProps) {
                         return (
                             <motion.div
                                 key={goal.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: idx * 0.1 }}
-                                className={`relative bg-white rounded-[3rem] p-8 border-4 transition-all overflow-hidden ${canAfford
-                                    ? 'border-yellow-200 hover:border-yellow-400 hover:shadow-2xl hover:shadow-yellow-200/50 shadow-lg shadow-slate-100'
-                                    : 'border-slate-100 shadow-sm opacity-90'
-                                    }`}
+                                className={`premium-card p-8 border-none shadow-sm overflow-hidden relative group ${!canAfford && 'opacity-80'}`}
                             >
-                                {canAfford && (
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-100 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 pointer-events-none" />
-                                )}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                                 <div className="relative z-10 flex flex-col h-full">
-                                    <div className="text-5xl text-center mb-6">
+                                    <div className="text-4xl text-center mb-6 drop-shadow-sm group-hover:scale-110 transition-transform duration-500">
                                         {goal.icon || '🎁'}
                                     </div>
-                                    <h3 className="text-lg font-black text-slate-800 text-center mb-6 leading-tight flex-1">
+                                    <h3 className="text-base font-black text-slate-900 text-center mb-6 leading-tight flex-1 tracking-tight px-2">
                                         {goal.label}
                                     </h3>
 
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center px-1">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Coût</span>
-                                            <span className={`text-base font-black ${canAfford ? 'text-yellow-600' : 'text-slate-500'}`}>
-                                                {goal.target} ⭐
-                                            </span>
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Coût magique</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-base font-black ${canAfford ? 'text-indigo-600' : 'text-slate-500'}`}>
+                                                    {goal.target}
+                                                </span>
+                                                <Star className={`w-4 h-4 ${canAfford ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+                                            </div>
                                         </div>
 
                                         {!canAfford && (
-                                            <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
-                                                    style={{ width: `${progress}%` }}
-                                                />
+                                            <div className="space-y-1.5">
+                                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                                    <div
+                                                        className="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out"
+                                                        style={{ width: `${progress}%` }}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] font-black text-slate-400 text-center uppercase tracking-widest">{progress}% accompli</p>
                                             </div>
                                         )}
 
                                         <button
                                             disabled={!canAfford || buyingId === goal.id}
                                             onClick={() => handleClaim(goal)}
-                                            className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all
+                                            className={`w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg
                                                 ${canAfford
-                                                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-xl shadow-yellow-200 hover:-translate-y-1 active:scale-95'
-                                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                                    ? 'bg-indigo-600 text-white shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 active:scale-95'
+                                                    : 'bg-slate-50 text-slate-400 shadow-none border border-slate-100 cursor-not-allowed'
                                                 }
                                             `}
                                         >
                                             {buyingId === goal.id
-                                                ? 'Déblocage...'
+                                                ? 'Magie...'
                                                 : canAfford
                                                     ? 'Débloquer !'
-                                                    : `Manque ${goal.target - child.stars} ⭐`
+                                                    : `Encore ${goal.target - child.stars} ⭐`
                                             }
                                         </button>
                                     </div>
