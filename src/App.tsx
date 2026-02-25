@@ -145,7 +145,7 @@ function AppContent() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-6 pb-10 max-w-4xl mx-auto">
+          <div className="space-y-6 pb-10 max-w-8xl mx-auto">
             <div className="text-center space-y-2 mb-8">
               <h3 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
               <p className="text-slate-500 font-bold text-lg">Choisis ton aventure du jour, {selectedChild?.name} !</p>
