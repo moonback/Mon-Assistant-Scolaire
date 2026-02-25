@@ -68,8 +68,8 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
                 >
                     <Camera className="w-10 h-10" />
                 </motion.div>
-                <h2 className="text-4xl font-black text-slate-800 tracking-tight">Scanner Devoirs</h2>
-                <p className="text-slate-500 font-bold max-w-md mx-auto">
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Scanner Devoirs</h2>
+                <p className="text-slate-500 font-semibold text-sm max-w-md mx-auto leading-relaxed">
                     Prends ton exercice en photo et je t'aiderai à le comprendre comme un vrai tuteur !
                 </p>
             </div>
@@ -132,16 +132,16 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="w-full magical-gradient text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all text-lg disabled:opacity-50"
+                                className="w-full magical-gradient text-white font-black py-4 rounded-xl shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all text-base disabled:opacity-50"
                             >
                                 {loading ? (
                                     <>
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                                         <span>Analyse magique...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <Brain className="w-6 h-6" />
+                                        <Brain className="w-5 h-5" />
                                         <span>Aider à résoudre !</span>
                                     </>
                                 )}
@@ -170,8 +170,8 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
                                     <Lightbulb className="w-10 h-10" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-xl font-black text-slate-400">Prêt à t'aider !</h3>
-                                    <p className="text-slate-400 font-bold text-sm max-w-xs leading-relaxed">
+                                    <h3 className="text-lg font-black text-slate-400">Prêt à t'aider !</h3>
+                                    <p className="text-slate-400 font-semibold text-xs max-w-xs leading-relaxed">
                                         Une fois la photo analysée, je t'expliquerai la leçon et te donnerai des indices pour réussir.
                                     </p>
                                 </div>
@@ -185,17 +185,17 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16" />
 
                                 <div className="flex items-center gap-4 mb-8">
-                                    <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-                                        <BookOpen className="w-6 h-6" />
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                                        <BookOpen className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-black text-slate-800 tracking-tight">Leçon & Indices</h3>
+                                        <h3 className="text-lg font-black text-slate-800 tracking-tight">Leçon & Indices</h3>
                                         <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Guide du tuteur</p>
                                     </div>
                                 </div>
 
                                 <div className="prose prose-indigo max-w-none">
-                                    <div className="whitespace-pre-wrap font-bold text-slate-700 leading-relaxed text-lg bg-slate-50 p-8 rounded-3xl border border-slate-100">
+                                    <div className="whitespace-pre-wrap font-semibold text-slate-700 leading-relaxed text-sm bg-slate-50 p-6 rounded-2xl border border-slate-100">
                                         {response}
                                     </div>
                                 </div>

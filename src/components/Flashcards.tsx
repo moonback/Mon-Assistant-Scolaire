@@ -190,15 +190,15 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
     if (phase === 'select') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 p-6 md:p-10">
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                     <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-200">
                                 <Layers className="h-6 w-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Mes Flashcards</h1>
-                                <p className="text-sm text-slate-500 font-medium">Écris ta réponse avant de voir le corrigé 🧠</p>
+                                <h1 className="text-xl font-black text-slate-900 tracking-tight">Mes Flashcards</h1>
+                                <p className="text-xs text-slate-500 font-semibold">Écris ta réponse avant de voir le corrigé 🧠</p>
                             </div>
                         </div>
                     </motion.div>
@@ -212,8 +212,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">⚡ Révisions urgentes</p>
-                                    <h3 className="font-black text-xl">{dueCount} carte{dueCount > 1 ? 's' : ''} à revoir maintenant</h3>
-                                    <p className="text-sm opacity-90 mt-1">Ces notions risquent de disparaître de ta mémoire !</p>
+                                    <h3 className="font-black text-lg">{dueCount} carte{dueCount > 1 ? 's' : ''} à revoir maintenant</h3>
+                                    <p className="text-xs opacity-90 mt-1">Ces notions risquent de disparaître de ta mémoire !</p>
                                 </div>
                                 <ArrowRight className="h-8 w-8 opacity-80 shrink-0" />
                             </div>
@@ -278,8 +278,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     className="w-16 h-16 rounded-full border-4 border-teal-100 border-t-teal-500 mb-6"
                 />
-                <h3 className="text-xl font-black text-slate-800 mb-2">L'IA prépare tes cartes...</h3>
-                <p className="text-sm text-slate-500 font-medium">Génération de 5 flashcards sur {selectedSubject}</p>
+                <h3 className="text-lg font-black text-slate-800 mb-2">L'IA prépare tes cartes...</h3>
+                <p className="text-xs text-slate-500 font-semibold">Génération de 5 flashcards sur {selectedSubject}</p>
             </div>
         );
     }
@@ -297,8 +297,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                         className="bg-white rounded-[3rem] shadow-2xl shadow-teal-100 p-10 text-center mb-6"
                     >
                         <div className="text-6xl mb-4">{pct >= 80 ? '🏆' : pct >= 50 ? '⭐' : '💪'}</div>
-                        <h2 className="text-3xl font-black text-slate-900 mb-1">Session terminée !</h2>
-                        <p className="text-slate-500 font-medium mb-6">{selectedSubject}</p>
+                        <h2 className="text-2xl font-black text-slate-900 mb-1">Session terminée !</h2>
+                        <p className="text-slate-500 font-semibold text-sm mb-6">{selectedSubject}</p>
                         <div className="flex gap-4 mb-6">
                             <div className="flex-1 p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
                                 <p className="text-3xl font-black text-emerald-600">{successCount}</p>
@@ -370,8 +370,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                             <button onClick={() => setPhase('select')} className="text-slate-500 text-sm font-bold hover:text-slate-800 mb-2 block">
                                 ← Retour
                             </button>
-                            <h1 className="text-3xl font-black text-slate-900">Ma Collection 📚</h1>
-                            <p className="text-sm text-slate-500 font-medium">Toutes les notions que tu as déjà travaillées.</p>
+                            <h1 className="text-2xl font-black text-slate-900">Ma Collection 📚</h1>
+                            <p className="text-xs text-slate-500 font-semibold">Toutes les notions que tu as déjà travaillées.</p>
                         </div>
                         <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
@@ -416,8 +416,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                                     ))}
                                                 </div>
                                             </div>
-                                            <h3 className="text-lg font-black text-slate-800 mb-2 leading-tight">{card.front || card.notion}</h3>
-                                            <p className="text-sm text-slate-600 font-medium line-clamp-2 italic mb-1">
+                                            <h3 className="text-base font-black text-slate-800 mb-2 leading-tight">{card.front || card.notion}</h3>
+                                            <p className="text-xs text-slate-600 font-semibold line-clamp-2 italic mb-1">
                                                 {card.back || 'Pas encore de corrigé détaillé.'}
                                             </p>
                                             <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2 space-y-2">
@@ -502,7 +502,7 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                         <Brain className="h-4 w-4" />
                                         <p className="text-[10px] font-black uppercase tracking-widest">Question n°{currentIndex + 1}</p>
                                     </div>
-                                    <p className="text-xl font-black leading-relaxed">{currentCard?.front}</p>
+                                    <p className="text-lg font-black leading-relaxed">{currentCard?.front}</p>
                                 </div>
 
                                 {/* Answer input area */}
@@ -516,8 +516,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                         value={childAnswer}
                                         onChange={e => setChildAnswer(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey && childAnswer.trim()) handleReveal(); }}
-                                        placeholder="Écris ce que tu penses être la bonne réponse... (Ctrl+Entrée pour valider)"
-                                        className="w-full h-28 resize-none outline-none text-slate-800 font-medium placeholder:text-slate-300 text-sm leading-relaxed"
+                                        placeholder="Écris ce que tu penses être la bonne réponse... (Ctrl+Entrée)"
+                                        className="w-full h-28 resize-none outline-none text-slate-800 font-semibold placeholder:text-slate-300 text-xs leading-relaxed"
                                     />
                                     <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
                                         {/* Hint button */}
@@ -618,7 +618,7 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                                                 <p>Magic: {h.ai}</p>
                                                             </div>
                                                         ))}
-                                                        <p className={`text-base font-black ${isValidating ? 'text-slate-400' : 'text-slate-800'}`}>
+                                                        <p className={`text-sm font-black ${isValidating ? 'text-slate-400' : 'text-slate-800'}`}>
                                                             {isValidating ? 'Analyse de ta réponse...' : aiFeedback?.feedback}
                                                         </p>
                                                     </div>
@@ -642,7 +642,7 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                                         onChange={e => setFollowUp(e.target.value)}
                                                         onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey && followUp.trim()) handleFollowUp(); }}
                                                         placeholder="Répondre à Magic ✨... (Ctrl+Entrée)"
-                                                        className="w-full p-4 pr-12 rounded-3xl bg-white border-2 border-indigo-100 shadow-sm text-sm font-medium resize-none h-20 outline-none focus:border-indigo-300 transition-all"
+                                                        className="w-full p-4 pr-12 rounded-3xl bg-white border-2 border-indigo-100 shadow-sm text-xs font-semibold resize-none h-20 outline-none focus:border-indigo-300 transition-all"
                                                     />
                                                     <button
                                                         onClick={handleFollowUp}
@@ -657,13 +657,13 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                             <div className="space-y-3">
                                                 <button
                                                     onClick={() => handleRate(aiFeedback.isCorrect)}
-                                                    className={`w-full py-5 rounded-[2.5rem] font-black text-xl uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${aiFeedback.isCorrect
+                                                    className={`w-full py-4 rounded-[2.5rem] font-black text-sm uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${aiFeedback.isCorrect
                                                         ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-200'
                                                         : 'bg-slate-900 text-white shadow-slate-200'
                                                         }`}
                                                 >
                                                     {aiFeedback.isCorrect ? 'Super, Suivant !' : 'D\'accord, Suivant'}
-                                                    <ArrowRight className="h-6 w-6" />
+                                                    <ArrowRight className="h-5 w-5" />
                                                 </button>
 
                                                 {/* Small override for the child */}

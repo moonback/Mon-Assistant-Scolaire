@@ -254,10 +254,10 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
       <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="flex items-center gap-2 text-2xl font-black text-slate-800 tracking-tight">
-              <CalendarCheck2 className="h-6 w-6 text-indigo-600" /> Missions du Jour
+            <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 tracking-tight">
+              <CalendarCheck2 className="h-5 w-5 text-indigo-600" /> Missions du Jour
             </h3>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Programme personnalisé de {gradeLevel}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Programme personnalisé de {gradeLevel}</p>
           </div>
           <div className="flex flex-col items-end">
             <div className="flex gap-1">
@@ -281,11 +281,11 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                 className={`relative group p-6 rounded-[2rem] border-2 transition-all ${isDone ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-50 hover:border-indigo-100 hover:bg-white'}`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDone ? 'text-emerald-600' : 'text-indigo-600'}`}>{m.subject}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">{m.subject}</span>
                   {isDone && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                 </div>
-                <h4 className="font-black text-slate-800 text-lg mb-2">{m.title}</h4>
-                <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">{m.description}</p>
+                <h4 className="font-black text-slate-800 text-base mb-2">{m.title}</h4>
+                <p className="text-xs text-slate-500 font-semibold mb-4 leading-relaxed">{m.description}</p>
                 <div className="bg-white/50 rounded-xl p-3 mb-4 border border-white/50 italic text-[10px] text-slate-400">
                   🎯 {m.objective}
                 </div>
@@ -311,8 +311,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Mastery Table */}
             <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
-              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
-                <Gauge className="h-5 w-5 text-indigo-600" /> Tableau de Maîtrise
+              <h3 className="flex items-center gap-2 text-base font-black text-slate-800 mb-6">
+                <Gauge className="h-4 w-4 text-indigo-600" /> Tableau de Maîtrise
               </h3>
               <div className="space-y-3">
                 {subjectInsights.slice(0, 4).map(item => {
@@ -337,8 +337,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
             {/* SRS Section */}
             <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
-              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
-                <RefreshCcw className="h-5 w-5 text-indigo-600" /> Révision Espacée
+              <h3 className="flex items-center gap-2 text-base font-black text-slate-800 mb-6">
+                <RefreshCcw className="h-4 w-4 text-indigo-600" /> Révision Espacée
               </h3>
               <div className="space-y-4">
                 {srsCards.length > 0 ? srsCards.map(card => (
@@ -363,8 +363,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
             {/* Difficulty Mapping / Diagnostic */}
             <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
-              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
-                <ShieldAlert className="h-5 w-5 text-amber-500" /> Diagnostic IA
+              <h3 className="flex items-center gap-2 text-base font-black text-slate-800 mb-6">
+                <ShieldAlert className="h-4 w-4 text-amber-500" /> Diagnostic IA
               </h3>
               {subjectInsights.some(item => item.lowScoreCount > 0) ? (
                 <div className="space-y-4">
@@ -395,13 +395,13 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
           {/* Explanation Workshop */}
           <section className="md:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="flex items-center gap-2 text-xl font-black text-slate-800">
-                <BookCheck className="h-5 w-5 text-indigo-600" /> Atelier "Explique avec tes mots"
+              <h3 className="flex items-center gap-2 text-base font-black text-slate-800">
+                <BookCheck className="h-4 w-4 text-indigo-600" /> Atelier "Explique avec tes mots"
               </h3>
               {latestExplanation && <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full uppercase">SCORE: {latestExplanation.understanding_score}/10</span>}
             </div>
-            <p className="text-sm text-slate-500 font-bold mb-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50 italic">
-              <Sparkles className="h-4 w-4 inline mr-2 text-indigo-600" /> "{explanationPrompt}"
+            <p className="text-xs text-slate-500 font-semibold mb-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-50 italic">
+              <Sparkles className="h-3.5 w-3.5 inline mr-2 text-indigo-600" /> "{explanationPrompt}"
             </p>
             <textarea
               value={explanationText}
@@ -426,8 +426,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
           {/* Portfolio Snapshot */}
           <section className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40">
-            <h3 className="flex items-center gap-2 text-xl font-black text-slate-800 mb-6">
-              <Award className="h-5 w-5 text-indigo-600" /> Mon Portfolio
+            <h3 className="flex items-center gap-2 text-base font-black text-slate-800 mb-6">
+              <Award className="h-4 w-4 text-indigo-600" /> Mon Portfolio
             </h3>
             <div className="space-y-6">
               {milestones.map(m => (
@@ -466,12 +466,12 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10">
               <div>
                 <span className="px-4 py-1.5 bg-indigo-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest leading-none mb-4 inline-block">Plan Parent-Enfant Hebdo</span>
-                <h3 className="text-3xl font-black tracking-tight mb-4">Objectifs de la Semaine</h3>
+                <h3 className="text-2xl font-black tracking-tight mb-4">Objectifs de la Semaine</h3>
                 <div className="space-y-4 mt-6">
                   {weeklyPlan?.objectives?.map((obj, idx) => (
                     <div key={idx} className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black ${idx === 0 ? 'bg-emerald-500' : idx === 1 ? 'bg-indigo-500' : 'bg-amber-500'}`}>{idx + 1}</div>
-                      <p className="text-sm font-bold">{obj}</p>
+                      <p className="text-xs font-semibold">{obj}</p>
                     </div>
                   )) || (
                       <div className="animate-pulse space-y-4">
@@ -518,8 +518,8 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Plan Hebdomadaire Complet</h2>
-                  <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Soutien pédagogique & Accompagnement</p>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Plan Hebdomadaire Complet</h2>
+                  <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">Soutien pédagogique & Accompagnement</p>
                 </div>
                 <button
                   onClick={() => setShowFullPlan(false)}

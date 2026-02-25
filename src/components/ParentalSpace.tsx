@@ -8,7 +8,7 @@ import ParentalOverview from './parental/ParentalOverview';
 import ParentalChildren from './parental/ParentalChildren';
 import ParentalRewards from './parental/ParentalRewards';
 import ParentalSecurity from './parental/ParentalSecurity';
-import ParentalCompetitions from './parental/ParentalCompetitions';
+import ParentalCompetitions from './parental/ParentalCompetitions.tsx';
 
 interface ParentalSpaceProps {
     activeSubTab: Tab;
@@ -92,8 +92,8 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                 <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mx-auto mb-6">
                     <Lock className="w-10 h-10" />
                 </div>
-                <h2 className="text-3xl font-semibold text-slate-800 mb-2">Espace Parents</h2>
-                <p className="text-slate-500 font-bold mb-8 text-sm uppercase tracking-wide">Zone Sécurisée</p>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Espace Parents</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Zone Sécurisée</p>
                 <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }} className="space-y-6">
                     <input
                         type="password"
@@ -102,13 +102,13 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                         onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                         placeholder="PIN"
                         autoComplete="current-password"
-                        className="w-full text-center text-4xl tracking-wide font-semibold p-5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none transition-all"
+                        className="w-full text-center text-3xl tracking-widest font-black p-5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none transition-all shadow-sm"
                     />
                     {error && <p className="text-red-500 font-bold text-xs">{error}</p>}
-                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-xl shadow-sm  transition-all outline-none">
+                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all outline-none uppercase tracking-widest text-xs">
                         Accéder au Tableau de Bord
                     </button>
-                    <button type="button" onClick={onExit} className="text-slate-400 text-xs font-bold uppercase hover:text-indigo-600 transition-colors w-full">Retour à l'accueil</button>
+                    <button type="button" onClick={onExit} className="text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-indigo-600 transition-colors w-full">Retour à l'accueil</button>
                 </form>
             </div>
         );

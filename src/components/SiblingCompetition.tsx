@@ -85,8 +85,8 @@ export default function SiblingCompetition() {
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                    <Swords className="h-6 w-6 text-indigo-600" /> Duels de Famille
+                <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
+                    <Swords className="h-5 w-5 text-indigo-600" /> Duels de Famille
                 </h3>
                 <button
                     onClick={() => setShowDuelModal(true)}
@@ -107,8 +107,8 @@ export default function SiblingCompetition() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 className={`p-5 rounded-[2rem] border-2 flex items-center justify-between group transition-all ${comp.status === 'pending_approval' || comp.status === 'pending_acceptance'
-                                        ? 'bg-slate-50 border-slate-100'
-                                        : 'bg-white border-indigo-100 shadow-xl shadow-indigo-100/20'
+                                    ? 'bg-slate-50 border-slate-100'
+                                    : 'bg-white border-indigo-100 shadow-xl shadow-indigo-100/20'
                                     }`}
                             >
                                 <div className="flex items-center gap-4">

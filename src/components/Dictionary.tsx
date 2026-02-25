@@ -38,8 +38,8 @@ export default function Dictionary() {
             <BookA className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Dictionnaire</h2>
-            <p className="text-sm text-slate-500">Cherche un mot et lis sa définition.</p>
+            <h2 className="text-sm font-black text-slate-800 tracking-tight">Le Petit Larousse IA</h2>
+            <p className="text-xs font-semibold text-slate-500">Cherche n'importe quel mot et découvre sa magie.</p>
           </div>
         </div>
 
@@ -50,18 +50,18 @@ export default function Dictionary() {
               type="text"
               value={word}
               onChange={(e) => setWord(e.target.value)}
-              placeholder="Écris un mot"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-9 pr-3 text-sm outline-none focus:border-indigo-300 focus:bg-white"
+              placeholder="Écris un mot..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-9 pr-3 text-xs font-semibold outline-none focus:border-indigo-300 focus:bg-white transition-all shadow-sm"
             />
           </div>
-          <button type="submit" disabled={loading || !word} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-60">
-            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Chercher'}
+          <button type="submit" disabled={loading || !word} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-xs font-black uppercase tracking-widest text-white disabled:opacity-60 shadow-lg shadow-indigo-100 transition-all">
+            {loading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : 'Chercher'}
           </button>
         </form>
 
         <div className="mt-3 flex flex-wrap gap-2">
           {['Curiosité', 'Éphémère', 'Symphonie', 'Galaxie'].map((suggested) => (
-            <button key={suggested} onClick={() => setWord(suggested)} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
+            <button key={suggested} onClick={() => setWord(suggested)} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-indigo-200 hover:text-indigo-600 transition-all">
               {suggested}
             </button>
           ))}
@@ -72,7 +72,7 @@ export default function Dictionary() {
         {definition && (
           <motion.section key="definition" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-2xl border border-slate-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold capitalize text-slate-900">{word}</h3>
+              <h3 className="text-base font-black text-slate-800 tracking-tight capitalize">{word}</h3>
               <button
                 onClick={() => {
                   if (isSpeaking) {
@@ -82,17 +82,17 @@ export default function Dictionary() {
                     speak(cleanText);
                   }
                 }}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600"
+                className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600"
               >
-                {isSpeaking ? <StopCircle className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                {isSpeaking ? <StopCircle className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
               </button>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-xs font-semibold leading-relaxed text-slate-700 shadow-inner">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-bold text-indigo-700" {...props} />
+                  strong: ({ node, ...props }) => <strong className="font-black text-indigo-700" {...props} />
                 }}
               >
                 {definition}

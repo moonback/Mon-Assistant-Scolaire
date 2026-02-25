@@ -158,12 +158,12 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
             className="rounded-2xl border border-slate-200 bg-white p-6"
           >
             <div className="mb-5 flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-indigo-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-indigo-600 shrink-0">
                 <Brain className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Quiz</h2>
-                <p className="text-sm text-slate-500">Choisis un sujet et lance une série de questions.</p>
+                <h2 className="text-sm font-bold text-slate-900">Lance ton défi</h2>
+                <p className="text-xs text-slate-500">Choisis un sujet et commence l'aventure !</p>
               </div>
             </div>
 
@@ -173,12 +173,12 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="Ex: Espace, Animaux, Histoire..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-indigo-300 focus:bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-800 outline-none focus:border-indigo-300 focus:bg-white"
               />
 
               <button
                 onClick={() => startQuiz()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100"
               >
                 Générer le quiz
                 <ChevronRight className="h-4 w-4" />
@@ -224,8 +224,8 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                 <p className="text-lg font-semibold text-slate-900">{Math.round((score / questions.length) * 100)}%</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs text-slate-500">Étoiles</p>
-                <p className="flex items-center justify-center gap-1 text-lg font-semibold text-slate-900">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Étoiles</p>
+                <p className="flex items-center justify-center gap-1 text-base font-black text-slate-900">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> +{score * 10}
                 </p>
               </div>
@@ -254,7 +254,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
               <div className="h-full rounded-full bg-indigo-600 transition-all duration-200" style={{ width: `${currentProgress}%` }} />
             </div>
 
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">{questions[currentQuestion].question}</h3>
+            <h3 className="mb-4 text-base font-black text-slate-800 leading-relaxed">{questions[currentQuestion].question}</h3>
 
             {questions[currentQuestion].type === 'open' ? (
               <div className="space-y-4">
@@ -270,10 +270,10 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                   <button
                     onClick={submitOpenAnswer}
                     disabled={!openAnswer.trim() || aiLoading}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50 transition-all"
                   >
                     {aiLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-                    Valider ma réponse
+                    Valider
                   </button>
                 ) : (
                   <div className={`rounded-xl border p-4 ${isCorrect ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
@@ -315,7 +315,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                       key={idx}
                       onClick={() => handleAnswer(idx)}
                       disabled={selectedOption !== null}
-                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left text-sm transition-colors ${style}`}
+                      className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-xs font-semibold transition-colors ${style}`}
                     >
                       <span>{option}</span>
                       {selectedOption !== null &&

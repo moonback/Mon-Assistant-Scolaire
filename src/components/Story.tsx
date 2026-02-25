@@ -36,30 +36,34 @@ export default function Story() {
             <Book className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Générateur d'histoire</h2>
-            <p className="text-sm text-slate-500">Décris un héros et un lieu pour créer un conte.</p>
+            <h2 className="text-sm font-black text-slate-800 tracking-tight">Conte Magique</h2>
+            <p className="text-xs font-semibold text-slate-500">Décris un héros et un lieu pour créer une aventure.</p>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1.5">
-            <span className="flex items-center gap-1 text-xs text-slate-500"><User className="h-3.5 w-3.5" /> Héros</span>
+            <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <User className="h-3 w-3" /> Héros
+            </span>
             <input
               type="text"
               value={hero}
               onChange={(e) => setHero(e.target.value)}
               placeholder="Ex: un robot curieux"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-indigo-300 focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold outline-none focus:border-indigo-300 focus:bg-white transition-all shadow-sm"
             />
           </label>
           <label className="space-y-1.5">
-            <span className="flex items-center gap-1 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" /> Lieu</span>
+            <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <MapPin className="h-3 w-3" /> Lieu
+            </span>
             <input
               type="text"
               value={place}
               onChange={(e) => setPlace(e.target.value)}
               placeholder="Ex: une planète lointaine"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-indigo-300 focus:bg-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold outline-none focus:border-indigo-300 focus:bg-white transition-all shadow-sm"
             />
           </label>
         </div>
@@ -67,10 +71,10 @@ export default function Story() {
         <button
           onClick={generateStory}
           disabled={loading || !hero}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100 transition-all disabled:opacity-60"
         >
-          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-          {loading ? 'Génération...' : 'Créer une histoire'}
+          {loading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+          {loading ? 'Génération...' : 'Créer mon histoire'}
         </button>
       </motion.section>
 
@@ -78,7 +82,7 @@ export default function Story() {
         {story && (
           <motion.section key="story" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-2xl border border-slate-200 bg-white p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900">Ton histoire</h3>
+              <h3 className="text-sm font-black text-slate-800 tracking-tight">Ton aventure magique</h3>
               <button
                 onClick={() => {
                   if (isSpeaking) {
@@ -87,14 +91,14 @@ export default function Story() {
                     speak(story.replace(/[*_#`]/g, ''));
                   }
                 }}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600"
+                className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600"
                 title={isSpeaking ? "Arrêter" : "Écouter"}
               >
-                {isSpeaking ? <StopCircle className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                {isSpeaking ? <StopCircle className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
               </button>
             </div>
 
-            <p className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">{story}</p>
+            <p className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-6 text-xs font-semibold leading-relaxed text-slate-700 shadow-inner">{story}</p>
 
             <button
               onClick={() => {

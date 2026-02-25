@@ -231,20 +231,20 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
                 <Radio className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-black text-white tracking-tight">Conversation Vocale IA</p>
-                <p className="text-[11px] text-white/70 font-medium">Parle directement avec Gemini Live</p>
+                <p className="text-xs font-black text-white tracking-tight">Conversation Vocale IA</p>
+                <p className="text-[10px] text-white/70 font-semibold mt-0.5">Parle directement avec Gemini Live</p>
               </div>
             </div>
             <button
               onClick={() => setShowLiveModal(true)}
               disabled={!hasGeminiKey}
               title={!hasGeminiKey ? 'VITE_GEMINI_API_KEY manquante dans .env' : ''}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${hasGeminiKey
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${hasGeminiKey
                 ? 'bg-white text-indigo-700 hover:scale-[1.03] shadow-lg'
                 : 'bg-white/20 text-white/50 cursor-not-allowed'
                 }`}
             >
-              <Mic className="h-4 w-4" /> Parler
+              <Mic className="h-3.5 w-3.5" /> Parler
             </button>
           </motion.div>
 
@@ -275,11 +275,16 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
           {/* Question form */}
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-slate-200 bg-white p-5">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <h2 className="text-base font-semibold text-slate-900">Assistant IA</h2>
-                <p className="text-sm text-slate-500">
-                  {selectedChild ? `Je connais ${selectedChild.name} et ses points forts 🧠` : 'Pose une question claire.'}
-                </p>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <Brain className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 tracking-tight">Assistant IA</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    {selectedChild ? `${selectedChild.name}` : 'Tuteur Intelligent'}
+                  </p>
+                </div>
               </div>
 
               <div className="relative">
@@ -288,7 +293,7 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
                   value={question}
                   onChange={e => setQuestion(e.target.value)}
                   placeholder="Exemple : Explique-moi la division étape par étape."
-                  className="h-36 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 pr-14 text-slate-800 outline-none transition focus:border-indigo-300 focus:bg-white"
+                  className="h-36 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 pr-14 text-slate-800 outline-none transition focus:border-indigo-300 focus:bg-white text-xs font-semibold leading-relaxed"
                 />
                 <button
                   type="button"
@@ -314,12 +319,11 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
               {error && <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
               <div className="flex flex-wrap gap-2">
-                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                  <ImageIcon className="h-4 w-4" /> Photo
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600">
+                  <ImageIcon className="h-3.5 w-3.5" /> Photo
                 </button>
-                <button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
-                  {loading ? <Sparkles className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white disabled:opacity-60 shadow-lg shadow-indigo-100">
+                  {loading ? <Sparkles className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                   {loading ? 'Analyse...' : 'Envoyer'}
                 </button>
                 {(question || selectedImage) && (
@@ -336,7 +340,7 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
             {response && (
               <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-slate-900">Réponse</h3>
+                  <h3 className="text-sm font-black text-slate-900 tracking-tight">Réponse Magique</h3>
                   <button
                     onClick={() => {
                       if (isSpeaking) {
@@ -345,13 +349,13 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
                         speak(response.replace(/[*_#`]/g, ''));
                       }
                     }}
-                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600"
+                    className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600"
                     title="Lire à voix haute"
                   >
-                    {isSpeaking ? <StopCircle className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    {isSpeaking ? <StopCircle className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
                   </button>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{response}</div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-xs font-semibold leading-relaxed whitespace-pre-wrap text-slate-700">{response}</div>
 
                 <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
@@ -381,8 +385,8 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
         <aside>
           <section className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <History className="h-4 w-4 text-indigo-600" /> Historique
+              <h2 className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-widest">
+                <History className="h-3.5 w-3.5 text-indigo-600" /> Historique
               </h2>
               {history.length > 0 && (
                 <button onClick={clearHistory} className="rounded-lg p-1.5 text-slate-400 hover:text-red-600" title="Effacer tout">
@@ -392,8 +396,8 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
             </div>
             <div className="max-h-[calc(100vh-240px)] space-y-2 overflow-y-auto pr-1">
               {history.map(item => (
-                <button key={item.id} onClick={() => loadHistoryItem(item)} className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition-colors hover:bg-white">
-                  <p className="line-clamp-2 text-sm font-medium text-slate-800">{item.question || "Analyse d'image"}</p>
+                <button key={item.id} onClick={() => loadHistoryItem(item)} className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition-colors hover:bg-white text-xs font-bold text-slate-800">
+                  <p className="line-clamp-2">{item.question || "Analyse d'image"}</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
                     <Clock className="h-3.5 w-3.5" /> {new Date(item.date).toLocaleDateString()}
                   </p>
@@ -404,6 +408,6 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
           </section>
         </aside>
       </div>
-    </div>
+    </div >
   );
 }

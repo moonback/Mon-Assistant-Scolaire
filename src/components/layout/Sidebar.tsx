@@ -58,8 +58,10 @@ export default function Sidebar({
                             {isParentMode ? <ShieldCheck className="h-4 w-4" /> : <Brain className="h-4 w-4" />}
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">Mon Assistant</p>
-                            <p className="text-xs text-slate-500">{isParentMode ? 'Espace parent' : 'Espace élève'}</p>
+                            <p className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">Magic Desk</p>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">
+                                {isParentMode ? 'Parents' : 'Élève'}
+                            </p>
                         </div>
                     </motion.div>
                 )}
@@ -79,10 +81,10 @@ export default function Sidebar({
                             whileHover={{ x: -4 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setActiveTab('home')}
-                            className={`mb-6 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 transition-colors ${isCollapsed ? 'justify-center px-0' : ''}`}
+                            className={`mb-6 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-xs font-black uppercase tracking-widest text-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 transition-colors ${isCollapsed ? 'justify-center px-0' : ''}`}
                             title={isCollapsed ? 'Retour' : ''}
                         >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="h-3.5 w-3.5" />
                             {!isCollapsed && <span>Retour à l'app</span>}
                         </motion.button>
 
@@ -94,7 +96,7 @@ export default function Sidebar({
                                     whileHover={{ x: 4 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => setParentalActiveTab(item.id)}
-                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition-all ${isActive
+                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-xs font-black uppercase tracking-wide transition-all ${isActive
                                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
                                         : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100'
                                         } ${isCollapsed ? 'justify-center px-0' : ''}`}
@@ -115,7 +117,7 @@ export default function Sidebar({
                                 whileHover={{ x: 4 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition-all ${isActive
+                                className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-wide transition-all ${isActive
                                     ? 'bg-white text-indigo-700 shadow-md ring-1 ring-indigo-100/50'
                                     : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm shadow-transparent hover:shadow-slate-200/50'
                                     } ${isCollapsed ? 'justify-center px-0' : ''}`}

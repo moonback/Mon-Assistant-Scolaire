@@ -146,9 +146,9 @@ function AppContent() {
       case 'home':
         return (
           <div className="space-y-6 pb-10 max-w-8xl mx-auto">
-            <div className="text-center space-y-2 mb-8">
-              <h3 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
-              <p className="text-slate-500 font-bold text-lg">Choisis ton aventure du jour, {selectedChild?.name} !</p>
+            <div className="text-center space-y-2 mb-6">
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Ton Bureau Magique ✨</h3>
+              <p className="text-slate-500 font-semibold text-sm">Choisis ton aventure du jour, {selectedChild?.name} !</p>
             </div>
 
             <SiblingCompetition />
@@ -163,16 +163,16 @@ function AppContent() {
                   onClick={() => setActiveTab('challenges')}
                   className="col-span-1 md:col-span-2 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 p-8 md:p-10 text-left shadow-xl shadow-indigo-200/60 flex flex-col md:flex-row items-center gap-6 border-4 border-white"
                 >
-                  <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner">
-                    <span className="text-5xl">🎯</span>
+                  <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner">
+                    <span className="text-4xl">🎯</span>
                   </div>
                   <div className="flex-1 text-white text-center md:text-left">
-                    <h4 className="text-3xl font-black mb-2">Mission du Jour</h4>
-                    <p className="text-indigo-100 font-bold text-xl leading-relaxed">
+                    <h4 className="text-xl font-black mb-1">Mission du Jour</h4>
+                    <p className="text-white/80 font-semibold text-base leading-relaxed">
                       Gagne le maximum d'étoiles en relevant tes défis quotidiens !
                     </p>
                   </div>
-                  <div className="shrink-0 text-white/80 text-4xl">→</div>
+                  <div className="shrink-0 text-white/80 text-3xl">→</div>
                 </motion.button>
               )}
 
@@ -184,12 +184,12 @@ function AppContent() {
                   onClick={() => setActiveTab('assistant')}
                   className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-4xl">🤖</span>
+                  <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-2xl">🤖</span>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-slate-800 mb-1">Cerveau Magique</h4>
-                    <p className="text-slate-500 font-bold text-base">Pose toutes tes questions !</p>
+                    <h4 className="text-lg font-black text-slate-800 mb-0.5">Cerveau Magique</h4>
+                    <p className="text-slate-500 font-semibold text-xs">Pose toutes tes questions !</p>
                   </div>
                 </motion.button>
               )}
@@ -202,12 +202,12 @@ function AppContent() {
                   onClick={() => setActiveTab('market')}
                   className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-yellow-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-20 h-20 bg-yellow-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-4xl">🎁</span>
+                  <div className="w-14 h-14 bg-yellow-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-2xl">🎁</span>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-slate-800 mb-1">La Boutique</h4>
-                    <p className="text-slate-500 font-bold text-base">Échange tes étoiles !</p>
+                    <h4 className="text-lg font-black text-slate-800 mb-0.5">La Boutique</h4>
+                    <p className="text-slate-500 font-semibold text-xs">Échange tes étoiles !</p>
                   </div>
                 </motion.button>
               )}
@@ -220,12 +220,12 @@ function AppContent() {
                   onClick={() => setActiveTab('flashcards')}
                   className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-emerald-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-4xl">📚</span>
+                  <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-2xl">📚</span>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-slate-800 mb-1">Cartes Mémoire</h4>
-                    <p className="text-slate-500 font-bold text-base">Révise en t'amusant !</p>
+                    <h4 className="text-lg font-black text-slate-800 mb-0.5">Cartes Mémoire</h4>
+                    <p className="text-slate-500 font-semibold text-xs">Révise en t'amusant !</p>
                   </div>
                 </motion.button>
               )}
@@ -238,12 +238,12 @@ function AppContent() {
                   onClick={() => setActiveTab('math')}
                   className="rounded-3xl bg-white p-7 shadow-md hover:shadow-xl transition-all border-2 border-transparent hover:border-teal-200 flex flex-col items-center text-center gap-4"
                 >
-                  <div className="w-20 h-20 bg-teal-50 rounded-2xl flex items-center justify-center shadow-inner">
-                    <span className="text-4xl">🔢</span>
+                  <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center shadow-inner">
+                    <span className="text-2xl">🔢</span>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-slate-800 mb-1">Calcul Mental</h4>
-                    <p className="text-slate-500 font-bold text-base">Deviens un champion des maths !</p>
+                    <h4 className="text-lg font-black text-slate-800 mb-0.5">Calcul Mental</h4>
+                    <p className="text-slate-500 font-semibold text-xs">Deviens un champion !</p>
                   </div>
                 </motion.button>
               )}
@@ -251,7 +251,7 @@ function AppContent() {
 
             {/* Other activities section */}
             <div className="pt-6 mt-2 border-t-2 border-slate-100">
-              <h4 className="text-base font-black text-slate-400 uppercase tracking-wider mb-4 px-2">Plus d'activités</h4>
+              <h4 className="text-sm font-black text-slate-400 uppercase tracking-wider mb-4 px-2">Plus d'activités</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {tabs
                   .filter(t => !['home', 'dashboard', 'parental', 'profile', 'challenges', 'assistant', 'flashcards', 'market', 'math'].includes(t.id))

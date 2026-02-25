@@ -15,8 +15,8 @@ export default function ParentalMissions() {
     return (
         <section className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                    <Gift className="h-6 w-6 text-pink-500" /> Missions des Parents
+                <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
+                    <Gift className="h-5 w-5 text-pink-500" /> Missions des Parents
                 </h3>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tes objectifs secrets</p>
             </div>
@@ -37,9 +37,9 @@ export default function ParentalMissions() {
                                     {goal.icon || '🎁'}
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="text-lg font-black text-slate-800 leading-tight">{goal.label}</h4>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                        Objectif : <span className="text-indigo-600">{goal.target} ⭐</span>
+                                    <h4 className="text-base font-black text-slate-800 leading-tight">{goal.label}</h4>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                        Objectif : <span className="text-indigo-600 font-black">{goal.target} ⭐</span>
                                     </p>
                                 </div>
                                 {isCompleted && (

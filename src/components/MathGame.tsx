@@ -71,7 +71,7 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
 
   useEffect(() => {
     generateProblem();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gradeLevel]);
 
   const computeCorrect = () => {
@@ -123,12 +123,12 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
       {/* Score bar */}
       <div className="flex items-center justify-between bg-white rounded-2xl border border-slate-200 px-5 py-3 shadow-sm">
         <div className="flex items-center gap-2">
-          <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-          <span className="text-lg font-black text-slate-800">{score * 5} étoiles</span>
+          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+          <span className="text-base font-black text-slate-800">{score * 5} étoiles</span>
         </div>
         <div className="flex items-center gap-2">
-          <Flame className={`h-5 w-5 ${streak >= 3 ? 'text-orange-500' : 'text-slate-300'}`} />
-          <span className={`text-sm font-black ${streak >= 3 ? 'text-orange-500' : 'text-slate-400'}`}>
+          <Flame className={`h-4 w-4 ${streak >= 3 ? 'text-orange-500' : 'text-slate-300'}`} />
+          <span className={`text-xs font-black ${streak >= 3 ? 'text-orange-500' : 'text-slate-400'}`}>
             {streak > 0 ? `${streak} d'affilée !` : 'Série: 0'}
           </span>
         </div>
@@ -154,9 +154,9 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
               className="absolute inset-0 flex items-center justify-center bg-amber-50/90 backdrop-blur-sm z-10 rounded-3xl"
             >
               <div className="text-center">
-                <div className="text-6xl mb-2">🔥</div>
-                <p className="text-2xl font-black text-orange-600">Série x3 !</p>
-                <p className="text-orange-500 font-bold">+10 étoiles bonus !</p>
+                <div className="text-5xl mb-2">🔥</div>
+                <p className="text-xl font-black text-orange-600">Série x3 !</p>
+                <p className="text-orange-500 font-bold text-sm">+10 étoiles bonus !</p>
               </div>
             </motion.div>
           )}
@@ -170,7 +170,7 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
             exit={{ opacity: 0, scale: 0.9 }}
             className="mb-8"
           >
-            <p className="text-6xl font-black text-slate-900 tracking-tight">
+            <p className="text-4xl font-black text-slate-900 tracking-tight">
               {num1} <span className="text-indigo-500">{operatorLabel}</span> {num2} <span className="text-slate-400">=</span> <span className="text-slate-300">?</span>
             </p>
           </motion.div>
@@ -183,13 +183,12 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="Ta réponse..."
-              className={`w-full rounded-2xl border-2 px-6 py-5 text-center text-4xl font-black outline-none transition-all ${
-                status === 'correct'
+              className={`w-full rounded-2xl border-2 px-6 py-4 text-center text-3xl font-black outline-none transition-all ${status === 'correct'
                   ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
                   : status === 'wrong'
                     ? 'border-red-400 bg-red-50 text-red-700'
                     : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-indigo-400 focus:bg-white focus:shadow-lg'
-              }`}
+                }`}
               autoFocus
               disabled={status !== 'idle'}
             />
@@ -235,9 +234,9 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
             disabled={!answer || status !== 'idle'}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            className="w-full rounded-2xl bg-indigo-600 py-5 text-xl font-black text-white shadow-lg shadow-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-700"
+            className="w-full rounded-2xl bg-indigo-600 py-4 text-base font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-700"
           >
-            {status === 'correct' ? '✅ Bravo !' : status === 'wrong' ? '❌ Prochaine question...' : '✅ Vérifier !'}
+            {status === 'correct' ? '✅ Bravo !' : status === 'wrong' ? '❌ Suivant...' : '✅ Vérifier'}
           </motion.button>
         </form>
       </motion.div>
@@ -245,12 +244,12 @@ export default function MathGame({ onEarnPoints }: MathGameProps) {
       {/* Tips */}
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-sm font-black text-slate-700 mb-1">💡 Astuce</p>
-          <p className="text-sm text-slate-500">Prends le temps de réfléchir, la rapidité vient avec la pratique !</p>
+          <p className="text-xs font-black text-slate-700 mb-1 uppercase tracking-widest">💡 Astuce</p>
+          <p className="text-xs font-semibold text-slate-500 leading-relaxed">Prends le temps de réfléchir, la rapidité vient avec la pratique !</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-sm font-black text-slate-700 mb-1">🎯 Objectif</p>
-          <p className="text-sm text-slate-500">Enchaîne 3 bonnes réponses pour un bonus de série !</p>
+          <p className="text-xs font-black text-slate-700 mb-1 uppercase tracking-widest">🎯 Objectif</p>
+          <p className="text-xs font-semibold text-slate-500 leading-relaxed">Enchaîne 3 bonnes réponses pour un bonus de série !</p>
         </div>
       </div>
     </div>
