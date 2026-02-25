@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Moon, Clock } from 'lucide-react';
+import { Moon, Clock, Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import { Tab, ParentalTab } from './types/app';
@@ -11,22 +11,23 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import MobileNav from './components/layout/MobileNav';
 import ChildSelector from './components/auth/ChildSelector';
+import TimeTracker from './components/layout/TimeTracker';
 
-// Feature Components
-import Assistant from './components/Assistant';
-import Quiz from './components/Quiz';
-import Story from './components/Story';
-import Dictionary from './components/Dictionary';
-import MathGame from './components/MathGame';
-import DidYouKnow from './components/DidYouKnow';
-import AuthPage from './components/AuthPage';
-import Dashboard from './components/Dashboard';
-import DrawingBoard from './components/DrawingBoard';
-import HomeworkHelper from './components/HomeworkHelper';
-import ParentalSpace from './components/ParentalSpace';
-import ChildProfile from './components/ChildProfile';
-import DailyChallenges from './components/DailyChallenges';
-import Flashcards from './components/Flashcards';
+// Feature Components (Lazy loaded)
+const Assistant = lazy(() => import('./components/Assistant'));
+const Quiz = lazy(() => import('./components/Quiz'));
+const Story = lazy(() => import('./components/Story'));
+const Dictionary = lazy(() => import('./components/Dictionary'));
+const MathGame = lazy(() => import('./components/MathGame'));
+const DidYouKnow = lazy(() => import('./components/DidYouKnow'));
+const AuthPage = lazy(() => import('./components/AuthPage'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const DrawingBoard = lazy(() => import('./components/DrawingBoard'));
+const HomeworkHelper = lazy(() => import('./components/HomeworkHelper'));
+const ParentalSpace = lazy(() => import('./components/ParentalSpace'));
+const ChildProfile = lazy(() => import('./components/ChildProfile'));
+const DailyChallenges = lazy(() => import('./components/DailyChallenges'));
+const Flashcards = lazy(() => import('./components/Flashcards'));
 
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -55,116 +56,14 @@ function AppContent() {
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  // Time Limit Enforcement & Tracking
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-    let isMounted = true;
+  // Setup handled via TimeTracker
+  const handleLimitReached = useCallback((message: string) => {
+    setSystemModal({ show: true, type: 'limit', message });
+  }, []);
 
-    // Don't enforce or track time if no child is selected OR if we are in the parental space
-    if (!selectedChild || activeTab === 'parental') {
-      setTimeLeft(null);
-      return;
-    }
-
-    const childId = selectedChild.id;
-    const today = new Date().toISOString().split('T')[0];
-
-    const fetchAndTimeTracking = async () => {
-      // 1. Fetch current time spent from Supabase
-      const { data } = await supabase
-        .from('daily_child_stats')
-        .select('time_spent_minutes')
-        .eq('child_id', childId)
-        .eq('date', today)
-        .maybeSingle();
-
-      if (!isMounted) return;
-
-      let timeSpent = data?.time_spent_minutes || 0;
-
-      const updateTime = () => {
-        if (!selectedChild) return false;
-
-        // Bedtime Enforcement
-        if (selectedChild.bedtime) {
-          const now = new Date();
-          const currentMinutes = now.getHours() * 60 + now.getMinutes();
-          const [bedHour, bedMin] = selectedChild.bedtime.split(':').map(Number);
-          const bedtimeMinutes = bedHour * 60 + bedMin;
-          const wakeUpMinutes = 7 * 60; // 07:00 AM wakeup
-
-          let isSleepTime = false;
-          if (bedtimeMinutes > wakeUpMinutes) {
-            isSleepTime = currentMinutes >= bedtimeMinutes || currentMinutes < wakeUpMinutes;
-          } else {
-            isSleepTime = currentMinutes >= bedtimeMinutes && currentMinutes < wakeUpMinutes;
-          }
-
-          if (isSleepTime) {
-            setSystemModal({
-              show: true,
-              type: 'bedtime',
-              message: `🌙 C'est l'heure de dormir pour ${selectedChild.name} ! Ton espace magique se ferme jusqu'à 07:00.`
-            });
-            setSelectedChild(null);
-            return true;
-          }
-        }
-
-        // Daily Limit Enforcement
-        if (selectedChild.daily_time_limit > 0) {
-          const remaining = Math.max(0, selectedChild.daily_time_limit - timeSpent);
-          setTimeLeft(remaining);
-
-          if (remaining <= 0) {
-            setSystemModal({
-              show: true,
-              type: 'limit',
-              message: `🛑 ${selectedChild.name}, c'est l'heure de faire une pause ! Tes ${selectedChild.daily_time_limit} minutes d'écran sont terminées pour aujourd'hui.`
-            });
-            setSelectedChild(null);
-            return true;
-          }
-        } else {
-          setTimeLeft(null);
-        }
-        return false;
-      };
-
-      // Initial check
-      const blocked = updateTime();
-      if (blocked) return;
-
-      // Start interval
-      intervalId = setInterval(async () => {
-        timeSpent += 1;
-        const nowBlocked = updateTime();
-
-        if (nowBlocked) {
-          if (intervalId) clearInterval(intervalId);
-          return;
-        }
-
-        // Update Supabase
-        await supabase
-          .from('daily_child_stats')
-          .upsert({
-            child_id: childId,
-            date: today,
-            time_spent_minutes: timeSpent
-          }, { onConflict: 'child_id,date' });
-      }, 60000);
-    };
-
-    fetchAndTimeTracking();
-
-    return () => {
-      isMounted = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [selectedChild, activeTab, setSelectedChild]);
+  const handleBedtimeReached = useCallback((message: string) => {
+    setSystemModal({ show: true, type: 'bedtime', message });
+  }, []);
 
   // Daily Challenge Notifications
   useEffect(() => {
@@ -279,7 +178,11 @@ function AppContent() {
     }
   };
 
-  if (!session) return <AuthPage />;
+  if (!session) return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>}>
+      <AuthPage />
+    </Suspense>
+  );
 
   const content = showChildSelector ? (
     <ChildSelector
@@ -334,7 +237,9 @@ function AppContent() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              {renderContent()}
+              <Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>}>
+                {renderContent()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
@@ -354,6 +259,12 @@ function AppContent() {
 
   return (
     <>
+      <TimeTracker
+        activeTab={activeTab}
+        setTimeLeft={setTimeLeft}
+        onLimitReached={handleLimitReached}
+        onBedtimeReached={handleBedtimeReached}
+      />
       {content}
 
       {/* System Status Modal (Time up / Bedtime) */}
