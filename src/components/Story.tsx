@@ -80,7 +80,13 @@ export default function Story() {
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-semibold text-slate-900">Ton histoire</h3>
               <button
-                onClick={() => (isSpeaking ? stop() : speak(story))}
+                onClick={() => {
+                  if (isSpeaking) {
+                    stop();
+                  } else {
+                    speak(story.replace(/[*_#`]/g, ''));
+                  }
+                }}
                 className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600"
                 title={isSpeaking ? "Arrêter" : "Écouter"}
               >

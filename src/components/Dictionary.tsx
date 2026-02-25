@@ -3,6 +3,8 @@ import { askGemini } from '../services/gemini';
 import { Search, BookA, RefreshCw, Volume2, StopCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSpeechSynthesis } from '../hooks/useSpeech';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function Dictionary() {
   const [word, setWord] = useState('');
@@ -72,13 +74,30 @@ export default function Dictionary() {
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold capitalize text-slate-900">{word}</h3>
               <button
-                onClick={() => (isSpeaking ? stop() : speak(`${word}. ${definition}`))}
+                onClick={() => {
+                  if (isSpeaking) {
+                    stop();
+                  } else {
+                    const cleanText = `${word}. ${definition}`.replace(/[*_#`]/g, '');
+                    speak(cleanText);
+                  }
+                }}
                 className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600"
               >
                 {isSpeaking ? <StopCircle className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
             </div>
-            <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">{definition}</p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="font-bold text-indigo-700" {...props} />
+                }}
+              >
+                {definition}
+              </ReactMarkdown>
+            </div>
           </motion.section>
         )}
       </AnimatePresence>

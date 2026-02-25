@@ -337,7 +337,17 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
               <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold text-slate-900">Réponse</h3>
-                  <button onClick={() => isSpeaking ? stopSpeaking() : speak(response)} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600" title="Lire à voix haute">
+                  <button
+                    onClick={() => {
+                      if (isSpeaking) {
+                        stopSpeaking();
+                      } else {
+                        speak(response.replace(/[*_#`]/g, ''));
+                      }
+                    }}
+                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600"
+                    title="Lire à voix haute"
+                  >
                     {isSpeaking ? <StopCircle className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                   </button>
                 </div>
