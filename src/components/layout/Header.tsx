@@ -24,7 +24,7 @@ export default function Header({ activeTab, tabs, selectedChild, timeLeft, setIs
                 </div>
                 <div>
                     <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                        {isHome ? `Salut ${selectedChild?.name} ! 👋` : (currentTab?.label || 'Magic École')}
+                        {isHome ? `Salut ${selectedChild?.name} ! 👋` : (currentTab?.label || 'Family AI')}
                     </h2>
                     <p className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                         {isHome ? 'Prêt pour tes missions ?' : (currentTab?.desc || 'Apprend en t\'amusant')}

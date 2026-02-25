@@ -32,7 +32,7 @@ export default function Sidebar({
                             <Brain className="w-5 h-5" />
                         </div>
                         <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-                            Magic École
+                            Family AI
                         </h1>
                     </motion.div>
                 )}
@@ -52,8 +52,8 @@ export default function Sidebar({
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all relative group ${isActive
-                                    ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
-                                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                                ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
+                                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
                                 } ${isCollapsed ? 'justify-center px-0' : ''}`}
                             title={isCollapsed ? tab.label : ''}
                         >
