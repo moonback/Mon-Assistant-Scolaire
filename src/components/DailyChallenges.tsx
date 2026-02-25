@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Brain, ChevronRight, CheckCircle2, Sparkles, Lightbulb, Palette, Globe, Rocket, Leaf, History, FlaskConical } from 'lucide-react';
 import { dailyChallengeService, DailyChallenges as DailyChallengesType } from '../services/dailyChallengeService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DailyChallengesProps {
     childId: string;
@@ -15,9 +16,21 @@ const THEMES = [
     { id: 'Nature', label: 'Nature', icon: Leaf, color: 'from-emerald-500 to-teal-600' },
     { id: 'Histoire', label: 'Histoire', icon: History, color: 'from-amber-600 to-orange-700' },
     { id: 'Sciences', label: 'Sciences', icon: FlaskConical, color: 'from-cyan-500 to-blue-600' },
+    { id: 'Géographie', label: 'Géo', icon: Globe, color: 'from-sky-400 to-blue-500' },
+    { id: 'Code', label: 'Code', icon: Brain, color: 'from-slate-700 to-slate-900' },
+    { id: 'Art', label: 'Art', icon: Palette, color: 'from-pink-500 to-rose-600' },
 ];
 
 export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: DailyChallengesProps) {
+    const { selectedChild } = useAuth();
+
+    // Filter themes based on allowed subjects
+    const filteredThemes = THEMES.filter(t => {
+        if (!selectedChild?.allowed_subjects?.length) return true;
+        if (t.id === 'Général') return true;
+        return selectedChild.allowed_subjects.includes(t.id);
+    });
+
     const [theme, setTheme] = useState(localStorage.getItem('preferred_challenge_theme') || 'Général');
     const [challenges, setChallenges] = useState<DailyChallengesType | null>(null);
     const [loading, setLoading] = useState(true);
@@ -69,7 +82,7 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                    {THEMES.map((t) => (
+                    {filteredThemes.map((t) => (
                         <button
                             key={t.id}
                             onClick={() => handleThemeChange(t.id)}

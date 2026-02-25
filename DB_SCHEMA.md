@@ -27,6 +27,7 @@ Profils individuels des enfants rattachés à un compte parent.
 - `bedtime` (text) : Heure de coucher (ex: `"20:30"`).
 - `reward_goals` (jsonb) : Liste des objectifs et récompenses définis par le parent.
 - `blocked_topics` (text[]) : Liste des sujets interdits à l'IA pour cet enfant.
+- `allowed_subjects` (text[]) : Liste des matières scolaires autorisées pour cet enfant.
 
 ### 3. `progress`
 Historique des activités pour le suivi pédagogique.

@@ -27,6 +27,7 @@ export default function ParentalChildren({
     const [childTimeLimit, setChildTimeLimit] = useState(30);
     const [childBedtime, setChildBedtime] = useState('20:00');
     const [childBlockedTopics, setChildBlockedTopics] = useState<string[]>([]);
+    const [childAllowedSubjects, setChildAllowedSubjects] = useState<string[]>([]);
     const [childWeakPoints, setChildWeakPoints] = useState<string[]>([]);
     const [rewardGoals, setRewardGoals] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -43,6 +44,7 @@ export default function ParentalChildren({
                 bedtime: childBedtime,
                 reward_goals: rewardGoals,
                 blocked_topics: childBlockedTopics,
+                allowed_subjects: childAllowedSubjects,
                 weak_points: childWeakPoints,
                 avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${childName}`
             };
@@ -96,6 +98,7 @@ export default function ParentalChildren({
         setChildTimeLimit(30);
         setChildBedtime('20:00');
         setChildBlockedTopics([]);
+        setChildAllowedSubjects(['Mathématiques', 'Français', 'Sciences', 'Histoire', 'Géographie', 'Anglais', 'Nature', 'Art', 'Code']);
         setChildWeakPoints([]);
         setRewardGoals([]);
     };
@@ -107,6 +110,7 @@ export default function ParentalChildren({
         setChildTimeLimit(child.daily_time_limit);
         setChildBedtime(child.bedtime || '20:00');
         setChildBlockedTopics(child.blocked_topics || []);
+        setChildAllowedSubjects(child.allowed_subjects || ['Mathématiques', 'Français', 'Sciences', 'Histoire', 'Géographie', 'Anglais', 'Nature', 'Art', 'Code']);
         setChildWeakPoints(child.weak_points || []);
         setRewardGoals(child.reward_goals || []);
         setShowAddChild(true);
@@ -115,6 +119,12 @@ export default function ParentalChildren({
     const toggleTopic = (topic: string) => {
         setChildBlockedTopics(prev =>
             prev.includes(topic) ? prev.filter(t => t !== topic) : [...prev, topic]
+        );
+    };
+
+    const toggleSubject = (subj: string) => {
+        setChildAllowedSubjects(prev =>
+            prev.includes(subj) ? prev.filter(s => s !== subj) : [...prev, subj]
         );
     };
 
@@ -287,6 +297,26 @@ export default function ParentalChildren({
                                             >
                                                 <span>{feature.label}</span>
                                                 <div className={`w-2 h-2 rounded-full ${!childBlockedTopics.includes(feature.id) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Matières autorisées</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        {[
+                                            'Mathématiques', 'Français', 'Sciences', 'Histoire',
+                                            'Géographie', 'Anglais', 'Nature', 'Art', 'Code', 'Espace'
+                                        ].map(subj => (
+                                            <button
+                                                key={subj}
+                                                type="button"
+                                                onClick={() => toggleSubject(subj)}
+                                                className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all flex items-center justify-between ${childAllowedSubjects.includes(subj) ? 'bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'}`}
+                                            >
+                                                <span>{subj}</span>
+                                                <div className={`w-2 h-2 rounded-full ${childAllowedSubjects.includes(subj) ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'bg-slate-300'}`} />
                                             </button>
                                         ))}
                                     </div>

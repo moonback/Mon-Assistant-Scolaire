@@ -73,7 +73,7 @@ export default function Dictionary() {
         </form>
 
         <div className="mt-6 flex flex-wrap gap-2 relative z-10">
-          {['Curiosité', 'Éphémère', 'Symphonie', 'Galaxie'].map((suggested) => (
+          {['Renaissance', 'Archipel', 'Photosynthèse', 'Perspective', 'Algorithme'].map((suggested) => (
             <button key={suggested} onClick={() => performSearch(suggested)} className="rounded-full border border-slate-100 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-sm transition-all">
               {suggested}
             </button>

@@ -218,10 +218,12 @@ export default function SiblingCompetition() {
                                         onChange={(e) => setSubject(e.target.value)}
                                         className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 font-bold text-slate-700 outline-none focus:border-indigo-500"
                                     >
-                                        <option value="Mathématiques">Mathématiques 🔢</option>
-                                        <option value="Français">Français ✍️</option>
-                                        <option value="Sciences">Sciences 🧪</option>
-                                        <option value="Général">Culture Générale 🌍</option>
+                                        {(selectedChild?.allowed_subjects?.length
+                                            ? selectedChild.allowed_subjects
+                                            : ['Mathématiques', 'Français', 'Sciences', 'Histoire', 'Géographie', 'Anglais', 'Code', 'Général']
+                                        ).map(s => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
                                     </select>
                                 </div>
 

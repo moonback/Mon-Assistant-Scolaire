@@ -33,6 +33,7 @@ export type Child = {
   bedtime?: string;
   reward_goals?: any[];
   blocked_topics: string[];
+  allowed_subjects?: string[];
   weak_points?: string[];
   badges?: string[]; // Array of badge IDs
   created_at: string;

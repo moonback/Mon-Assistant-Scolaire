@@ -192,7 +192,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
               </button>
 
               <div className="flex flex-wrap gap-2 pt-2">
-                {['Dinosaures', 'Espace', 'Histoire', 'Maths', 'Nature'].map((t) => (
+                {(selectedChild?.allowed_subjects?.length ? selectedChild.allowed_subjects : ['Géographie', 'Histoire', 'Sciences', 'Espace', 'Anglais', 'Nature', 'Art', 'Code']).map((t) => (
                   <button
                     key={t}
                     onClick={() => {
