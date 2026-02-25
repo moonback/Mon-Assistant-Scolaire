@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Star } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import { Tab, ParentalTab } from './types/app';
@@ -24,6 +25,7 @@ import DrawingBoard from './components/DrawingBoard';
 import HomeworkHelper from './components/HomeworkHelper';
 import ParentalSpace from './components/ParentalSpace';
 import ChildProfile from './components/ChildProfile';
+import ActivityCards from './components/ActivityCards';
 
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -200,30 +202,47 @@ function AppContent() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-6 pb-16">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {tabs
-                .filter(t => !['home', 'dashboard', 'parental', 'profile'].includes(t.id))
-                .filter(t => !selectedChild?.blocked_topics?.includes(t.id))
-                .map((tab, idx) => (
-                  <motion.button
-                    key={tab.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    whileHover={{ y: -10, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab(tab.id)}
-                    className="bg-white p-6 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl transition-all text-left group overflow-hidden relative"
-                  >
-                    <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${tab.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tab.color} text-white flex items-center justify-center mb-4 shadow-lg group-hover:rotate-6 transition-transform`}>
-                      <tab.icon className="w-6 h-6" />
-                    </div>
-                    <h4 className="text-lg font-black text-slate-800">{tab.label}</h4>
-                    <p className="text-slate-500 font-medium text-xs mt-2 leading-relaxed line-clamp-2">{tab.desc}</p>
-                  </motion.button>
-                ))}
+          <div className="space-y-10 pb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[3rem] p-8 md:p-12 border border-slate-100 shadow-premium relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 rounded-full -mr-40 -mt-40 blur-3xl group-hover:bg-indigo-100/50 transition-colors duration-1000" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-50/30 rounded-full -ml-32 -mb-32 blur-3xl" />
+
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                <div className="relative">
+                  <div className="w-28 h-28 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-2xl rotate-3 group-hover:rotate-6 transition-transform duration-500 animate-float">
+                    <span className="text-5xl">✨</span>
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center shadow-lg border-4 border-white">
+                    <Star className="w-5 h-5 text-white fill-white" />
+                  </div>
+                </div>
+
+                <div className="text-center md:text-left">
+                  <h3 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-tight mb-4">
+                    Salut <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 capitalize">{selectedChild?.name}</span> ! 👋
+                  </h3>
+                  <p className="text-slate-500 font-medium text-lg md:text-xl max-w-xl leading-relaxed">
+                    Ton espace magique est prêt. Quelle aventure incroyable vas-tu choisir aujourd'hui ?
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="space-y-8">
+              <div className="flex items-center gap-6 px-4">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Activités recommandées</h4>
+                <div className="h-px bg-slate-100 w-full" />
+              </div>
+              <ActivityCards
+                tabs={tabs}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                selectedChild={selectedChild}
+              />
             </div>
           </div>
         );
