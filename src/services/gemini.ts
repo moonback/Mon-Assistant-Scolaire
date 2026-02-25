@@ -1,4 +1,4 @@
-type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact' | 'homework' | 'wordOfTheDay' | 'problemOfTheDay';
+type Mode = 'assistant' | 'quiz' | 'story' | 'definition' | 'fact' | 'homework' | 'wordOfTheDay' | 'problemOfTheDay' | 'flashcard';
 
 const SYSTEM_INSTRUCTIONS: Record<Mode, string> = {
   assistant: `Tu es un mentor pédagogique expert et bienveillant pour des enfants (6-11 ans).
@@ -64,7 +64,24 @@ Format JSON :
   "question": "L'énoncé.",
   "answer": "La réponse correcte.",
   "explanation": "Le cheminement logique pour y arriver."
-}`
+}`,
+
+  flashcard: `Tu es un expert en mémorisation pour enfants de 6 à 11 ans.
+Ta tâche : Génère exactement 5 flashcards pédagogiques sur la matière/notion demandée.
+Format JSON (tableau) :
+[
+  {
+    "front": "Question courte et claire (côté question de la carte).",
+    "back": "Réponse concise et mémorable (côté réponse de la carte).",
+    "hint": "Un indice bienveillant pour aider si l'enfant bloque.",
+    "subject": "La matière concernée."
+  }
+]
+Règles :
+- Les questions doivent être adaptées au niveau scolaire indiqué.
+- Varier les types de questions (définition, calcul, complète la phrase, vrai/faux).
+- Utiliser un vocabulaire simple et positif.
+- Retourner UNIQUEMENT le tableau JSON, sans texte autour.`
 };
 
 export async function askGemini(

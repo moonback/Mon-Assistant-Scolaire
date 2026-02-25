@@ -1,0 +1,456 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+    Layers, RefreshCcw, CheckCircle2, XCircle,
+    Lightbulb, Zap, ArrowRight, BookOpen, Brain,
+    PenLine, Eye
+} from 'lucide-react';
+import {
+    generateFlashcards,
+    getDueCards,
+    getChildSubjects,
+    rateCard,
+    saveSession,
+    Flashcard,
+} from '../services/flashcardService';
+
+interface FlashcardsProps {
+    childId: string;
+    gradeLevel: string;
+    onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
+}
+
+const SUBJECT_THEMES: Record<string, { color: string; icon: string }> = {
+    'Mathématiques': { color: 'from-blue-500 to-indigo-600', icon: '🔢' },
+    'Maths': { color: 'from-blue-500 to-indigo-600', icon: '🔢' },
+    'Français': { color: 'from-purple-500 to-pink-600', icon: '📖' },
+    'Sciences': { color: 'from-emerald-500 to-teal-600', icon: '🔬' },
+    'Histoire': { color: 'from-amber-500 to-orange-600', icon: '🏛️' },
+    'Géographie': { color: 'from-cyan-500 to-sky-600', icon: '🌍' },
+    'Lecture': { color: 'from-rose-500 to-red-600', icon: '📚' },
+    'Résolution de problèmes': { color: 'from-violet-500 to-purple-600', icon: '🧩' },
+};
+
+function getTheme(subject: string) {
+    return SUBJECT_THEMES[subject] || { color: 'from-teal-500 to-cyan-600', icon: '⭐' };
+}
+
+// CardStep defines the 3-step flow for each card
+// 1. 'question' — show the question, child writes their answer
+// 2. 'reveal'   — show correct answer alongside child's answer
+type CardStep = 'question' | 'reveal';
+type Phase = 'select' | 'loading' | 'session' | 'result';
+
+export default function Flashcards({ childId, gradeLevel, onEarnPoints }: FlashcardsProps) {
+    const [phase, setPhase] = useState<Phase>('select');
+    const [subjects, setSubjects] = useState<string[]>([]);
+    const [selectedSubject, setSelectedSubject] = useState('');
+    const [cards, setCards] = useState<Flashcard[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [cardStep, setCardStep] = useState<CardStep>('question');
+    const [childAnswer, setChildAnswer] = useState('');
+    const [showHint, setShowHint] = useState(false);
+    const [results, setResults] = useState<{ card: Flashcard; success: boolean; childAnswer: string }[]>([]);
+    const [sessionPoints, setSessionPoints] = useState(0);
+    const [dueCount, setDueCount] = useState(0);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        async function loadData() {
+            if (!childId) return;
+            const [childSubjects, due] = await Promise.all([
+                getChildSubjects(childId),
+                getDueCards(childId),
+            ]);
+            setSubjects(childSubjects);
+            setDueCount(due.length);
+        }
+        loadData();
+    }, [childId]);
+
+    // Auto-focus textarea when question step appears
+    useEffect(() => {
+        if (cardStep === 'question' && textareaRef.current) {
+            setTimeout(() => textareaRef.current?.focus(), 350);
+        }
+    }, [cardStep, currentIndex]);
+
+    const resetCard = () => {
+        setCardStep('question');
+        setChildAnswer('');
+        setShowHint(false);
+    };
+
+    const startSession = useCallback(async (subject: string) => {
+        setSelectedSubject(subject);
+        setPhase('loading');
+        setCards([]);
+        setCurrentIndex(0);
+        resetCard();
+        setResults([]);
+        setSessionPoints(0);
+        const generated = await generateFlashcards(gradeLevel, subject);
+        setCards(generated);
+        setPhase('session');
+    }, [gradeLevel]);
+
+    const startReviewSession = useCallback(async () => {
+        setSelectedSubject('Révision SRS');
+        setPhase('loading');
+        const due = await getDueCards(childId);
+        if (due.length === 0) { setPhase('select'); return; }
+        const flashcards: Flashcard[] = due.map(d => ({
+            front: `Explique la notion : ${d.notion}`,
+            back: `Notion de ${d.subject} : ${d.notion}`,
+            hint: `C'est en rapport avec ${d.subject}.`,
+            subject: d.subject,
+        }));
+        setCards(flashcards);
+        setPhase('session');
+    }, [childId]);
+
+    const handleReveal = () => {
+        if (!childAnswer.trim()) return; // prevent reveal without any input
+        setCardStep('reveal');
+    };
+
+    const handleRate = useCallback(async (success: boolean) => {
+        const current = cards[currentIndex];
+        const points = success ? 5 : 2;
+        const newResults = [...results, { card: current, success, childAnswer }];
+        setResults(newResults);
+
+        await rateCard(childId, { notion: current.front, subject: current.subject }, success);
+
+        if (currentIndex < cards.length - 1) {
+            setCurrentIndex(i => i + 1);
+            resetCard();
+        } else {
+            const totalPoints = newResults.filter(r => r.success).length * 5
+                + newResults.filter(r => !r.success).length * 2;
+            onEarnPoints(totalPoints, 'flashcard', selectedSubject);
+            await saveSession(childId, cards, totalPoints);
+            setSessionPoints(totalPoints);
+            setPhase('result');
+        }
+    }, [cards, currentIndex, childId, results, childAnswer, onEarnPoints, selectedSubject]);
+
+    const currentCard = cards[currentIndex];
+    const theme = getTheme(selectedSubject);
+    const progressPct = cards.length > 0 ? (currentIndex / cards.length) * 100 : 0;
+
+    // ───────────────────────────────────────────────
+    // PHASE: SELECT
+    // ───────────────────────────────────────────────
+    if (phase === 'select') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 p-6 md:p-10">
+                <div className="max-w-3xl mx-auto">
+                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-200">
+                                <Layers className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Mes Flashcards</h1>
+                                <p className="text-sm text-slate-500 font-medium">Écris ta réponse avant de voir le corrigé 🧠</p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {dueCount > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                            className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white cursor-pointer shadow-lg shadow-orange-200"
+                            onClick={startReviewSession}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">⚡ Révisions urgentes</p>
+                                    <h3 className="font-black text-xl">{dueCount} carte{dueCount > 1 ? 's' : ''} à revoir maintenant</h3>
+                                    <p className="text-sm opacity-90 mt-1">Ces notions risquent de disparaître de ta mémoire !</p>
+                                </div>
+                                <ArrowRight className="h-8 w-8 opacity-80 shrink-0" />
+                            </div>
+                        </motion.div>
+                    )}
+
+                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Choisir une matière :</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {subjects.map((subject, i) => {
+                            const th = getTheme(subject);
+                            return (
+                                <motion.button
+                                    key={subject}
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.07 }}
+                                    whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.97 }}
+                                    onClick={() => startSession(subject)}
+                                    className="p-6 rounded-3xl bg-white border-2 border-slate-100 hover:border-transparent hover:shadow-xl transition-all text-left group"
+                                >
+                                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${th.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>
+                                        {th.icon}
+                                    </div>
+                                    <p className="font-black text-slate-800">{subject}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">5 cartes générées par IA</p>
+                                </motion.button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ───────────────────────────────────────────────
+    // PHASE: LOADING
+    // ───────────────────────────────────────────────
+    if (phase === 'loading') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-teal-50/30">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    className="w-16 h-16 rounded-full border-4 border-teal-100 border-t-teal-500 mb-6"
+                />
+                <h3 className="text-xl font-black text-slate-800 mb-2">L'IA prépare tes cartes...</h3>
+                <p className="text-sm text-slate-500 font-medium">Génération de 5 flashcards sur {selectedSubject}</p>
+            </div>
+        );
+    }
+
+    // ───────────────────────────────────────────────
+    // PHASE: RESULT
+    // ───────────────────────────────────────────────
+    if (phase === 'result') {
+        const successCount = results.filter(r => r.success).length;
+        const pct = Math.round((successCount / results.length) * 100);
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 p-6 overflow-y-auto">
+                <div className="max-w-2xl mx-auto">
+                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white rounded-[3rem] shadow-2xl shadow-teal-100 p-10 text-center mb-6"
+                    >
+                        <div className="text-6xl mb-4">{pct >= 80 ? '🏆' : pct >= 50 ? '⭐' : '💪'}</div>
+                        <h2 className="text-3xl font-black text-slate-900 mb-1">Session terminée !</h2>
+                        <p className="text-slate-500 font-medium mb-6">{selectedSubject}</p>
+                        <div className="flex gap-4 mb-6">
+                            <div className="flex-1 p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+                                <p className="text-3xl font-black text-emerald-600">{successCount}</p>
+                                <p className="text-[10px] font-black uppercase text-emerald-400">Réussies</p>
+                            </div>
+                            <div className="flex-1 p-4 rounded-2xl bg-rose-50 border border-rose-100">
+                                <p className="text-3xl font-black text-rose-600">{results.length - successCount}</p>
+                                <p className="text-[10px] font-black uppercase text-rose-400">À revoir</p>
+                            </div>
+                            <div className="flex-1 p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                                <p className="text-3xl font-black text-amber-600">+{sessionPoints}</p>
+                                <p className="text-[10px] font-black uppercase text-amber-400">Points</p>
+                            </div>
+                        </div>
+                        <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-6">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                                transition={{ duration: 1, delay: 0.3 }}
+                                className="h-full bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full"
+                            />
+                        </div>
+                        <p className="text-sm font-bold text-slate-500 mb-8">{pct}% de réussite</p>
+                        <div className="flex gap-3">
+                            <button onClick={() => startSession(selectedSubject)}
+                                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-teal-200 hover:scale-[1.02] transition-transform">
+                                <RefreshCcw className="h-4 w-4 inline mr-2" /> Rejouer
+                            </button>
+                            <button onClick={() => setPhase('select')}
+                                className="flex-1 py-4 rounded-2xl bg-slate-900 text-white font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition">
+                                Choisir
+                            </button>
+                        </div>
+                    </motion.div>
+
+                    {/* Detailed review of each card */}
+                    <div className="space-y-4">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 px-2">Détail de la session</p>
+                        {results.map((r, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                className={`p-5 rounded-2xl flex gap-4 ${r.success ? 'bg-emerald-50 border border-emerald-100' : 'bg-rose-50 border border-rose-100'}`}
+                            >
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${r.success ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                    {r.success ? <CheckCircle2 className="h-4 w-4 text-white" /> : <XCircle className="h-4 w-4 text-white" />}
+                                </div>
+                                <div className="text-left min-w-0">
+                                    <p className="text-xs font-black text-slate-700 mb-1 truncate">{r.card.front}</p>
+                                    <p className="text-[11px] text-slate-500 font-bold">Ta réponse : <span className="italic">"{r.childAnswer || '(vide)'}"</span></p>
+                                    <p className="text-[11px] text-teal-600 font-bold mt-1">Corrigé : {r.card.back}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ───────────────────────────────────────────────
+    // PHASE: SESSION
+    // ───────────────────────────────────────────────
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 p-4 md:p-8">
+            <div className="max-w-2xl mx-auto">
+
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                    <button onClick={() => setPhase('select')} className="text-slate-500 text-sm font-bold hover:text-slate-800 transition">
+                        ← Retour
+                    </button>
+                    <div className="text-center">
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{selectedSubject}</p>
+                        <p className="font-black text-slate-700">{currentIndex + 1} / {cards.length}</p>
+                    </div>
+                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+                    </div>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={`${currentIndex}-${cardStep}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.25 }}
+                    >
+                        {/* ── STEP 1: QUESTION + text input ── */}
+                        {cardStep === 'question' && (
+                            <div className="space-y-4">
+                                {/* Question card */}
+                                <div className={`rounded-[2.5rem] bg-gradient-to-br ${theme.color} text-white shadow-2xl p-8`}>
+                                    <div className="flex items-center gap-2 mb-5 opacity-70">
+                                        <Brain className="h-4 w-4" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest">Question n°{currentIndex + 1}</p>
+                                    </div>
+                                    <p className="text-xl font-black leading-relaxed">{currentCard?.front}</p>
+                                </div>
+
+                                {/* Answer input area */}
+                                <div className="bg-white rounded-3xl border-2 border-slate-100 p-5 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <PenLine className="h-4 w-4 text-teal-500" />
+                                        <p className="text-xs font-black uppercase text-slate-500 tracking-widest">Écris ta réponse</p>
+                                    </div>
+                                    <textarea
+                                        ref={textareaRef}
+                                        value={childAnswer}
+                                        onChange={e => setChildAnswer(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey && childAnswer.trim()) handleReveal(); }}
+                                        placeholder="Écris ce que tu penses être la bonne réponse... (Ctrl+Entrée pour valider)"
+                                        className="w-full h-28 resize-none outline-none text-slate-800 font-medium placeholder:text-slate-300 text-sm leading-relaxed"
+                                    />
+                                    <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
+                                        {/* Hint button */}
+                                        {!showHint ? (
+                                            <button
+                                                onClick={() => setShowHint(true)}
+                                                className="flex items-center gap-1.5 text-amber-500 text-xs font-bold hover:text-amber-600 transition"
+                                            >
+                                                <Lightbulb className="h-3.5 w-3.5" /> Voir un indice
+                                            </button>
+                                        ) : (
+                                            <p className="text-xs text-amber-600 font-bold italic">💡 {currentCard?.hint}</p>
+                                        )}
+
+                                        {/* Reveal button */}
+                                        <motion.button
+                                            whileHover={{ scale: 1.04 }}
+                                            whileTap={{ scale: 0.97 }}
+                                            onClick={handleReveal}
+                                            disabled={!childAnswer.trim()}
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${childAnswer.trim()
+                                                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-200'
+                                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                                }`}
+                                        >
+                                            <Eye className="h-4 w-4" /> Voir la réponse
+                                        </motion.button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── STEP 2: REVEAL — side-by-side comparison ── */}
+                        {cardStep === 'reveal' && (
+                            <div className="space-y-4">
+                                {/* Question reminder */}
+                                <div className={`rounded-2xl bg-gradient-to-br ${theme.color} text-white/90 p-4 text-center`}>
+                                    <p className="text-xs font-black opacity-70 uppercase tracking-widest mb-1">Question</p>
+                                    <p className="font-black text-sm leading-relaxed">{currentCard?.front}</p>
+                                </div>
+
+                                {/* Comparison grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Child's answer */}
+                                    <div className="bg-slate-50 rounded-3xl p-5 border-2 border-slate-100">
+                                        <div className="flex items-center gap-1.5 mb-3">
+                                            <PenLine className="h-3.5 w-3.5 text-slate-400" />
+                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Ta réponse</p>
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-700 leading-relaxed italic">
+                                            {childAnswer || <span className="text-slate-300">(rien écrit)</span>}
+                                        </p>
+                                    </div>
+
+                                    {/* Correct answer */}
+                                    <div className="bg-teal-50 rounded-3xl p-5 border-2 border-teal-100">
+                                        <div className="flex items-center gap-1.5 mb-3">
+                                            <BookOpen className="h-3.5 w-3.5 text-teal-500" />
+                                            <p className="text-[10px] font-black uppercase text-teal-500 tracking-widest">Corrigé</p>
+                                        </div>
+                                        <p className="text-sm font-black text-teal-800 leading-relaxed">{currentCard?.back}</p>
+                                    </div>
+                                </div>
+
+                                {/* Self-evaluation prompt */}
+                                <p className="text-center text-xs text-slate-500 font-bold py-1">
+                                    Compare ta réponse. Est-ce que tu avais trouvé ?
+                                </p>
+
+                                {/* Rating buttons */}
+                                <div className="flex gap-3">
+                                    <motion.button
+                                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
+                                        onClick={() => handleRate(false)}
+                                        className="flex-1 py-4 rounded-2xl bg-rose-100 text-rose-600 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-rose-200 transition"
+                                    >
+                                        <XCircle className="h-5 w-5" /> Pas encore
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
+                                        onClick={() => handleRate(true)}
+                                        className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 hover:opacity-90 transition"
+                                    >
+                                        <CheckCircle2 className="h-5 w-5" /> Je savais ! +5⭐
+                                    </motion.button>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
+
+                {/* Progress dots */}
+                <div className="flex justify-center gap-2 mt-8">
+                    {cards.map((_, i) => (
+                        <div
+                            key={i}
+                            className={`h-2 rounded-full transition-all duration-300 ${i < results.length
+                                    ? results[i]?.success ? 'bg-emerald-400 w-3' : 'bg-rose-400 w-3'
+                                    : i === currentIndex ? 'bg-teal-500 w-5' : 'bg-slate-200 w-2'
+                                }`}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}

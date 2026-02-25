@@ -26,6 +26,7 @@ import HomeworkHelper from './components/HomeworkHelper';
 import ParentalSpace from './components/ParentalSpace';
 import ChildProfile from './components/ChildProfile';
 import DailyChallenges from './components/DailyChallenges';
+import Flashcards from './components/Flashcards';
 
 function AppContent() {
   const { session, children, selectedChild, setSelectedChild, signOut, refreshChildren } = useAuth();
@@ -247,6 +248,7 @@ function AppContent() {
         );
       case 'dashboard': return <Dashboard onEarnPoints={addStars} />;
       case 'challenges': return <DailyChallenges {...commonProps} childId={selectedChild?.id || ''} />;
+      case 'flashcards': return <Flashcards childId={selectedChild?.id || ''} gradeLevel={selectedChild?.grade_level || 'CM1'} onEarnPoints={addStars} />;
       case 'assistant': return <Assistant {...commonProps} />;
       case 'quiz': return <Quiz {...commonProps} />;
       case 'math': return <MathGame onEarnPoints={addStars} />;
