@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Star, Menu, Clock, ShieldCheck, Lock } from 'lucide-react';
 import { TabItem } from '../../types/app';
 import { Child } from '../../lib/supabase';
@@ -13,67 +12,57 @@ interface HeaderProps {
 }
 
 export default function Header({ activeTab, tabs, selectedChild, timeLeft, setIsMobileNavOpen }: HeaderProps) {
-    const currentTab = tabs.find(t => t.id === activeTab);
+    const currentTab = tabs.find((t) => t.id === activeTab);
     const isHome = activeTab === 'home';
     const isParental = activeTab === 'parental';
 
     return (
-        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-100 px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-xl bg-gradient-to-br ${isParental ? 'from-slate-700 to-slate-800' : (currentTab?.color || 'from-indigo-500 to-purple-500')} text-white shadow-sm md:hidden`}>
-                    {isParental ? <ShieldCheck className="w-5 h-5" /> : (currentTab && <currentTab.icon className="w-5 h-5" />)}
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 bg-[#FAFAFA]/95 px-4 py-3 backdrop-blur md:px-6">
+            <div className="flex items-center gap-3">
+                <div className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700">
+                    {isParental ? <ShieldCheck className="h-4 w-4" /> : (currentTab && <currentTab.icon className="h-4 w-4" />)}
                 </div>
                 <div>
-                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                        {isParental ? 'Administration Parentale' : (isHome ? `Salut ${selectedChild?.name} ! 👋` : (currentTab?.label || 'Family AI'))}
+                    <h2 className="text-sm font-semibold text-slate-900 md:text-base">
+                        {isParental ? 'Espace parent' : isHome ? `Bonjour ${selectedChild?.name}` : currentTab?.label || 'Mon Assistant'}
                     </h2>
-                    <p className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        {isParental ? 'Gérez les profils et la sécurité' : (isHome ? 'Prêt pour tes missions ?' : (currentTab?.desc || 'Apprend en t\'amusant'))}
+                    <p className="hidden text-xs text-slate-500 md:block">
+                        {isParental ? 'Gestion des profils et de la sécurité' : isHome ? 'Choisis une activité pour continuer' : currentTab?.desc}
                     </p>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-2">
                 {isParental ? (
-                    <div className="bg-slate-100 px-4 py-2 rounded-2xl flex items-center gap-2 border border-slate-200">
-                        <Lock className="w-4 h-4 text-slate-500" />
-                        <span className="font-black text-slate-600 text-[10px] uppercase tracking-widest">Zone Sécurisée</span>
+                    <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 sm:flex">
+                        <Lock className="h-3.5 w-3.5" />
+                        Zone sécurisée
                     </div>
                 ) : (
                     <>
                         {timeLeft !== null && (
-                            <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
-                                <Clock className={`w-3.5 h-3.5 ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`} />
-                                <span className={`font-black text-[10px] md:text-sm ${timeLeft < 10 ? 'text-red-600' : 'text-slate-600'}`}>
-                                    {timeLeft} MIN
-                                </span>
+                            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600">
+                                <Clock className={`h-3.5 w-3.5 ${timeLeft < 10 ? 'text-red-500' : ''}`} />
+                                <span className="font-medium">{timeLeft} min</span>
                             </div>
                         )}
 
-                        <div className="hidden sm:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
-                            <span className="text-sm">🎓</span>
-                            <span className="font-black text-indigo-700 text-[10px] uppercase tracking-wider">{selectedChild?.grade_level}</span>
+                        <div className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 sm:flex">
+                            <span>{selectedChild?.grade_level}</span>
                         </div>
 
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            className="bg-yellow-50 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 border border-yellow-200 shadow-sm"
-                        >
-                            <div className="bg-yellow-400 p-1 rounded-lg">
-                                <Star className="w-3 h-3 md:w-3.5 md:h-3.5 text-white fill-white" />
-                            </div>
-                            <span className="font-black text-yellow-700 text-sm">
-                                {selectedChild?.stars || 0} <span className="text-[10px] text-yellow-600/60 ml-0.5">PTS</span>
-                            </span>
-                        </motion.div>
+                        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                            <span className="font-semibold text-slate-800">{selectedChild?.stars || 0}</span>
+                        </div>
                     </>
                 )}
 
                 <button
                     onClick={() => setIsMobileNavOpen(true)}
-                    className="md:hidden p-2 bg-slate-50 rounded-xl text-slate-600 border border-slate-100"
+                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 md:hidden"
                 >
-                    <Menu className="w-6 h-6" />
+                    <Menu className="h-5 w-5" />
                 </button>
             </div>
         </header>
