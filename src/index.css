@@ -23,6 +23,22 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Ensure all interactive elements have a minimum touch target for kids */
+  button, a, [role="button"] {
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  /* Visible focus ring for keyboard navigation (accessibility) */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {

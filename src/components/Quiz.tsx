@@ -136,8 +136,9 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       }
     } catch (e) {
       console.error(e);
-      // Fallback in case of AI error
-      setIsCorrect(true);
+      // Show neutral error feedback instead of silently marking as correct
+      setIsCorrect(false);
+      setAiFeedback("Oups, je n'ai pas pu évaluer ta réponse. Réessaie ou passe à la question suivante !");
     } finally {
       setAiLoading(false);
     }
