@@ -18,6 +18,7 @@ export interface SRSCard {
     front?: string;
     back?: string;
     hint?: string;
+    last_answer?: string;
 }
 
 // Generate flashcards using AI for a given subject/notion
@@ -96,7 +97,7 @@ export async function getChildSubjects(childId: string): Promise<string[]> {
 // Rate a card after review (updates SRS scheduling)
 export async function rateCard(
     childId: string,
-    cardData: { notion: string; subject: string; front?: string; back?: string; hint?: string },
+    cardData: { notion: string; subject: string; front?: string; back?: string; hint?: string; last_answer?: string },
     success: boolean
 ): Promise<void> {
     // Get or create SRS card
@@ -129,7 +130,8 @@ export async function rateCard(
                 failure_count: !success ? existing.failure_count + 1 : existing.failure_count,
                 front: cardData.front, // Store full content for coming back
                 back: cardData.back,
-                hint: cardData.hint
+                hint: cardData.hint,
+                last_answer: cardData.last_answer
             })
             .eq('id', existing.id);
     } else {
@@ -148,7 +150,8 @@ export async function rateCard(
             failure_count: !success ? 1 : 0,
             front: cardData.front,
             back: cardData.back,
-            hint: cardData.hint
+            hint: cardData.hint,
+            last_answer: cardData.last_answer
         });
     }
 }
@@ -177,4 +180,80 @@ export async function saveSession(
         score,
         completed_at: new Date().toISOString(),
     });
+}
+
+// AI Validation of a child's answer
+export async function validateFlashcardAnswer(
+    gradeLevel: string,
+    question: string,
+    correctAnswer: string,
+    childAnswer: string
+): Promise<{ isCorrect: boolean; feedback: string }> {
+    const prompt = `
+    Tu es un tuteur bienveillant. Un élève de niveau ${gradeLevel} répond à une flashcard.
+    Question : "${question}"
+    Réponse attendue : "${correctAnswer}"
+    Réponse de l'élève : "${childAnswer}"
+
+    Tâche : Analyse si la réponse de l'élève est correcte (même si formulée différemment).
+    Réponds TOUJOURS au format JSON suivant :
+    {
+      "isCorrect": boolean,
+      "feedback": "une courte phrase d'explication ou d'encouragement en français"
+    }
+    `;
+
+    try {
+        const raw = await askGemini(prompt, 'assistant', gradeLevel);
+        const start = raw.indexOf('{');
+        const end = raw.lastIndexOf('}');
+        if (start === -1 || end === -1) throw new Error('No JSON output');
+
+        return JSON.parse(raw.substring(start, end + 1));
+    } catch (e) {
+        console.error('[flashcardService] validation error:', e);
+        return { isCorrect: false, feedback: "Je n'ai pas pu analyser ta réponse, compare-la avec le corrigé !" };
+    }
+}
+
+// AI Follow-up validation (conversation)
+export async function followUpValidation(
+    gradeLevel: string,
+    question: string,
+    correctAnswer: string,
+    history: { child: string; ai: string }[],
+    newChildAnswer: string
+): Promise<{ isCorrect: boolean; feedback: string }> {
+    const historyText = history.map(h => `Élève: ${h.child}\nMagic: ${h.ai}`).join('\n');
+
+    const prompt = `
+    Tu es Magic ✨, un tuteur bienveillant pour un élève de ${gradeLevel}.
+    On travaille sur cette flashcard :
+    Question : "${question}"
+    Réponse attendue : "${correctAnswer}"
+
+    Voici l'historique de notre discussion :
+    ${historyText}
+
+    L'élève vient de préciser : "${newChildAnswer}"
+
+    Tâche : Analyse si avec cette précision, l'élève a maintenant bien compris ou répondu correctement.
+    Réponds TOUJOURS au format JSON :
+    {
+      "isCorrect": boolean,
+      "feedback": "ton nouveau feedback encourageant"
+    }
+    `;
+
+    try {
+        const raw = await askGemini(prompt, 'assistant', gradeLevel);
+        const start = raw.indexOf('{');
+        const end = raw.lastIndexOf('}');
+        if (start === -1 || end === -1) throw new Error('No JSON output');
+
+        return JSON.parse(raw.substring(start, end + 1));
+    } catch (e) {
+        console.error('[flashcardService] follow-up error:', e);
+        return { isCorrect: false, feedback: "Je continue de t'écouter, dis-m'en plus !" };
+    }
 }

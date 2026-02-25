@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
     Layers, RefreshCcw, CheckCircle2, XCircle,
     Lightbulb, Zap, ArrowRight, BookOpen, Brain,
-    PenLine, Eye
+    PenLine, Eye, Star
 } from 'lucide-react';
 import {
     generateFlashcards,
@@ -12,6 +12,8 @@ import {
     rateCard,
     saveSession,
     getCollection,
+    validateFlashcardAnswer,
+    followUpValidation,
     Flashcard,
 } from '../services/flashcardService';
 
@@ -55,6 +57,10 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
     const [sessionPoints, setSessionPoints] = useState(0);
     const [dueCount, setDueCount] = useState(0);
     const [collectionCards, setCollectionCards] = useState<any[]>([]);
+    const [aiFeedback, setAiFeedback] = useState<{ isCorrect: boolean; feedback: string } | null>(null);
+    const [isValidating, setIsValidating] = useState(false);
+    const [history, setHistory] = useState<{ child: string; ai: string }[]>([]);
+    const [followUp, setFollowUp] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -81,6 +87,9 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
         setCardStep('question');
         setChildAnswer('');
         setShowHint(false);
+        setAiFeedback(null);
+        setHistory([]);
+        setFollowUp('');
     };
 
     const startSession = useCallback(async (subject: string) => {
@@ -111,9 +120,36 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
         setPhase('session');
     }, [childId]);
 
-    const handleReveal = () => {
-        if (!childAnswer.trim()) return; // prevent reveal without any input
+    const handleReveal = async () => {
+        if (!childAnswer.trim()) return;
+        setIsValidating(true);
         setCardStep('reveal');
+        const validation = await validateFlashcardAnswer(
+            gradeLevel,
+            cards[currentIndex].front,
+            cards[currentIndex].back,
+            childAnswer
+        );
+        setAiFeedback(validation);
+        setHistory([{ child: childAnswer, ai: validation.feedback }]);
+        setIsValidating(false);
+    };
+
+    const handleFollowUp = async () => {
+        if (!followUp.trim()) return;
+        setIsValidating(true);
+        const nextAnswer = followUp.trim();
+        setFollowUp('');
+        const validation = await followUpValidation(
+            gradeLevel,
+            cards[currentIndex].front,
+            cards[currentIndex].back,
+            history,
+            nextAnswer
+        );
+        setAiFeedback(validation);
+        setHistory(prev => [...prev, { child: nextAnswer, ai: validation.feedback }]);
+        setIsValidating(false);
     };
 
     const handleRate = useCallback(async (success: boolean) => {
@@ -127,7 +163,8 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
             subject: current.subject,
             front: current.front,
             back: current.back,
-            hint: current.hint
+            hint: current.hint,
+            last_answer: childAnswer
         }, success);
 
         if (currentIndex < cards.length - 1) {
@@ -336,6 +373,17 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                             <h1 className="text-3xl font-black text-slate-900">Ma Collection 📚</h1>
                             <p className="text-sm text-slate-500 font-medium">Toutes les notions que tu as déjà travaillées.</p>
                         </div>
+                        <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                                <Star className="h-6 w-6 fill-amber-500" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Total Réussites</p>
+                                <p className="text-xl font-black text-slate-900 leading-none">
+                                    {collectionCards.reduce((acc, card) => acc + (card.success_count || 0), 0)} ⭐
+                                </p>
+                            </div>
+                        </div>
                     </header>
 
                     {collectionCards.length === 0 ? (
@@ -369,9 +417,21 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                                 </div>
                                             </div>
                                             <h3 className="text-lg font-black text-slate-800 mb-2 leading-tight">{card.front || card.notion}</h3>
-                                            <p className="text-sm text-slate-600 font-medium line-clamp-3 italic mb-4">
+                                            <p className="text-sm text-slate-600 font-medium line-clamp-2 italic mb-1">
                                                 {card.back || 'Pas encore de corrigé détaillé.'}
                                             </p>
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mt-2 space-y-2">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Ta dernière réponse :</p>
+                                                    <p className="text-xs font-bold text-indigo-600 italic">"{card.last_answer || '(vide)'}"</p>
+                                                </div>
+                                                <div className="flex items-center justify-between pt-2 border-t border-slate-200/50">
+                                                    <p className="text-[10px] font-black uppercase text-slate-400">Étoiles gagnées :</p>
+                                                    <p className="text-xs font-black text-amber-600 flex items-center gap-1">
+                                                        {card.success_count || 0} <Star className="h-3 w-3 fill-amber-500" />
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
                                             <p className="text-[10px] font-black text-slate-400 uppercase">
@@ -527,22 +587,95 @@ export default function Flashcards({ childId, gradeLevel, onEarnPoints }: Flashc
                                     Compare ta réponse. Est-ce que tu avais trouvé ?
                                 </p>
 
-                                {/* Rating buttons */}
-                                <div className="flex gap-3">
-                                    <motion.button
-                                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
-                                        onClick={() => handleRate(false)}
-                                        className="flex-1 py-4 rounded-2xl bg-rose-100 text-rose-600 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-rose-200 transition"
-                                    >
-                                        <XCircle className="h-5 w-5" /> Pas encore
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
-                                        onClick={() => handleRate(true)}
-                                        className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-100 hover:opacity-90 transition"
-                                    >
-                                        <CheckCircle2 className="h-5 w-5" /> Je savais ! +5⭐
-                                    </motion.button>
+                                {/* Action Area */}
+                                <div className="flex flex-col gap-4">
+                                    {/* AI Verdict */}
+                                    <AnimatePresence>
+                                        {(isValidating || aiFeedback) && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className={`p-5 rounded-[2.5rem] border-2 flex items-center gap-4 ${isValidating
+                                                    ? 'bg-slate-50 border-slate-100 animate-pulse'
+                                                    : aiFeedback?.isCorrect
+                                                        ? 'bg-emerald-50 border-emerald-100/50'
+                                                        : 'bg-amber-50 border-amber-100/50'}`}
+                                            >
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${isValidating
+                                                    ? 'bg-slate-200'
+                                                    : aiFeedback?.isCorrect
+                                                        ? 'bg-emerald-500'
+                                                        : 'bg-amber-500'}`}>
+                                                    {isValidating ? <RefreshCcw className="h-6 w-6 text-slate-400 animate-spin" /> :
+                                                        aiFeedback?.isCorrect ? <CheckCircle2 className="h-6 w-6 text-white" /> : <Brain className="h-6 w-6 text-white" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">L'avis de Magic ✨</p>
+                                                    <div className="space-y-2">
+                                                        {history.slice(0, -1).map((h, i) => (
+                                                            <div key={i} className="text-[10px] text-slate-400 font-medium border-l-2 border-slate-100 pl-2 py-1 italic">
+                                                                <p>Toi: {h.child}</p>
+                                                                <p>Magic: {h.ai}</p>
+                                                            </div>
+                                                        ))}
+                                                        <p className={`text-base font-black ${isValidating ? 'text-slate-400' : 'text-slate-800'}`}>
+                                                            {isValidating ? 'Analyse de ta réponse...' : aiFeedback?.feedback}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {/* Conversation / Next buttons overlay */}
+                                    {aiFeedback && !isValidating && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="space-y-4"
+                                        >
+                                            {/* Chat Input if Magic asks something or if not correct */}
+                                            {!aiFeedback.isCorrect && (
+                                                <div className="relative">
+                                                    <textarea
+                                                        value={followUp}
+                                                        onChange={e => setFollowUp(e.target.value)}
+                                                        onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey && followUp.trim()) handleFollowUp(); }}
+                                                        placeholder="Répondre à Magic ✨... (Ctrl+Entrée)"
+                                                        className="w-full p-4 pr-12 rounded-3xl bg-white border-2 border-indigo-100 shadow-sm text-sm font-medium resize-none h-20 outline-none focus:border-indigo-300 transition-all"
+                                                    />
+                                                    <button
+                                                        onClick={handleFollowUp}
+                                                        disabled={!followUp.trim()}
+                                                        className="absolute right-3 bottom-3 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center disabled:opacity-30 transition-all"
+                                                    >
+                                                        <ArrowRight className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-3">
+                                                <button
+                                                    onClick={() => handleRate(aiFeedback.isCorrect)}
+                                                    className={`w-full py-5 rounded-[2.5rem] font-black text-xl uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${aiFeedback.isCorrect
+                                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-200'
+                                                        : 'bg-slate-900 text-white shadow-slate-200'
+                                                        }`}
+                                                >
+                                                    {aiFeedback.isCorrect ? 'Super, Suivant !' : 'D\'accord, Suivant'}
+                                                    <ArrowRight className="h-6 w-6" />
+                                                </button>
+
+                                                {/* Small override for the child */}
+                                                <button
+                                                    onClick={() => handleRate(!aiFeedback.isCorrect)}
+                                                    className="w-full text-center text-[10px] font-bold text-slate-400 hover:text-indigo-500 transition-colors"
+                                                >
+                                                    {aiFeedback.isCorrect ? "Je me suis trompé en fait..." : "Je pense que Magic se trompe, j'avais raison !"}
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    )}
                                 </div>
                             </div>
                         )}
