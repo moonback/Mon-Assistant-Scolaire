@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, Brain, ChevronRight, CheckCircle2, Sparkles, Lightbulb, Palette, Globe, Rocket, Leaf, History, FlaskConical } from 'lucide-react';
+import { BookOpen, Brain, ChevronRight, CheckCircle2, Sparkles, Lightbulb, Palette, Globe, Rocket, Leaf, History, FlaskConical, Volume2, PenTool, RefreshCw, Star } from 'lucide-react';
 import { dailyChallengeService, DailyChallenges as DailyChallengesType } from '../services/dailyChallengeService';
 import { useAuth } from '../contexts/AuthContext';
 import SectionHeader from './ui/SectionHeader';
@@ -39,6 +39,7 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
     const [challenges, setChallenges] = useState<DailyChallengesType | null>(null);
     const [loading, setLoading] = useState(true);
     const [revealProblem, setRevealProblem] = useState(false);
+    const [userAnswer, setUserAnswer] = useState('');
 
     useEffect(() => {
         async function fetchChallenges() {
@@ -65,13 +66,21 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
         }
     };
 
-    const handleProblemDone = async () => {
+    const handleProblemDone = async (success = true) => {
         if (challenges?.id && !challenges.problemCompleted) {
             await dailyChallengeService.completeProblem(childId, challenges.id);
             setChallenges({ ...challenges, problemCompleted: true });
-            onEarnPoints(10, 'daily_challenge', 'Math');
+            onEarnPoints(success ? 10 : 5, 'daily_challenge', 'Math');
         }
         setRevealProblem(true);
+    };
+
+    const speakWord = () => {
+        if ('speechSynthesis' in window && challenges?.word?.word) {
+            const utterance = new SpeechSynthesisUtterance(challenges.word.word);
+            utterance.lang = 'fr-FR';
+            window.speechSynthesis.speak(utterance);
+        }
     };
 
     return (
@@ -98,11 +107,18 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
             />
 
             {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {[1, 2].map((i) => (
-                        <div key={i} className="h-64 bg-slate-100 rounded-[3rem] animate-pulse" />
-                    ))}
-                </div>
+                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[2.5rem] border border-slate-100 bg-white p-12 text-center relative overflow-hidden shadow-xl shadow-slate-200/40">
+                    <RefreshCw className="mx-auto mb-6 h-12 w-12 animate-spin text-indigo-600" />
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Génération de tes missions magiques...</h3>
+                    <p className="text-sm font-semibold text-slate-500 mb-8 max-w-md mx-auto">Notre intelligence artificielle prépare tes défis du jour sur mesure 🚀</p>
+
+                    <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/50 max-w-md mx-auto">
+                        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest">
+                            <Star className="w-3.5 h-3.5 fill-indigo-600" />
+                            <span>Tu peux naviguer sur un autre onglet, tes activités t'attendront !</span>
+                        </div>
+                    </div>
+                </motion.div>
             ) : !challenges ? (
                 <EmptyStateKid
                     icon={<Sparkles className="h-6 w-6" />}
@@ -139,7 +155,16 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                             </div>
 
                             <div className="flex-1 space-y-4 relative z-10 mt-6">
-                                <h4 className="text-2xl font-black text-indigo-600 tracking-tight leading-none uppercase">{challenges.word.word}</h4>
+                                <div className="flex items-center gap-3">
+                                    <h4 className="text-2xl font-black text-indigo-600 tracking-tight leading-none uppercase">{challenges.word.word}</h4>
+                                    <button
+                                        onClick={speakWord}
+                                        className="p-2 rounded-full bg-indigo-50 text-indigo-400 hover:bg-indigo-100 hover:text-indigo-600 transition-colors shadow-sm"
+                                        title="Écouter la prononciation"
+                                    >
+                                        <Volume2 className="w-5 h-5" />
+                                    </button>
+                                </div>
                                 <p className="text-slate-500 text-sm font-semibold leading-relaxed">
                                     {challenges.word.definition}
                                 </p>
@@ -197,18 +222,38 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                                 )}
                             </div>
 
-                            <div className="flex-1 relative z-10 mt-6">
+                            <div className="flex-1 relative z-10 mt-6 flex flex-col">
                                 <div className="bg-orange-50/30 p-6 rounded-2xl border border-white shadow-inner mb-6">
                                     <p className="text-slate-800 font-bold text-sm leading-relaxed">
                                         {challenges.problem.question}
                                     </p>
                                 </div>
 
+                                {!revealProblem && !challenges.problemCompleted && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mb-6 flex-1"
+                                    >
+                                        <div className="relative h-full min-h-[120px]">
+                                            <textarea
+                                                value={userAnswer}
+                                                onChange={(e) => setUserAnswer(e.target.value)}
+                                                placeholder="Écris ta réponse ou ton raisonnement ici..."
+                                                className="w-full h-full p-5 rounded-2xl border-2 border-orange-100 bg-white/60 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-400/10 outline-none transition-all resize-none text-sm font-bold text-slate-700 placeholder:text-slate-400 shadow-inner"
+                                            />
+                                            <div className="absolute bottom-4 right-4 text-orange-300 pointer-events-none">
+                                                <PenTool className="w-5 h-5 opacity-50" />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
                                 <AnimatePresence>
                                     {revealProblem && (
                                         <motion.div
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
+                                            initial={{ opacity: 0, scale: 0.95, height: 0 }}
+                                            animate={{ opacity: 1, scale: 1, height: 'auto' }}
                                             className="space-y-4"
                                         >
                                             <div className="bg-emerald-50 border-2 border-emerald-100 p-6 rounded-3xl flex items-start gap-4">
@@ -216,8 +261,8 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                                                     <Sparkles className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-1">La Solution</p>
-                                                    <p className="text-xl font-black text-emerald-700">{challenges.problem.answer}</p>
+                                                    <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">La Solution</p>
+                                                    <p className="text-lg font-black text-emerald-700 leading-snug">{challenges.problem.answer}</p>
                                                 </div>
                                             </div>
                                             <div className="bg-white border-2 border-orange-100 p-6 rounded-3xl flex items-start gap-4">
@@ -225,8 +270,8 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                                                     <Lightbulb className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-black text-orange-800 uppercase tracking-widest mb-1">Le secret de la réponse</p>
-                                                    <p className="text-slate-600 font-medium leading-relaxed">{challenges.problem.explanation}</p>
+                                                    <p className="text-[10px] font-black text-orange-800 uppercase tracking-widest mb-1">Le secret de la réponse</p>
+                                                    <p className="text-slate-600 text-sm font-medium leading-relaxed">{challenges.problem.explanation}</p>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -235,18 +280,45 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                             </div>
 
                             {!challenges.problemCompleted ? (
-                                <AppButton
-                                    onClick={handleProblemDone}
-                                    className="relative z-10 mt-8 w-full bg-orange-500 text-xs uppercase tracking-widest hover:bg-orange-600"
-                                    rightIcon={<ChevronRight className="h-4 w-4" />}
-                                >
-                                    Vérifier la réponse
-                                </AppButton>
+                                !revealProblem ? (
+                                    <AppButton
+                                        onClick={() => setRevealProblem(true)}
+                                        disabled={!userAnswer.trim()}
+                                        className="relative z-10 mt-8 w-full bg-orange-500 text-xs uppercase tracking-widest hover:bg-orange-600 disabled:opacity-50 disabled:grayscale transition-all"
+                                        rightIcon={<ChevronRight className="h-4 w-4" />}
+                                    >
+                                        Vérifier ma réponse
+                                    </AppButton>
+                                ) : (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex flex-col gap-3 mt-8 relative z-10"
+                                    >
+                                        <p className="text-center text-xs font-bold text-slate-500 mb-2">As-tu trouvé la bonne réponse ?</p>
+                                        <div className="flex gap-3">
+                                            <AppButton
+                                                onClick={() => handleProblemDone(true)}
+                                                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-[10px] sm:text-xs uppercase tracking-widest px-2"
+                                                leftIcon={<CheckCircle2 className="h-4 w-4" />}
+                                            >
+                                                J'avais bon !
+                                            </AppButton>
+                                            <AppButton
+                                                onClick={() => handleProblemDone(false)}
+                                                variant="secondary"
+                                                className="flex-1 text-[10px] sm:text-xs uppercase tracking-widest px-2 group hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
+                                            >
+                                                Presque !
+                                            </AppButton>
+                                        </div>
+                                    </motion.div>
+                                )
                             ) : !revealProblem && (
                                 <AppButton
                                     onClick={() => setRevealProblem(true)}
                                     variant="secondary"
-                                    className="mt-10 w-full text-base"
+                                    className="mt-10 w-full text-base relative z-10"
                                 >
                                     Afficher le corrigé
                                 </AppButton>

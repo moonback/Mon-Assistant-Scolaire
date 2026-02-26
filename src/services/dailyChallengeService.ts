@@ -28,24 +28,23 @@ const STORAGE_KEY = 'daily_challenges';
 export const dailyChallengeService = {
     async getChallenges(childId: string, gradeLevel: string = 'CM1', theme?: string): Promise<DailyChallenges | null> {
         const today = new Date().toISOString().split('T')[0];
+        const activeTheme = theme || 'Général';
 
         try {
             // 1. Check if challenge exists for today/grade/theme in Supabase
-            let query = supabase
+            const { data: challengeData, error: challengeError } = await supabase
                 .from('daily_challenges')
                 .select('*')
                 .eq('date', today)
-                .eq('grade_level', gradeLevel);
+                .eq('grade_level', gradeLevel)
+                .eq('theme', activeTheme)
+                .maybeSingle();
 
-            if (theme) {
-                query = query.eq('theme', theme);
-            }
-
-            let { data: challenge, error: challengeError } = await query.maybeSingle();
+            let challenge = challengeData;
 
             // 2. If not, generate with AI and save to Supabase
             if (!challenge) {
-                const themePrompt = theme ? ` sur le thème : "${theme}"` : '';
+                const themePrompt = activeTheme !== 'Général' ? ` sur le thème : "${activeTheme}"` : '';
                 const [wordRes, problemRes] = await Promise.all([
                     askGemini(`Génère le mot du jour${themePrompt}.`, 'wordOfTheDay', gradeLevel),
                     askGemini(`Génère le problème du jour${themePrompt}.`, 'problemOfTheDay', gradeLevel)
@@ -68,29 +67,28 @@ export const dailyChallengeService = {
                     problem = { question: "Combien font 2 + 2 ?", answer: "4", explanation: "C'est la base !" };
                 }
 
-                const { data: newChallenge, error: insertError } = await supabase
+                const { data: newChallengeArray, error: insertError } = await supabase
                     .from('daily_challenges')
                     .upsert({
                         date: today,
                         grade_level: gradeLevel,
-                        theme: theme || 'Général',
+                        theme: activeTheme,
                         word_data: word,
                         problem_data: problem
                     }, { onConflict: 'date,grade_level,theme', ignoreDuplicates: true })
-                    .select()
-                    .maybeSingle();
+                    .select();
 
                 if (insertError) {
                     throw insertError;
                 }
 
-                if (!newChallenge) {
+                if (!newChallengeArray || newChallengeArray.length === 0) {
                     // Another request inserted it at the same time, triggering ignoreDuplicates 
                     // which returns null. So we just fetch it again.
                     return this.getChallenges(childId, gradeLevel, theme);
                 }
 
-                challenge = newChallenge;
+                challenge = newChallengeArray[0];
             }
 
             // 3. Check completion status for this child
