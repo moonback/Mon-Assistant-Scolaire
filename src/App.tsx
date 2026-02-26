@@ -163,19 +163,19 @@ function AppContent() {
                   whileHover={{ y: -4, scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab('challenges')}
-                  className="col-span-1 md:col-span-2 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 p-8 md:p-10 text-left shadow-2xl shadow-indigo-200/50 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group"
+                  className="col-span-1 md:col-span-2 rounded-[2rem] bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 p-6 md:p-7 text-left shadow-xl shadow-indigo-200/40 flex items-center gap-6 relative overflow-hidden group"
                 >
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-white/20 transition-colors" />
-                  <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner border border-white/30 relative z-10">
-                    <span className="text-4xl">🎯</span>
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:bg-white/20 transition-colors" />
+                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner border border-white/30 relative z-10">
+                    <span className="text-3xl">🎯</span>
                   </div>
                   <div className="flex-1 text-white relative z-10">
-                    <h3 className="text-xl font-black mb-1 tracking-tight">Mission du Jour</h3>
-                    <p className="text-white/80 font-bold text-base leading-relaxed max-w-md">
-                      Gagne le maximum d'étoiles en relevant tes défis quotidiens !
+                    <h3 className="text-lg font-black mb-0.5 tracking-tight">Mission du Jour</h3>
+                    <p className="text-white/80 font-bold text-sm leading-snug max-w-sm">
+                      Gagne tes étoiles en relevant tes défis quotidiens !
                     </p>
                   </div>
-                  <div className="shrink-0 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white text-2xl relative z-10 group-hover:bg-white/20 transition-colors">
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white text-xl relative z-10 group-hover:bg-white/20 transition-colors">
                     →
                   </div>
                 </motion.button>
