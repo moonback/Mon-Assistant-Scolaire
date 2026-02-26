@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LayoutDashboard, Users, Gift, Settings as SettingsIcon, ChevronLeft } from 'lucide-react';
+import { X, LayoutDashboard, Users, Gift, Settings as SettingsIcon, ChevronLeft, ShieldCheck, Swords } from 'lucide-react';
 import { TabItem, Tab, ParentalTab } from '../../types/app';
 
 interface MobileNavProps {
@@ -27,6 +27,8 @@ export default function MobileNav({
     const parentalMenuItems = [
         { id: 'overview' as ParentalTab, label: 'Vue d\'ensemble', icon: LayoutDashboard },
         { id: 'children' as ParentalTab, label: 'Mes enfants', icon: Users },
+        { id: 'missions' as ParentalTab, label: 'Missions AI', icon: ShieldCheck },
+        { id: 'competitions' as ParentalTab, label: 'Compétitions', icon: Swords },
         { id: 'rewards' as ParentalTab, label: 'Récompenses', icon: Gift },
         { id: 'security' as ParentalTab, label: 'Sécurité', icon: SettingsIcon },
     ];
@@ -81,11 +83,10 @@ export default function MobileNav({
                                                     setParentalActiveTab(item.id);
                                                     onClose();
                                                 }}
-                                                className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${
-                                                    isActive
+                                                className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${isActive
                                                         ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
                                                         : 'border-slate-200 bg-white text-slate-700'
-                                                }`}
+                                                    }`}
                                             >
                                                 <item.icon className="h-4 w-4" />
                                                 {item.label}
@@ -103,11 +104,10 @@ export default function MobileNav({
                                                 setActiveTab(tab.id);
                                                 onClose();
                                             }}
-                                            className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${
-                                                isActive
+                                            className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${isActive
                                                     ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
                                                     : 'border-slate-200 bg-white text-slate-700'
-                                            }`}
+                                                }`}
                                         >
                                             <tab.icon className="h-4 w-4" />
                                             {tab.label}

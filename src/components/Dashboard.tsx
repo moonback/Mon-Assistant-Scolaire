@@ -103,7 +103,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
       />
 
       <SiblingCompetition />
-      <ParentalMissions />
+      <ParentalMissions onEarnPoints={onEarnPoints} />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <AppCard

@@ -40,6 +40,7 @@ export default function Sidebar({
     const parentalMenuItems = [
         { id: 'overview' as ParentalTab, label: 'Vue d\'ensemble', icon: LayoutDashboard },
         { id: 'children' as ParentalTab, label: 'Mes enfants', icon: Users },
+        { id: 'missions' as ParentalTab, label: 'Missions AI', icon: ShieldCheck },
         { id: 'competitions' as ParentalTab, label: 'Compétitions', icon: Swords },
         { id: 'rewards' as ParentalTab, label: 'Récompenses', icon: Gift },
         { id: 'security' as ParentalTab, label: 'Sécurité', icon: SettingsIcon },

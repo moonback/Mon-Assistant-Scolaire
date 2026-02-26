@@ -8,7 +8,7 @@ export const GRADE_LEVELS: GradeLevel[] = ['CP', 'CE1', 'CE2', 'CM1', 'CM2', '6�
 // ─── Navigation ──────────────────────────────────────────
 export type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental' | 'profile' | 'challenges' | 'flashcards' | 'market';
 
-export type ParentalTab = 'overview' | 'children' | 'rewards' | 'security' | 'competitions';
+export type ParentalTab = 'overview' | 'children' | 'missions' | 'rewards' | 'security' | 'competitions';
 
 export interface TabItem {
     id: Tab;
@@ -26,6 +26,22 @@ export interface RewardGoal {
     icon: string;
     claimed?: boolean;
     claimed_at?: string;
+}
+
+// ─── Parental Mission ────────────────────────────────────
+export type MissionStatus = 'pending' | 'completed' | 'verified';
+export type MissionCategory = 'education' | 'home' | 'behavior' | 'sport';
+
+export interface ParentalMission {
+    id: string;
+    label: string;
+    description?: string;
+    reward: number; // stars
+    icon: string;
+    status: MissionStatus;
+    category: MissionCategory;
+    due_date?: string;
+    completed_at?: string;
 }
 
 // ─── Activity Types ──────────────────────────────────────

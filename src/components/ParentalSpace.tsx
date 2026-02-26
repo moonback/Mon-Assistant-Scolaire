@@ -7,6 +7,7 @@ import { ParentalTab as Tab } from '../types/app';
 import ParentalOverview from './parental/ParentalOverview';
 import ParentalChildren from './parental/ParentalChildren';
 import ParentalRewards from './parental/ParentalRewards';
+import ParentalMissionsManagement from './parental/ParentalMissionsManagement';
 import ParentalSecurity from './parental/ParentalSecurity';
 import ParentalCompetitions from './parental/ParentalCompetitions';
 import AppCard from './ui/AppCard';
@@ -155,6 +156,15 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                         session={session}
                         setError={setError}
                         setSuccess={setSuccess}
+                    />
+                )}
+
+                {activeTab === 'missions' && (
+                    <ParentalMissionsManagement
+                        childrenContext={children}
+                        refreshChildren={refreshChildren}
+                        setSuccess={setSuccess}
+                        setError={setError}
                     />
                 )}
 

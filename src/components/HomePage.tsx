@@ -14,13 +14,14 @@ const FEATURED_TABS: Tab[] = ['home', 'dashboard', 'parental', 'profile', 'chall
 
 export default function HomePage({ setActiveTab }: HomePageProps) {
   const { selectedChild, children } = useAuth();
+  const { addStars } = usePoints();
 
   return (
     <div className="space-y-6 pb-10 max-w-8xl mx-auto">
 
 
       <SiblingCompetition />
-      <ParentalMissions />
+      <ParentalMissions onEarnPoints={addStars} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Mission du jour */}
