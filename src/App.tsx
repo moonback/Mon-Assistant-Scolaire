@@ -127,6 +127,11 @@ function AppContent() {
     }
   }, [activeTab, addStars, commonProps, parentalActiveTab, selectedChild?.grade_level, selectedChild?.id]);
 
+  // ─── Visible Tabs (respecting blocked topics) ──────────
+  const visibleTabs = useMemo(() => tabs.filter(t =>
+    !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id)
+  ), [selectedChild?.blocked_topics]);
+
   // ─── Auth Gate ─────────────────────────────────────────
   if (!session) return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>}>
@@ -144,10 +149,6 @@ function AppContent() {
     );
   }
 
-  // ─── Visible Tabs (respecting blocked topics) ──────────
-  const visibleTabs = useMemo(() => tabs.filter(t =>
-    !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id)
-  ), [selectedChild?.blocked_topics]);
 
   // ─── Main Layout ───────────────────────────────────────
   return (
