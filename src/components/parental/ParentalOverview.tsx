@@ -42,24 +42,34 @@ export default function ParentalOverview({ childrenContext, stats }: ParentalOve
                     </h3>
                 </div>
                 <div className="space-y-4">
-                    {stats.length > 0 ? stats.slice(0, 5).map(s => (
-                        <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                                    <BookOpen className="w-5 h-5 text-indigo-500" />
+                    {stats.length > 0 ? stats.slice(0, 5).map(s => {
+                        const childName = childrenContext.find(c => c.id === s.child_id)?.name || 'Anonyme';
+                        const isQuiz = s.activity_type?.toLowerCase().includes('quiz');
+                        return (
+                            <div key={s.id} className="flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl border border-slate-100 shadow-sm transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 ${isQuiz ? 'bg-amber-50 border-amber-100 text-amber-500' : 'bg-indigo-50 border-indigo-100 text-indigo-500'}`}>
+                                        {isQuiz ? <Star className="w-6 h-6 fill-current" /> : <BookOpen className="w-6 h-6" />}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-800 text-sm capitalize">{s.subject}</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                                            {childName} • {s.activity_type || 'Activité'}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-slate-800 text-sm">{s.subject}</p>
-                                    <p className="text-xs font-bold text-slate-400 uppercase">{childrenContext.find(c => c.id === s.child_id)?.name || 'Anonyme'}</p>
+                                <div className="text-right">
+                                    <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 rounded-lg">
+                                        <span className="text-xs font-black text-emerald-600">+{s.score} PTS</span>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                                        {new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="font-semibold text-indigo-600">+{s.score} PTS</p>
-                                <p className="text-xs font-bold text-slate-400 uppercase">{new Date(s.date).toLocaleDateString()}</p>
-                            </div>
-                        </div>
-                    )) : (
-                        <div className="py-10 text-center text-slate-400 font-bold italic">Aucune activité pour le moment...</div>
+                        )
+                    }) : (
+                        <div className="py-10 text-center text-slate-400 font-bold bg-slate-50 border border-slate-100 rounded-2xl uppercase tracking-widest text-xs">Aucune activité pour le moment</div>
                     )}
                 </div>
             </div>
