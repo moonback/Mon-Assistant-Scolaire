@@ -4,6 +4,9 @@ import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, ChevronRight, Star } fr
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import SectionHeader from './ui/SectionHeader';
+import AppCard from './ui/AppCard';
+import AppButton from './ui/AppButton';
 
 interface Question {
   question: string;
@@ -148,21 +151,19 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Générateur de Quiz ✨</h1>
-          <p className="text-slate-500 font-semibold text-sm">Choisis ton sujet et teste tes connaissances !</p>
-        </div>
-      </header>
+      <SectionHeader
+        title="Générateur de Quiz ✨"
+        subtitle="Choisis ton sujet et teste tes connaissances !"
+      />
 
       <AnimatePresence mode="wait">
         {!questions.length && !loading ? (
-          <motion.section
+          <AppCard as={motion.section}
             key="setup"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="premium-card p-8 border-none shadow-sm"
+            className="p-8"
           >
             <div className="mb-8 flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shrink-0 shadow-inner">
@@ -183,13 +184,13 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-sm font-semibold text-slate-800 outline-none focus:border-indigo-300 focus:bg-white transition-all shadow-inner"
               />
 
-              <button
+              <AppButton
                 onClick={() => startQuiz()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                className="w-full py-4 text-xs uppercase tracking-widest"
               >
                 Générer le quiz
                 <ChevronRight className="h-4 w-4" />
-              </button>
+              </AppButton>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 {(selectedChild?.allowed_subjects?.length ? selectedChild.allowed_subjects : ['Géographie', 'Histoire', 'Sciences', 'Espace', 'Anglais', 'Nature', 'Art', 'Code']).map((t) => (
@@ -206,7 +207,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                 ))}
               </div>
             </div>
-          </motion.section>
+          </AppCard>
         ) : loading ? (
           <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-indigo-600" />
