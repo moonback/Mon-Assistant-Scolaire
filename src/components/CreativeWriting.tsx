@@ -15,7 +15,9 @@ import {
     Rocket,
     Sword,
     Baby,
-    ArrowRight
+    ArrowRight,
+    PenTool,
+    MessageSquareQuote
 } from 'lucide-react';
 import { askGemini } from '../services/gemini';
 import { storyService } from '../services/storyService';
@@ -25,11 +27,11 @@ import confetti from 'canvas-confetti';
 import AppCard from './ui/AppCard';
 import AppButton from './ui/AppButton';
 
-interface Scene {
-    childText: string;
-    aiResponse: string;
-    illustration: string;
-    magicWordsUsed: string[];
+type WritingStep = 'SETUP' | 'WRITING' | 'REVIEWING' | 'FINISHED';
+
+interface ManuscriptEntry {
+    role: 'child' | 'ai';
+    text: string;
 }
 
 const GENRES = [
@@ -43,46 +45,75 @@ export default function CreativeWriting() {
     const { selectedChild } = useAuth();
     const { speak, stop, isSpeaking } = useSpeechSynthesis();
 
-    const [scenes, setScenes] = useState<Scene[]>([]);
-    const [currentInput, setCurrentInput] = useState('');
+    const [step, setStep] = useState<WritingStep>('SETUP');
     const [loading, setLoading] = useState(false);
-    const [isFinished, setIsFinished] = useState(false);
-    const [title, setTitle] = useState('');
+
+    // Config
     const [selectedGenre, setSelectedGenre] = useState<typeof GENRES[0] | null>(null);
     const [heroName, setHeroName] = useState('');
+    const [title, setTitle] = useState('');
+
+    // Manuscript Data
+    const [manuscript, setManuscript] = useState<ManuscriptEntry[]>([]);
+
+    // Tutor State
+    const [draftInput, setDraftInput] = useState('');
+    const [editorFeedback, setEditorFeedback] = useState('');
+    const [nextChoice, setNextChoice] = useState('');
+    const [magicWords, setMagicWords] = useState<string[]>([]);
+    const [pendingEngineContent, setPendingEngineContent] = useState<string>('');
+    const [fullHistory, setFullHistory] = useState<string>(''); // For Gemini context
+
+    // Gamification
     const [creativePoints, setCreativePoints] = useState(0);
-    const [lastMagicWords, setLastMagicWords] = useState<string[]>([]);
     const [isSaved, setIsSaved] = useState(false);
 
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const manuscriptBottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (manuscriptBottomRef.current) {
+            manuscriptBottomRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [scenes]);
+    }, [manuscript, step]);
+
+    const parseAiResponse = (text: string) => {
+        const editorMatch = text.match(/\*\*L'[ŒO]il de l'[ÉE]diteur\*\*\s*:\s*(.+)/i);
+        const wordsMatch = text.match(/\*\*Mots Magiques\*\*\s*:\s*(.+)/i);
+        const engineMatch = text.match(/\*\*Le Moteur de l'Histoire\*\*\s*:\s*(.+)/i);
+        const choiceMatch = text.match(/\*\*Le Choix du H[éèe]ros\*\*\s*:\s*(.+)/i);
+
+        let words: string[] = [];
+        if (wordsMatch && wordsMatch[1]) {
+            words = wordsMatch[1].replace(/[*_]/g, '').split(',').map(w => w.trim());
+        }
+
+        return {
+            editor: editorMatch ? editorMatch[1].trim() : "Super idée !",
+            words: words.length ? words : ["Aventure", "Courage"],
+            engine: engineMatch ? engineMatch[1].trim() : text.replace(/\*\*.*\*\*\s*:/g, '').trim(),
+            choice: choiceMatch ? choiceMatch[1].trim() : "Que fais-tu ensuite ?"
+        };
+    };
 
     const startStory = async () => {
         if (!selectedGenre || !heroName.trim()) return;
 
         setLoading(true);
         const initialPrompt = `Lance une nouvelle histoire dans le genre ${selectedGenre.label}. Le héros s'appelle ${heroName}. 
-        Donne une accroche captivante et propose 2 mots magiques à utiliser.`;
+        Utilise OBLIGATOIREMENT le format avec L'Œil de l'Éditeur, Mots Magiques, Le Moteur de l'Histoire, et Le Choix du Héros. 
+        Pour l'Œil de l'Éditeur, souhaite-lui juste la bienvenue dans l'aventure.`;
 
         try {
             const resp = await askGemini(initialPrompt, 'writing_lab', selectedChild?.grade_level || 'CM1');
+            const parsed = parseAiResponse(resp);
 
-            // Extract magic words from AI response (simple regex)
-            const wordsMatch = resp.match(/Mots Magiques\s*:\s*\*?([^*,\n]+)\*?,\s*\*?([^*,\n]+)\*?/i);
-            const words = wordsMatch ? [wordsMatch[1].trim(), wordsMatch[2].trim()] : [];
-            setLastMagicWords(words);
+            setManuscript([{ role: 'ai', text: parsed.engine }]);
+            setEditorFeedback(parsed.editor);
+            setMagicWords(parsed.words);
+            setNextChoice(parsed.choice);
+            setFullHistory(`IA: ${parsed.engine}\n`);
 
-            setScenes([{
-                childText: `Voici l'aventure de ${heroName} !`,
-                aiResponse: resp,
-                illustration: selectedGenre.emoji,
-                magicWordsUsed: []
-            }]);
+            setStep('WRITING');
         } catch (e) {
             console.error(e);
         } finally {
@@ -90,46 +121,34 @@ export default function CreativeWriting() {
         }
     };
 
-    const handlesubmit = async () => {
-        if (!currentInput.trim() || loading) return;
+    const submitDraftToTutor = async () => {
+        if (!draftInput.trim() || loading) return;
 
         setLoading(true);
-        const userInput = currentInput;
-        setCurrentInput('');
+        const userInput = draftInput;
 
-        // Detect if magic words were used
-        const usedThisTime = lastMagicWords.filter(word =>
-            userInput.toLowerCase().includes(word.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-        );
-
-        if (usedThisTime.length > 0) {
-            setCreativePoints(prev => prev + (usedThisTime.length * 50));
+        // Points
+        const wordsUsed = magicWords.filter(w => userInput.toLowerCase().includes(w.toLowerCase()));
+        if (wordsUsed.length > 0) {
+            setCreativePoints(prev => prev + (wordsUsed.length * 50));
         }
-        setCreativePoints(prev => prev + 10); // Base points for writing
+        setCreativePoints(prev => prev + 10);
 
-        // Build context from previous scenes
-        const history = scenes.map(s => `Enfant: ${s.childText}\nIA: ${s.aiResponse}`).join('\n');
-        const fullPrompt = `HISTORIQUE :\n${history}\n\nL'enfant continue avec : "${userInput}". 
-        ${usedThisTime.length > 0 ? `Il a utilisé les mots magiques : ${usedThisTime.join(', ')}. Félicite-le !` : ''}
-        Réagis, relance l'histoire et propose 2 NOUVEAUX mots magiques.`;
+        const prompt = `HISTORIQUE :\n${fullHistory}\n\nL'enfant propose la suite : "${userInput}". 
+        ${wordsUsed.length > 0 ? `Il a utilisé les mots : ${wordsUsed.join(', ')}. Félicite-le !` : ''}
+        Réponds OBLIGATOIREMENT avec le format : L'Œil de l'Éditeur (conseil doux sur l'orthographe si besoin), Mots Magiques (2 mots), Le Moteur de l'Histoire (qui intègre son idée), Le Choix du Héros (1 question).`;
 
         try {
-            const aiResp = await askGemini(fullPrompt, 'writing_lab', selectedChild?.grade_level || 'CM1');
+            const aiResp = await askGemini(prompt, 'writing_lab', selectedChild?.grade_level || 'CM1');
+            const parsed = parseAiResponse(aiResp);
 
-            // Extract new magic words
-            const wordsMatch = aiResp.match(/Mots Magiques\s*:\s*\*?([^*,\n]+)\*?,\s*\*?([^*,\n]+)\*?/i);
-            const words = wordsMatch ? [wordsMatch[1].trim(), wordsMatch[2].trim()] : [];
-            setLastMagicWords(words);
+            setEditorFeedback(parsed.editor);
+            setMagicWords(parsed.words);
+            setPendingEngineContent(parsed.engine);
+            setNextChoice(parsed.choice);
 
-            const emojis = ['🌟', '🐉', '🏰', '🚀', '🐱', '🌳', '🌊', '🔥', '💎', '🎨'];
-            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-
-            setScenes(prev => [...prev, {
-                childText: userInput,
-                aiResponse: aiResp,
-                illustration: randomEmoji,
-                magicWordsUsed: usedThisTime
-            }]);
+            // We do NOT add to manuscript yet, we wait for child to validate
+            setStep('REVIEWING');
         } catch (e) {
             console.error(e);
         } finally {
@@ -137,16 +156,32 @@ export default function CreativeWriting() {
         }
     };
 
-    const finishStory = async () => {
+    const validateDraftForBook = () => {
+        // Child has reviewed (and possibly corrected) their draft
+        setManuscript(prev => [
+            ...prev,
+            { role: 'child', text: draftInput },
+            { role: 'ai', text: pendingEngineContent }
+        ]);
+
+        setFullHistory(prev => prev + `Enfant: ${draftInput}\nIA: ${pendingEngineContent}\n`);
+
+        // Reset for next turn
+        setDraftInput('');
+        setPendingEngineContent('');
+        setEditorFeedback('');
+        setStep('WRITING');
+    };
+
+    const loadEnding = async () => {
         setLoading(true);
-        const history = scenes.map(s => `Enfant: ${s.childText}\nIA: ${s.aiResponse}`).join('\n');
-        const prompt = `HISTORIQUE :\n${history}\n\nL'histoire est finie ! Trouve un titre MAGNIFIQUE pour ce livre de ${selectedChild?.grade_level}. Réponds UNIQUEMENT le titre.`;
+        const prompt = `HISTORIQUE :\n${fullHistory}\n\nL'histoire est finie ! Trouve un titre MAGNIFIQUE pour ce livre de ${selectedChild?.grade_level}. Réponds UNIQUEMENT le titre.`;
 
         try {
             const storyTitle = await askGemini(prompt, 'writing_lab', selectedChild?.grade_level || 'CM1');
             setTitle(storyTitle.replace(/[*_#"]+/g, ''));
-            setIsFinished(true);
             setCreativePoints(prev => prev + 200); // Completion bonus
+            setStep('FINISHED');
             confetti({
                 particleCount: 150,
                 spread: 70,
@@ -161,22 +196,37 @@ export default function CreativeWriting() {
     };
 
     const resetStory = () => {
-        setScenes([]);
-        setCurrentInput('');
-        setIsFinished(false);
+        setManuscript([]);
+        setDraftInput('');
+        setStep('SETUP');
         setTitle('');
         setSelectedGenre(null);
         setHeroName('');
-        setLastMagicWords([]);
+        setMagicWords([]);
         setIsSaved(false);
+        setCreativePoints(0);
+        setFullHistory('');
         stop();
     };
 
     const saveToPortfolio = async () => {
         if (isSaved || !title || !selectedChild) return;
-
         setLoading(true);
         try {
+            // Reconstruct scenes array for compatibility with older format
+            const scenes = [];
+            for (let i = 0; i < manuscript.length; i += 2) {
+                if (manuscript[i].role === 'ai') { // First item is always AI engine
+                    const childTxt = i > 0 ? manuscript[i - 1].text : `Voici l'aventure de ${heroName} !`;
+                    scenes.push({
+                        childText: childTxt,
+                        aiResponse: manuscript[i].text,
+                        illustration: selectedGenre?.emoji || '✨',
+                        magicWordsUsed: []
+                    });
+                }
+            }
+
             await storyService.saveStory({
                 child_id: selectedChild.id,
                 title,
@@ -185,12 +235,7 @@ export default function CreativeWriting() {
                 points: creativePoints
             });
             setIsSaved(true);
-            confetti({
-                particleCount: 100,
-                spread: 50,
-                origin: { y: 0.8 },
-                colors: ['#10b981', '#34d399']
-            });
+            confetti({ particleCount: 100, spread: 50, origin: { y: 0.8 }, colors: ['#10b981', '#34d399'] });
         } catch (e) {
             console.error(e);
         } finally {
@@ -198,20 +243,19 @@ export default function CreativeWriting() {
         }
     };
 
-    // --- RENDER: Selection Screen ---
-    if (scenes.length === 0) {
+    // --- RENDER: SETUP SCREEN ---
+    if (step === 'SETUP') {
         return (
             <div className="max-w-4xl mx-auto space-y-12 py-8 px-4 animate-in fade-in duration-700">
                 <header className="text-center space-y-4">
                     <div className="inline-flex p-4 bg-indigo-50 rounded-[2rem] text-indigo-600 shadow-inner mb-2">
-                        <BookOpen className="w-10 h-10" />
+                        <PenTool className="w-10 h-10" />
                     </div>
-                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">Le Laboratoire d'Écriture 🖋️</h1>
-                    <p className="text-slate-500 font-medium text-lg">Prêt à devenir un grand auteur ?</p>
+                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">Le Studio d'Autheur 🖋️</h1>
+                    <p className="text-slate-500 font-medium text-lg">Prépare-toi à écrire ton best-seller avec ton éditeur IA.</p>
                 </header>
 
                 <div className="grid md:grid-cols-2 gap-12 items-start">
-                    {/* Setup Card */}
                     <AppCard className="p-8 space-y-8 border-none shadow-xl shadow-indigo-100/30">
                         <section className="space-y-4">
                             <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -252,33 +296,23 @@ export default function CreativeWriting() {
                             loading={loading}
                             className="w-full py-6 rounded-2xl text-lg shadow-lg shadow-indigo-100"
                         >
-                            Ouvrir le grimoire <ArrowRight className="ml-2 w-5 h-5" />
+                            Ouvrir le Manuscrit <ArrowRight className="ml-2 w-5 h-5" />
                         </AppButton>
                     </AppCard>
 
-                    {/* How to Play Card */}
                     <div className="space-y-6 pt-4">
                         <h3 className="text-xl font-black text-slate-700">Comment ça marche ?</h3>
                         <div className="space-y-4">
                             {[
-                                { icon: Sparkles, text: "L'IA lance l'histoire et tu écris la suite.", color: 'text-yellow-500' },
-                                { icon: Star, text: "Utilise les 'Mots Magiques' pour gagner des points.", color: 'text-amber-500' },
-                                { icon: CheckCircle2, text: "Termine ton livre et reçois ton trophée d'auteur !", color: 'text-emerald-500' },
-                            ].map((step, i) => (
+                                { icon: Sparkles, text: "Tu es l'auteur, l'IA est ton éditeur. Elle te donne des défis !", color: 'text-amber-500' },
+                                { icon: PenTool, text: "Fais des brouillons, corrige tes fautes, puis valide pour le livre.", color: 'text-indigo-500' },
+                                { icon: BookOpen, text: "À la fin, admire ton manuscrit finalisé dans ton portfolio.", color: 'text-emerald-500' },
+                            ].map((s, i) => (
                                 <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
-                                    <div className={`p-2 rounded-xl bg-slate-50 ${step.color}`}>
-                                        <step.icon className="w-5 h-5" />
-                                    </div>
-                                    <p className="text-sm font-bold text-slate-600 leading-tight">{step.text}</p>
+                                    <div className={`p-2 rounded-xl bg-slate-50 ${s.color}`}><s.icon className="w-5 h-5" /></div>
+                                    <p className="text-sm font-bold text-slate-600 leading-tight">{s.text}</p>
                                 </div>
                             ))}
-                        </div>
-
-                        <div className="p-6 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl text-white shadow-xl">
-                            <h4 className="font-black text-sm uppercase tracking-widest mb-2 opacity-80">Astuce de Pro</h4>
-                            <p className="font-medium text-sm leading-relaxed italic">
-                                "Plus tes descriptions sont précises, plus l'IA créera des rebondissements incroyables !"
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -286,224 +320,208 @@ export default function CreativeWriting() {
         );
     }
 
-    // --- RENDER: Story Mode ---
-    return (
-        <div className="max-w-5xl mx-auto flex flex-col h-[calc(100vh-10rem)] p-4">
-            {/* Top Bar: Progress & Status */}
-            <div className="flex items-center justify-between mb-8 bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-white shadow-sm sticky top-0 z-50">
-                <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 ${selectedGenre?.color} rounded-2xl flex items-center justify-center shadow-sm`}>
-                        {selectedGenre && <selectedGenre.icon className="w-6 h-6" />}
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
-                            {isFinished ? title : `Aventure de ${heroName}`}
-                            {!isFinished && <span className="animate-pulse w-2 h-2 bg-emerald-500 rounded-full" />}
-                        </h2>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">
-                                Chapitre {scenes.length}
-                            </span>
-                            <div className="h-1 w-24 bg-slate-100 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min((scenes.length / 10) * 100, 100)}%` }}
-                                    className="h-full bg-indigo-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    {/* Creative Points Badge */}
-                    <div className="hidden sm:flex flex-col items-end">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Points Créatifs</span>
-                        <div className="flex items-center gap-2 text-indigo-600 font-black">
-                            {creativePoints} <Star className="w-4 h-4 fill-indigo-600" />
-                        </div>
-                    </div>
-
-                    {!isFinished && (
-                        <button
-                            onClick={finishStory}
-                            disabled={scenes.length < 3 || loading}
-                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50"
-                        >
-                            <CheckCircle2 className="w-4 h-4" /> Publier mon livre
-                        </button>
-                    )}
-                    {isFinished && (
-                        <button
-                            onClick={resetStory}
-                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-slate-800 text-white text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200"
-                        >
-                            <RefreshCw className="w-4 h-4" /> Nouvelle Histoire
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Story Content Area */}
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto space-y-12 pr-4 custom-scrollbar mb-8 px-2"
-            >
-                <AnimatePresence initial={false}>
-                    {scenes.map((scene, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="relative"
-                        >
-                            {/* Visual Scene Marker */}
-                            <div className="absolute -left-2 top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-indigo-100 to-transparent rounded-full" />
-
-                            <div className="flex justify-center -mb-8 relative z-20">
-                                <div className="w-20 h-20 bg-white border-8 border-slate-50/50 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-xl shadow-slate-200/50 animate-bounce-slow">
-                                    {scene.illustration}
-                                </div>
-                            </div>
-
-                            <AppCard className="overflow-hidden p-0 border-none shadow-xl shadow-slate-200/40 bg-white/60 backdrop-blur-sm group">
-                                <div className="p-6 pt-10 bg-slate-50/30 border-b border-slate-50">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 text-xs">
-                                                ✍️
-                                            </div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plume d'auteur</span>
-                                        </div>
-                                        {scene.magicWordsUsed.length > 0 && (
-                                            <div className="flex gap-1">
-                                                {scene.magicWordsUsed.map((w, i) => (
-                                                    <span key={i} className="px-2 py-1 bg-yellow-100 text-yellow-700 text-[9px] font-black uppercase rounded-lg border border-yellow-200 animate-pulse">
-                                                        Mot Magique !
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-base font-bold text-slate-700 leading-relaxed italic">"{scene.childText}"</p>
-                                </div>
-
-                                <div className="p-8 relative">
-                                    <div className="absolute top-6 right-8 flex gap-2">
-                                        <button
-                                            onClick={() => speak(scene.aiResponse.replace(/[*_#`]/g, ''))}
-                                            className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm"
-                                        >
-                                            {isSpeaking ? <StopCircle className="w-5 h-5 active:scale-95" /> : <Volume2 className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-                                    <div className="prose-base prose-slate max-w-none text-slate-600 font-medium leading-[1.8] whitespace-pre-wrap">
-                                        {scene.aiResponse.split('Mots Magiques').map((part, i) => (
-                                            i === 0 ? part : <div key={i} className="mt-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 border-dashed">
-                                                <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest block mb-2">💎 Mots Magiques pour la suite :</span>
-                                                <span className="text-indigo-700 font-black italic">{part}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </AppCard>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-
-                {loading && (
-                    <div className="flex flex-col items-center gap-4 py-8">
-                        <RefreshCw className="w-8 h-8 animate-spin text-indigo-400" />
-                        <span className="text-xs font-black uppercase tracking-widest text-indigo-300">L'IA parcourt tes mots...</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Input Area */}
-            {!isFinished ? (
-                <div className="sticky bottom-0 pb-4 pt-2 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent">
-                    <div className="absolute -top-12 left-0 right-0 flex justify-center pointer-events-none">
-                        <AnimatePresence>
-                            {lastMagicWords.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="flex gap-2"
-                                >
-                                    {lastMagicWords.map((word, i) => (
-                                        <div key={i} className="px-4 py-2 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-indigo-200">
-                                            ✨ {word}
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2.5rem] blur opacity-15 group-focus-within:opacity-40 transition-opacity duration-500" />
-                        <div className="relative bg-white border-2 border-slate-100 rounded-[2rem] flex items-center p-3 shadow-xl">
-                            <input
-                                type="text"
-                                value={currentInput}
-                                onChange={(e) => setCurrentInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handlesubmit()}
-                                placeholder="Écris la suite de ton incroyable aventure..."
-                                disabled={loading}
-                                className="flex-1 bg-transparent px-6 py-4 outline-none text-base font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium"
-                            />
-                            <button
-                                disabled={!currentInput.trim() || loading}
-                                onClick={handlesubmit}
-                                className="w-14 h-14 bg-indigo-600 text-white rounded-[1.5rem] flex items-center justify-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95 disabled:opacity-50"
-                            >
-                                <Send className="w-6 h-6" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            ) : (
+    if (step === 'FINISHED') {
+        return (
+            <div className="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[70vh]">
                 <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[3rem] p-12 text-center text-white shadow-2xl relative overflow-hidden"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-indigo-900 rounded-[3rem] p-12 text-center text-white shadow-2xl relative overflow-hidden w-full"
                 >
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                    <div className="relative z-10">
-                        <div className="w-24 h-24 bg-white/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 backdrop-blur-xl border border-white/20">
-                            <Save className="w-10 h-10 text-white" />
+                    <div className="absolute top-0 left-0 w-full h-full opacity-10" />
+                    <div className="relative z-10 space-y-8">
+                        <div className="w-24 h-24 bg-white/10 rounded-[2rem] flex items-center justify-center mx-auto backdrop-blur-xl border border-white/20">
+                            <BookOpen className="w-10 h-10 text-white" />
                         </div>
-                        <h3 className="text-4xl font-black mb-4 tracking-tight">Chef-d'œuvre terminé ! 📖</h3>
-                        <p className="text-indigo-200 font-medium mb-10 text-lg max-w-md mx-auto">
-                            Tu as créé un livre magnifique dont le titre est : <br />
-                            <strong className="text-white text-3xl block mt-4 drop-shadow-lg">« {title} »</strong>
-                        </p>
+                        <div>
+                            <h3 className="text-4xl font-black mb-2 tracking-tight">Manuscrit achevé ! 📖</h3>
+                            <p className="text-indigo-200 font-medium text-lg">Tu as écrit le best-seller :</p>
+                            <h2 className="text-white text-4xl block mt-4 font-black drop-shadow-md">« {title} »</h2>
+                        </div>
 
-                        <div className="p-6 bg-white/5 rounded-3xl border border-white/10 mb-10 inline-block">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300 block mb-2">Score Final</span>
-                            <div className="text-4xl font-black text-yellow-400 flex items-center gap-3">
-                                {creativePoints} <Star className="w-8 h-8 fill-yellow-400" />
+                        <div className="inline-block p-4 bg-white/10 rounded-3xl border border-white/20">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300 block mb-1">Score Créatif</span>
+                            <div className="text-3xl font-black text-yellow-400 flex items-center justify-center gap-2">
+                                {creativePoints} <Star className="w-6 h-6 fill-yellow-400" />
                             </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <AppButton
-                                variant="secondary"
                                 onClick={saveToPortfolio}
                                 disabled={isSaved || loading}
-                                loading={loading && !isFinished} // Special case
-                                className={`px-8 ${isSaved ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
-                                leftIcon={isSaved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                                loading={loading}
+                                className={`px-8 ${isSaved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-white text-indigo-900 hover:bg-slate-50'}`}
+                                leftIcon={isSaved ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                             >
-                                {isSaved ? 'Enregistré !' : 'Ajouter à mon portfolio'}
+                                {isSaved ? 'Sauvegardé !' : 'Ajouter au Portfolio'}
                             </AppButton>
-                            <AppButton onClick={resetStory} className="px-8 bg-indigo-500 hover:bg-indigo-600">
-                                Écrire une autre histoire
+                            <AppButton variant="secondary" onClick={resetStory} className="px-8 bg-white/10 border-white/20 text-white hover:bg-white/20">
+                                Ré-écrire un livre
                             </AppButton>
                         </div>
                     </div>
                 </motion.div>
-            )}
+            </div>
+        );
+    }
+
+    // --- RENDER: SPLIT VIEW (WRITING / REVIEWING) ---
+    return (
+        <div className="h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-6 p-4 max-w-7xl mx-auto w-full">
+
+            {/* LEFT COLUMN: THE MANUSCRIPT */}
+            <div className="flex-1 lg:max-w-[50%] flex flex-col bg-[#fdfaf6] rounded-[2rem] shadow-inner border border-slate-200 overflow-hidden relative">
+                {/* Book Header */}
+                <div className="p-4 border-b border-[#ebdacc] bg-[#f9f1e8] flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">{selectedGenre?.emoji}</span>
+                        <div>
+                            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest" style={{ fontFamily: 'Georgia, serif' }}>
+                                L'aventure de {heroName}
+                            </h2>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">
+                                Chapitre {Math.max(1, Math.floor(manuscript.length / 2))}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Book Pages */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar relative">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
+
+                    <div className="space-y-6 relative z-10 text-slate-800 text-lg leading-[2] text-justify" style={{ fontFamily: 'Georgia, serif' }}>
+                        {manuscript.map((entry, idx) => (
+                            <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={entry.role === 'child' ? 'text-indigo-900 font-bold ml-4 border-l-4 border-indigo-200 pl-4 py-1' : ''}
+                            >
+                                {entry.text}
+                            </motion.div>
+                        ))}
+                        <div ref={manuscriptBottomRef} />
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT COLUMN: THE CREATIVE STUDIO (AI TUTOR) */}
+            <div className="flex-1 flex flex-col gap-4">
+                {/* Points & Finish Bar */}
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Créativité</span>
+                        <div className="flex items-center gap-1 text-indigo-600 font-black">
+                            {creativePoints} <Star className="w-4 h-4 fill-indigo-600" />
+                        </div>
+                    </div>
+                    <AppButton
+                        variant="secondary"
+                        onClick={loadEnding}
+                        disabled={manuscript.length < 5 || loading}
+                        className="text-xs py-2 px-4 bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
+                    >
+                        <CheckCircle2 className="w-4 h-4 mr-2" /> Publier le livre
+                    </AppButton>
+                </div>
+
+                {/* Tutor Interaction Area */}
+                <AppCard className="flex-1 flex flex-col p-0 overflow-hidden shadow-sm border-slate-100">
+                    <div className="p-4 bg-indigo-50 border-b border-indigo-100 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-600 text-white rounded-xl flex items-center justify-center">
+                            <Wand2 className="w-4 h-4" />
+                        </div>
+                        <span className="font-black text-indigo-900 uppercase tracking-widest text-xs">Ton Éditeur Magique</span>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
+                        {step === 'WRITING' && (
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-amber-400 relative">
+                                    <MessageSquareQuote className="absolute top-4 right-4 text-slate-100 w-8 h-8" />
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2">Le Choix du Héros</h4>
+                                    <p className="font-bold text-slate-700">{nextChoice}</p>
+                                </div>
+
+                                {magicWords.length > 0 && (
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">💎 Mots Magiques du chapitre</h4>
+                                        <div className="flex gap-2">
+                                            {magicWords.map((w, i) => (
+                                                <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-black uppercase tracking-wider rounded-lg">
+                                                    {w}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {step === 'REVIEWING' && (
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+                                <div className="bg-emerald-50 p-5 rounded-2xl shadow-sm border border-emerald-100 relative">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600">L'Œil de l'Éditeur</h4>
+                                        <button onClick={() => speak(editorFeedback)} className="text-emerald-500 hover:text-emerald-700">
+                                            {isSpeaking ? <StopCircle className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                    <p className="font-bold text-emerald-900 leading-relaxed">{editorFeedback}</p>
+                                </div>
+                                <div className="text-center">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        ↓ Corrige ton brouillon en bas et valide ↓
+                                    </span>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {loading && (
+                            <div className="flex items-center gap-3 text-indigo-400 p-4">
+                                <RefreshCw className="w-5 h-5 animate-spin" />
+                                <span className="text-xs font-black uppercase tracking-widest">L'éditeur lit tes pages...</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Editor Input */}
+                    <div className="p-4 bg-white border-t border-slate-100">
+                        <div className="relative group">
+                            <textarea
+                                value={draftInput}
+                                onChange={(e) => setDraftInput(e.target.value)}
+                                placeholder={step === 'WRITING' ? "C'est à toi d'écrire la suite..." : "Corrige ton texte ici..."}
+                                disabled={loading}
+                                className={`w-full h-32 resize-none rounded-2xl p-4 outline-none font-medium text-slate-700 transition-all border-2 
+                                ${step === 'REVIEWING' ? 'bg-amber-50/50 border-amber-200 focus:border-amber-400 focus:bg-white' : 'bg-slate-50 border-slate-200 focus:border-indigo-400 focus:bg-white'}`}
+                            />
+
+                            <div className="absolute bottom-4 right-4 h-10">
+                                {step === 'WRITING' ? (
+                                    <AppButton
+                                        disabled={!draftInput.trim() || loading}
+                                        onClick={submitDraftToTutor}
+                                        className="h-full px-6 shadow-lg shadow-indigo-200"
+                                    >
+                                        Vérifier le brouillon <ArrowRight className="w-4 h-4 ml-2" />
+                                    </AppButton>
+                                ) : (
+                                    <AppButton
+                                        disabled={!draftInput.trim() || loading}
+                                        onClick={validateDraftForBook}
+                                        className="h-full px-6 shadow-lg shadow-emerald-200 bg-emerald-500 hover:bg-emerald-600"
+                                    >
+                                        <BookOpen className="w-4 h-4 mr-2" /> Encre magique ! (Valider)
+                                    </AppButton>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </AppCard>
+            </div>
         </div>
     );
 }
