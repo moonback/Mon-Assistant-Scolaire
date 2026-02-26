@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { Progress } from '../lib/supabase';
+import type { LearningProfile } from '../types/learningProfile';
 
 interface ChildLite {
   name: string;
   grade_level?: string;
   stars?: number;
+  learning_profile?: LearningProfile;
 }
 
 export interface SubjectAverage {
@@ -59,6 +61,9 @@ Niveau scolaire : ${child.grade_level || fallbackGradeLevel}
 Nombre d'activités réalisées : ${childStats.length}
 Matières les plus faibles : ${weakest}
 Matière la plus forte : ${strongest}
+${child.learning_profile ? `Type de mémoire : ${child.learning_profile.memory}
+Rythme d'apprentissage : ${child.learning_profile.pace}
+Tolérance aux erreurs : ${child.learning_profile.errorTolerance}` : ''}
 ${lastQuestion ? `Dernière question posée : "${lastQuestion}"` : ''}
 
 Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son prénom quand c'est naturel.`;

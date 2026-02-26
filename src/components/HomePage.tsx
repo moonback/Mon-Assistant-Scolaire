@@ -5,6 +5,7 @@ import { tabs } from '../config/tabs';
 import SiblingCompetition from './SiblingCompetition';
 import ParentalMissions from './ParentalMissions';
 import type { Tab } from '../types/app';
+import { Brain } from 'lucide-react';
 
 interface HomePageProps {
   setActiveTab: (tab: Tab) => void;
@@ -19,6 +20,29 @@ export default function HomePage({ setActiveTab }: HomePageProps) {
   return (
     <div className="space-y-6 pb-10 max-w-8xl mx-auto">
 
+
+      {/* Learning DNA Banner */}
+      {selectedChild && !selectedChild.learning_profile && (
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setActiveTab('profile')}
+          className="w-full rounded-2xl bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-100 p-5 flex items-center gap-4 text-left transition-all hover:shadow-md group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shrink-0 shadow-md">
+            <Brain className="h-6 w-6 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-black text-slate-900 tracking-tight">Découvre ton ADN d'apprentissage !</h3>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">
+              6 questions pour que l'IA s'adapte à toi
+            </p>
+          </div>
+          <span className="text-indigo-400 group-hover:text-indigo-600 transition-colors text-lg shrink-0">→</span>
+        </motion.button>
+      )}
 
       <SiblingCompetition />
       <ParentalMissions onEarnPoints={addStars} />

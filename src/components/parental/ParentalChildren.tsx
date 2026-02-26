@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, User, Trash2, Edit2, X, Moon } from 'lucide-react';
+import { Plus, User, Trash2, Edit2, X, Moon, Brain } from 'lucide-react';
 import { supabase, Child } from '../../lib/supabase';
+import type { LearningProfile, MemoryType, PaceType, ErrorToleranceType } from '../../types/learningProfile';
+import { MEMORY_LABELS, PACE_LABELS, ERROR_TOLERANCE_LABELS } from '../../types/learningProfile';
 
 interface ParentalChildrenProps {
     childrenContext: Child[];
@@ -30,6 +32,7 @@ export default function ParentalChildren({
     const [childAllowedSubjects, setChildAllowedSubjects] = useState<string[]>([]);
     const [childWeakPoints, setChildWeakPoints] = useState<string[]>([]);
     const [rewardGoals, setRewardGoals] = useState<any[]>([]);
+    const [childLearningProfile, setChildLearningProfile] = useState<LearningProfile | undefined>(undefined);
     const [loading, setLoading] = useState(false);
 
     const saveChild = async () => {
@@ -46,6 +49,7 @@ export default function ParentalChildren({
                 blocked_topics: childBlockedTopics,
                 allowed_subjects: childAllowedSubjects,
                 weak_points: childWeakPoints,
+                learning_profile: childLearningProfile || null,
                 avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${childName}`
             };
 
@@ -101,6 +105,7 @@ export default function ParentalChildren({
         setChildAllowedSubjects(['Mathématiques', 'Français', 'Sciences', 'Histoire', 'Géographie', 'Anglais', 'Nature', 'Art', 'Code']);
         setChildWeakPoints([]);
         setRewardGoals([]);
+        setChildLearningProfile(undefined);
     };
 
     const openEditChild = (child: Child) => {
@@ -113,6 +118,7 @@ export default function ParentalChildren({
         setChildAllowedSubjects(child.allowed_subjects || ['Mathématiques', 'Français', 'Sciences', 'Histoire', 'Géographie', 'Anglais', 'Nature', 'Art', 'Code']);
         setChildWeakPoints(child.weak_points || []);
         setRewardGoals(child.reward_goals || []);
+        setChildLearningProfile(child.learning_profile);
         setShowAddChild(true);
     };
 
@@ -348,6 +354,97 @@ export default function ParentalChildren({
                                         />
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-bold uppercase">L'IA adaptera sa pédagogie pour faire travailler ces notions en priorité.</p>
+                                </div>
+
+                                {/* Learning DNA Profile */}
+                                <div className="space-y-4 border-t border-slate-100 pt-8">
+                                    <div className="flex items-center gap-2">
+                                        <Brain className="w-4 h-4 text-purple-600" />
+                                        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Profil d'apprentissage (Learning DNA)</label>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Ajustez manuellement le profil ou laissez l'enfant le découvrir via le diagnostic.</p>
+
+                                    {/* Memory Type */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Mémoire</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {(Object.entries(MEMORY_LABELS) as [MemoryType, typeof MEMORY_LABELS[MemoryType]][]).map(([key, val]) => (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => setChildLearningProfile(prev => ({
+                                                        memory: key,
+                                                        pace: prev?.pace || 'normal',
+                                                        errorTolerance: prev?.errorTolerance || 'medium',
+                                                        generatedAt: new Date().toISOString(),
+                                                        source: 'manual',
+                                                    }))}
+                                                    className={`px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide border-2 transition-all text-center ${childLearningProfile?.memory === key ? `${val.color} shadow-sm` : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                                                >
+                                                    <span className="text-lg block mb-1">{val.icon}</span>
+                                                    {val.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Pace */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Rythme</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {(Object.entries(PACE_LABELS) as [PaceType, typeof PACE_LABELS[PaceType]][]).map(([key, val]) => (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => setChildLearningProfile(prev => ({
+                                                        memory: prev?.memory || 'visuelle',
+                                                        pace: key,
+                                                        errorTolerance: prev?.errorTolerance || 'medium',
+                                                        generatedAt: new Date().toISOString(),
+                                                        source: 'manual',
+                                                    }))}
+                                                    className={`px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide border-2 transition-all text-center ${childLearningProfile?.pace === key ? `${val.color} shadow-sm` : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                                                >
+                                                    <span className="text-lg block mb-1">{val.icon}</span>
+                                                    {val.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Error Tolerance */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Tolérance aux erreurs</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {(Object.entries(ERROR_TOLERANCE_LABELS) as [ErrorToleranceType, typeof ERROR_TOLERANCE_LABELS[ErrorToleranceType]][]).map(([key, val]) => (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => setChildLearningProfile(prev => ({
+                                                        memory: prev?.memory || 'visuelle',
+                                                        pace: prev?.pace || 'normal',
+                                                        errorTolerance: key,
+                                                        generatedAt: new Date().toISOString(),
+                                                        source: 'manual',
+                                                    }))}
+                                                    className={`px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide border-2 transition-all text-center ${childLearningProfile?.errorTolerance === key ? `${val.color} shadow-sm` : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                                                >
+                                                    <span className="text-lg block mb-1">{val.icon}</span>
+                                                    {val.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {childLearningProfile && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setChildLearningProfile(undefined)}
+                                            className="text-[10px] text-red-400 font-bold uppercase tracking-wide hover:text-red-600 transition-colors"
+                                        >
+                                            Réinitialiser le profil
+                                        </button>
+                                    )}
                                 </div>
 
                                 <button onClick={saveChild} disabled={loading || !childName} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-5 rounded-2xl font-semibold text-xl shadow-sm  active:scale-95 transition-all mt-8">

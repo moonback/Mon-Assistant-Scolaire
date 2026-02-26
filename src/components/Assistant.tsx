@@ -103,8 +103,8 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
 
   // ── System prompt for Gemini Live ──
   const liveSystemPrompt = useMemo(() =>
-    buildAssistantSystemPrompt(selectedChild?.grade_level || gradeLevel, childContext, selectedChild?.weak_points),
-    [selectedChild?.grade_level, selectedChild?.weak_points, gradeLevel, childContext]
+    buildAssistantSystemPrompt(selectedChild?.grade_level || gradeLevel, childContext, selectedChild?.weak_points, selectedChild?.learning_profile),
+    [selectedChild?.grade_level, selectedChild?.weak_points, selectedChild?.learning_profile, gradeLevel, childContext]
   );
 
   // ── Voice input → textarea ──
@@ -134,7 +134,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     setVerificationAnswer(''); setVerificationFeedback('');
     stopSpeaking();
     try {
-      const answer = await askGemini(question, 'assistant', gradeLevel, selectedImage || undefined, childContext, selectedChild?.weak_points);
+      const answer = await askGemini(question, 'assistant', gradeLevel, selectedImage || undefined, childContext, selectedChild?.weak_points, selectedChild?.learning_profile);
       setResponse(answer);
       if (selectedChild) {
         const { data: newItem, error: insertError } = await supabase.from('conversations')
@@ -161,7 +161,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     setCheckingVerification(true);
     try {
       const prompt = `Contexte : Question élève : "${question}" — Ta réponse : "${response}"\nRéponse vérification de l'élève : "${verificationAnswer}"\nTâche : Dis si c'est bon. Commence par [CORRECT] ou [INCORRECT].`;
-      const feedback = await askGemini(prompt, 'assistant', gradeLevel, undefined, childContext, selectedChild?.weak_points);
+      const feedback = await askGemini(prompt, 'assistant', gradeLevel, undefined, childContext, selectedChild?.weak_points, selectedChild?.learning_profile);
       const isCorrect = feedback.includes('[CORRECT]');
       setVerificationFeedback(feedback.replace('[CORRECT]', '').replace('[INCORRECT]', '').trim());
       if (isCorrect) onEarnPoints?.(20, 'assistant', 'Général');

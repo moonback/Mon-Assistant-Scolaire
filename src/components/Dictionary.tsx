@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSpeechSynthesis } from '../hooks/useSpeech';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Dictionary() {
+  const { selectedChild } = useAuth();
   const [word, setWord] = useState('');
   const [definition, setDefinition] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +22,7 @@ export default function Dictionary() {
     stop();
 
     try {
-      const result = await askGemini(searchTerm, 'definition');
+      const result = await askGemini(searchTerm, 'definition', selectedChild?.grade_level || 'CM1', undefined, undefined, undefined, selectedChild?.learning_profile);
       setDefinition(result);
     } catch (e) {
       console.error(e);

@@ -41,7 +41,7 @@ export default function HomeworkHelper({ onEarnPoints, gradeLevel = 'CM1' }: Hom
 
         try {
             const prompt = question || "Peux-tu m'aider à comprendre cet exercice ? Explique-moi les étapes sans me donner la réponse tout de suite.";
-            const answer = await askGemini(prompt, 'homework', gradeLevel, selectedImage, undefined, selectedChild?.weak_points);
+            const answer = await askGemini(prompt, 'homework', gradeLevel, selectedImage, undefined, selectedChild?.weak_points, selectedChild?.learning_profile);
             setResponse(answer);
             onEarnPoints?.(15, 'homework', 'Général'); // Points for using the tool
         } catch (err) {
