@@ -1,20 +1,28 @@
-import { ElementType, ReactNode } from 'react';
+import { ElementType, ReactNode, ComponentPropsWithoutRef } from 'react';
 
 type CardVariant = 'surface' | 'highlight';
 
-interface AppCardProps {
-  as?: ElementType;
+type AppCardProps<T extends ElementType = 'div'> = {
+  as?: T;
   variant?: CardVariant;
   className?: string;
   children: ReactNode;
-}
+} & Omit<ComponentPropsWithoutRef<T>, 'as' | 'className' | 'children'>;
 
 const variantClasses: Record<CardVariant, string> = {
   surface: 'bg-white border border-slate-200',
   highlight: 'bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100',
 };
 
-export default function AppCard({ as: Component = 'div', variant = 'surface', className = '', children }: AppCardProps) {
+export default function AppCard<T extends ElementType = 'div'>({
+  as,
+  variant = 'surface',
+  className = '',
+  children,
+  ...props
+}: AppCardProps<T>) {
+  const Component = (as || 'div') as ElementType;
+
   return (
     <Component
       className={[
@@ -23,6 +31,7 @@ export default function AppCard({ as: Component = 'div', variant = 'surface', cl
         variantClasses[variant],
         className,
       ].join(' ')}
+      {...props}
     >
       {children}
     </Component>

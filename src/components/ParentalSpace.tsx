@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, ShieldCheck } from 'lucide-react';
 import { supabase, Progress } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ParentalTab as Tab } from '../types/app';
@@ -9,6 +9,9 @@ import ParentalChildren from './parental/ParentalChildren';
 import ParentalRewards from './parental/ParentalRewards';
 import ParentalSecurity from './parental/ParentalSecurity';
 import ParentalCompetitions from './parental/ParentalCompetitions';
+import AppCard from './ui/AppCard';
+import AppButton from './ui/AppButton';
+import SectionHeader from './ui/SectionHeader';
 
 interface ParentalSpaceProps {
     activeSubTab: Tab;
@@ -88,12 +91,12 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
 
     if (!isAuthenticated) {
         return (
-            <div className="max-w-md mx-auto mt-20 p-10 bg-white rounded-2xl shadow-sm border border-slate-100 text-center">
+            <AppCard className="mx-auto mt-20 max-w-md text-center">
                 <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mx-auto mb-6">
                     <Lock className="w-10 h-10" />
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Espace Parents</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Zone Sécurisée</p>
+                <p className="mb-8 text-xs font-bold uppercase tracking-widest text-slate-500">Zone sécurisée</p>
                 <form onSubmit={(e) => { e.preventDefault(); handleAuth(); }} className="space-y-6">
                     <input
                         type="password"
@@ -105,30 +108,38 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
                         className="w-full text-center text-3xl tracking-widest font-black p-5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none transition-all shadow-sm"
                     />
                     {error && <p className="text-red-500 font-bold text-xs">{error}</p>}
-                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all outline-none uppercase tracking-widest text-xs">
-                        Accéder au Tableau de Bord
-                    </button>
-                    <button type="button" onClick={onExit} className="text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-indigo-600 transition-colors w-full">Retour à l'accueil</button>
+                    <AppButton type="submit" className="w-full text-xs uppercase tracking-widest">
+                        Accéder au tableau de bord
+                    </AppButton>
+                    <AppButton type="button" variant="ghost" onClick={onExit} className="w-full text-xs uppercase tracking-widest">Retour à l'accueil</AppButton>
                 </form>
-            </div>
+            </AppCard>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto pb-20 ">
-            <div className="flex justify-end mb-4 gap-4">
+        <div className="mx-auto max-w-7xl space-y-6 pb-20">
+            <SectionHeader
+                title="Espace Parents"
+                subtitle="Suivez les progrès et ajustez les paramètres en toute sécurité."
+                action={
+                    <AppButton
+                        variant="ghost"
+                        onClick={onExit}
+                        leftIcon={<Lock className="h-4 w-4" />}
+                        className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                    >
+                        Quitter la zone parent
+                    </AppButton>
+                }
+            />
+
+            <div className="flex justify-end gap-4">
                 {success && (
                     <div className="flex items-center px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-semibold text-xs tracking-wide">
-                        {success}
+                        <ShieldCheck className="mr-2 h-4 w-4" />{success}
                     </div>
                 )}
-                <button
-                    onClick={onExit}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-semibold text-xs uppercase tracking-wide hover:bg-red-100 transition-all border border-red-100 shadow-sm"
-                >
-                    <Lock className="w-3.5 h-3.5" />
-                    Quitter la zone parent
-                </button>
             </div>
 
             <main className="flex-1 space-y-8">
