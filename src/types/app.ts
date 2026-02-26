@@ -8,7 +8,7 @@ export const GRADE_LEVELS: GradeLevel[] = ['CP', 'CE1', 'CE2', 'CM1', 'CM2', '6�
 // ─── Navigation ──────────────────────────────────────────
 export type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental' | 'profile' | 'challenges' | 'flashcards' | 'market';
 
-export type ParentalTab = 'overview' | 'children' | 'missions' | 'rewards' | 'security' | 'competitions';
+export type ParentalTab = 'overview' | 'children' | 'missions' | 'rewards' | 'security' | 'competitions' | 'accessibility';
 
 export interface TabItem {
     id: Tab;
