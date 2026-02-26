@@ -74,6 +74,9 @@ export default function ParentalMissionsManagement({
 
     const handleVerifyMission = async (missionId: string) => {
         if (!selectedChild) return;
+        const mission = missions.find(m => m.id === missionId);
+        if (!mission) return;
+
         setLoading(true);
 
         const updatedMissions = missions.map(m =>
@@ -84,11 +87,22 @@ export default function ParentalMissionsManagement({
             const { error: err } = await supabase
                 .from('children')
                 .update({
-                    missions: updatedMissions
+                    missions: updatedMissions,
+                    stars: (selectedChild.stars || 0) + mission.reward
                 })
                 .eq('id', selectedChild.id);
 
             if (err) throw err;
+
+            // Log progress
+            await supabase.from('progress').insert({
+                child_id: selectedChild.id,
+                user_id: selectedChild.parent_id,
+                subject: mission.category,
+                activity_type: 'mission',
+                score: mission.reward,
+                date: new Date().toISOString()
+            });
 
             setSuccess('Mission validée ! ⭐');
             await refreshChildren();

@@ -50,13 +50,11 @@ export default function ParentalMissions({ onEarnPoints }: ParentalMissionsProps
             const { error } = await supabase
                 .from('children')
                 .update({
-                    missions: updatedMissions,
-                    stars: (selectedChild.stars || 0) + mission.reward
+                    missions: updatedMissions
                 })
                 .eq('id', selectedChild.id);
 
             if (!error) {
-                onEarnPoints(mission.reward, 'pedagogy_mission', mission.category);
                 await refreshChildren();
             }
         } catch (err) {
@@ -132,10 +130,15 @@ export default function ParentalMissions({ onEarnPoints }: ParentalMissionsProps
                                     >
                                         Marquer comme fini
                                     </AppButton>
-                                ) : (
-                                    <div className="flex items-center justify-center gap-2 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase">
-                                        <CheckCircle2 className="h-4 w-4" />
+                                ) : mission.status === 'completed' ? (
+                                    <div className="flex items-center justify-center gap-2 py-3 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase border border-amber-100 animate-pulse">
+                                        <Clock className="h-4 w-4" />
                                         En attente des parents
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-2 py-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase border border-emerald-100">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Validé ! (+{mission.reward} ⭐)
                                     </div>
                                 )}
 
