@@ -41,6 +41,9 @@ interface QuizContextType {
         weakPoints?: string[],
         learningProfile?: any
     ) => Promise<void>;
+    resumeQuizContext: (quiz: any) => void;
+    activeQuizId: string | null;
+    setActiveQuizId: React.Dispatch<React.SetStateAction<string | null>>;
     resetQuizContext: () => void;
 }
 
@@ -58,6 +61,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     const [openAnswer, setOpenAnswer] = useState('');
     const [aiLoading, setAiLoading] = useState(false);
     const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+    const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
 
     const wrongTopicsRef = useRef<string[]>([]);
     const generationIdRef = useRef(0);
@@ -78,6 +82,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         setIsCorrect(null);
         setOpenAnswer('');
         setAiFeedback(null);
+        setActiveQuizId(null);
         wrongTopicsRef.current = [];
 
         try {
@@ -110,6 +115,23 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const resumeQuizContext = (quiz: any) => {
+        generationIdRef.current++; // cancel any ongoing generation
+        setTopic(quiz.topic);
+        setQuestions(quiz.questions);
+        setCurrentQuestion(quiz.current_question || 0);
+        setScore(quiz.score || 0);
+        wrongTopicsRef.current = quiz.wrong_topics || [];
+        setActiveQuizId(quiz.id);
+
+        setLoading(false);
+        setShowResult(false);
+        setSelectedOption(null);
+        setIsCorrect(null);
+        setOpenAnswer('');
+        setAiFeedback(null);
+    };
+
     const resetQuizContext = () => {
         generationIdRef.current++;
         setQuestions([]);
@@ -122,6 +144,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         setIsCorrect(null);
         setOpenAnswer('');
         setAiFeedback(null);
+        setActiveQuizId(null);
     };
 
     return (
@@ -140,6 +163,8 @@ export function QuizProvider({ children }: { children: ReactNode }) {
                 aiFeedback, setAiFeedback,
                 wrongTopicsRef,
                 startQuizContext,
+                resumeQuizContext,
+                activeQuizId, setActiveQuizId,
                 resetQuizContext
             }}
         >

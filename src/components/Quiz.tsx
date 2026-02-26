@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { askGemini } from '../services/gemini';
-import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, ChevronRight, Star } from 'lucide-react';
+import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, ChevronRight, Star, Clock, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -31,12 +31,44 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     aiFeedback, setAiFeedback,
     wrongTopicsRef,
     startQuizContext,
+    resumeQuizContext,
+    activeQuizId,
     resetQuizContext
   } = useQuizContext();
 
+  const [savedQuizzes, setSavedQuizzes] = useState<any[]>([]);
 
+  useEffect(() => {
+    if (selectedChild && !questions.length && !loading) {
+      supabase.from('saved_quizzes')
+        .select('*')
+        .eq('child_id', selectedChild.id)
+        .order('updated_at', { ascending: false })
+        .then(({ data }) => setSavedQuizzes(data || []));
+    }
+  }, [selectedChild, questions, loading]);
 
-  const startQuiz = async (selectedTopic?: string) => {
+  const saveQuizForLater = async () => {
+    if (!selectedChild || !questions.length) return;
+
+    const quizData = {
+      child_id: selectedChild.id,
+      topic,
+      grade_level: gradeLevel,
+      questions,
+      current_question: currentQuestion,
+      score,
+      wrong_topics: wrongTopicsRef.current
+    };
+
+    if (activeQuizId) {
+      await supabase.from('saved_quizzes').update(quizData).eq('id', activeQuizId);
+    } else {
+      await supabase.from('saved_quizzes').insert(quizData);
+    }
+
+    resetQuizContext();
+  }; const startQuiz = async (selectedTopic?: string) => {
     const finalTopic = selectedTopic || topic || 'Culture générale';
     setTopic(finalTopic);
     await startQuizContext(finalTopic, gradeLevel, selectedChild?.weak_points, selectedChild?.learning_profile);
@@ -51,6 +83,9 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       setAiFeedback(null);
     } else {
       setShowResult(true);
+      if (activeQuizId) {
+        supabase.from('saved_quizzes').delete().eq('id', activeQuizId).then();
+      }
       if (selectedChild && wrongTopicsRef.current.length > 0) {
         const currentPoints = selectedChild.weak_points || [];
         const newPoints = wrongTopicsRef.current.filter((t: string) => !currentPoints.includes(t));
@@ -179,6 +214,28 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                 ))}
               </div>
             </div>
+
+            {savedQuizzes.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Quiz en attente ({savedQuizzes.length})</p>
+                <div className="space-y-3">
+                  {savedQuizzes.map(quiz => (
+                    <div key={quiz.id} className="flex items-center justify-between p-3 rounded-2xl bg-indigo-50 border border-indigo-100/50">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800 capitalize leading-tight">{quiz.topic}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-1">Question {quiz.current_question + 1}/{quiz.questions.length}</p>
+                      </div>
+                      <button
+                        onClick={() => resumeQuizContext(quiz)}
+                        className="w-10 h-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors"
+                      >
+                        <Play className="w-4 h-4 ml-0.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </AppCard>
         ) : loading ? (
           <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-slate-200 bg-white p-10 text-center relative overflow-hidden shadow-sm">
@@ -345,6 +402,18 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                   </div>
                 )}
               </motion.div>
+            )}
+
+            {isCorrect === null && selectedOption === null && (
+              <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center">
+                <button
+                  onClick={saveQuizForLater}
+                  className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest px-4 py-2 rounded-full hover:bg-indigo-50"
+                >
+                  <Clock className="w-4 h-4" />
+                  Je ne sais pas, sauvegarder pour plus tard
+                </button>
+              </div>
             )}
           </motion.section>
         )}
