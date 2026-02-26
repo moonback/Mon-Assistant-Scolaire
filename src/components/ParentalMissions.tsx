@@ -23,12 +23,12 @@ export default function ParentalMissions({ onEarnPoints }: ParentalMissionsProps
     const missions = (selectedChild.missions || []) as ParentalMission[];
     const goals = (selectedChild.reward_goals || []) as any[];
 
-    // Mock missions for demonstration if none exist
-    const displayMissions = missions.length > 0 ? missions : [
-        { id: 'm1', label: 'Ranger ma chambre', reward: 10, icon: '🏠', category: 'home', status: 'pending' },
-        { id: 'm2', label: 'Lire 15 minutes', reward: 15, icon: '📚', category: 'education', status: 'pending' },
-        { id: 'm3', label: 'Faire mes devoirs de maths', reward: 20, icon: '🔢', category: 'education', status: 'pending' }
-    ] as ParentalMission[];
+    // Masquer le composant s'il n'y a pas de missions
+    if (missions.length === 0) {
+        return null;
+    }
+
+    const displayMissions = missions;
 
     const handleCompleteMission = async (mission: ParentalMission) => {
         setCompletingId(mission.id);
@@ -72,7 +72,7 @@ export default function ParentalMissions({ onEarnPoints }: ParentalMissionsProps
                         <Gift className="h-6 w-6 text-pink-600" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Missions & Cadeaux</h2>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Missions du Jour ✨</h2>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tes objectifs secrets</p>
                     </div>
                 </div>

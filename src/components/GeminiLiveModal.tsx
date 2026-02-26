@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mic, Volume2, Wifi, WifiOff, AlertCircle, Sparkles, User, Bot, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Mic, Volume2, Wifi, WifiOff, AlertCircle, Sparkles, User, Bot, MessageSquare, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { useGeminiLive, LiveMessage } from '../hooks/useGeminiLive';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,7 +12,7 @@ interface GeminiLiveModalProps {
 }
 
 export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: GeminiLiveModalProps) {
-    const { status, messages, errorMessage, connect, disconnect } = useGeminiLive();
+    const { status, messages, errorMessage, latency, connect, disconnect } = useGeminiLive();
     const [showTranscription, setShowTranscription] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -62,8 +62,11 @@ export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: Gemin
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-500"
-                    style={{ maxHeight: showTranscription ? '90vh' : 'auto' }}
+                    className={`relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-500 border-4 ${status === 'speaking' ? 'border-emerald-400/30' : 'border-transparent'}`}
+                    style={{
+                        maxHeight: showTranscription ? '90vh' : 'auto',
+                        boxShadow: status === 'speaking' ? '0 0 50px -10px rgba(16, 185, 129, 0.3)' : undefined
+                    }}
                 >
                     {/* Premium Header */}
                     <div className="relative p-6 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white overflow-hidden shrink-0">
@@ -85,8 +88,8 @@ export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: Gemin
                                 <button
                                     onClick={() => setShowTranscription(!showTranscription)}
                                     className={`flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all duration-300 ${showTranscription
-                                            ? 'bg-white text-indigo-600 shadow-lg'
-                                            : 'bg-white/10 text-white hover:bg-white/20'
+                                        ? 'bg-white text-indigo-600 shadow-lg'
+                                        : 'bg-white/10 text-white hover:bg-white/20'
                                         } border border-white/10`}
                                 >
                                     <MessageSquare className="w-4 h-4" />
@@ -101,34 +104,52 @@ export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: Gemin
                             </div>
                         </div>
 
-                        {/* Animated Visualizer Bars */}
-                        <div className="flex items-end justify-center gap-1 h-12 mt-6">
-                            {[...Array(6)].map((_, i) => (
+                        {/* Animated Visualizer Bars - Expanded and more dynamic */}
+                        <div className="flex items-end justify-center gap-1.5 h-16 mt-6">
+                            {[...Array(20)].map((_, i) => (
                                 <motion.div
                                     key={i}
                                     animate={status === 'speaking' || status === 'listening' ? {
-                                        height: [12, 32, 16, 40, 20, 12][i % 6] * (status === 'speaking' ? 1.2 : 0.8),
-                                        opacity: [0.4, 1, 0.6][i % 3]
-                                    } : { height: 8, opacity: 0.3 }}
+                                        height: [
+                                            Math.random() * 20 + 10,
+                                            Math.random() * 40 + 20,
+                                            Math.random() * 15 + 10
+                                        ],
+                                        opacity: [0.3, 1, 0.5]
+                                    } : {
+                                        height: 4,
+                                        opacity: 0.2
+                                    }}
                                     transition={{
                                         repeat: Infinity,
-                                        duration: 0.6,
-                                        delay: i * 0.1,
+                                        duration: 0.4 + (Math.random() * 0.4),
+                                        delay: i * 0.03,
                                         ease: "easeInOut"
                                     }}
-                                    className="w-1.5 bg-white rounded-full transition-all duration-300"
+                                    className={`w-1 rounded-full transition-all duration-300 ${status === 'speaking' ? 'bg-emerald-300' : 'bg-white'
+                                        }`}
                                 />
                             ))}
                         </div>
 
-                        {/* Status Chip (always visible) */}
-                        <div className="flex justify-center mt-6">
+                        {/* Status & Latency Chip */}
+                        <div className="flex flex-col items-center gap-3 mt-6">
                             <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 transition-colors duration-500`}>
                                 <cfg.icon className={`w-3.5 h-3.5 text-white ${status === 'listening' ? 'animate-pulse' : ''}`} />
                                 <span className={`text-[10px] uppercase tracking-widest font-black text-white`}>
                                     {cfg.label}
                                 </span>
                             </div>
+
+                            {latency > 0 && status !== 'idle' && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-[10px] font-bold text-white/60 flex items-center gap-1.5 bg-black/10 px-3 py-1 rounded-full border border-white/5"
+                                >
+                                    <Zap className="w-3 h-3 text-amber-300" /> Latence : {latency}ms
+                                </motion.div>
+                            )}
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target, Award, TrendingUp, HelpCircle, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
+import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target, Award, TrendingUp, HelpCircle, ArrowRight, CheckCircle2, Zap, Mic, MessageSquare, Send, Quote } from 'lucide-react';
 import { Progress, supabase } from '../lib/supabase';
 
 interface PedagogicalHubProps {
@@ -92,16 +92,27 @@ interface WeeklyPlan {
 export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoints }: PedagogicalHubProps) {
   const { selectedChild, refreshChildren } = useAuth();
   const today = new Date().toISOString().split('T')[0];
-  const [completedMissionIds, setCompletedMissionIds] = useState<string[]>([]);
-  const [savingMissionId, setSavingMissionId] = useState<string | null>(null);
   const [explanationText, setExplanationText] = useState('');
-  const [explanationPrompt, setExplanationPrompt] = useState('Comment expliquerais-tu cette notion à un ami ?');
+  const EXPLANATION_PROMPTS = [
+    "Comment expliquerais-tu cette notion à un ami ?",
+    "Qu'est-ce qui a été le plus facile à comprendre aujourd'hui ?",
+    "Si tu devais dessiner cette idée, que représenterais-tu ?",
+    "Quelle est la 'règle d'or' à retenir pour ce sujet ?",
+    "Pourquoi est-il important de connaître cette notion selon toi ?"
+  ];
+  const [explanationPrompt, setExplanationPrompt] = useState(EXPLANATION_PROMPTS[0]);
   const [explanationSaving, setExplanationSaving] = useState(false);
   const [latestExplanation, setLatestExplanation] = useState<ExplanationRecord | null>(null);
   const [srsCards, setSrsCards] = useState<SRSCard[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [weeklyPlan, setWeeklyPlan] = useState<WeeklyPlan | null>(null);
   const [showFullPlan, setShowFullPlan] = useState(false);
+
+  const shufflePrompt = () => {
+    const currentIndex = EXPLANATION_PROMPTS.indexOf(explanationPrompt);
+    const nextIndex = (currentIndex + 1) % EXPLANATION_PROMPTS.length;
+    setExplanationPrompt(EXPLANATION_PROMPTS[nextIndex]);
+  };
 
   // ... subjectInsights and missions definitions ...
   const subjectInsights = useMemo(() => {
@@ -127,35 +138,6 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
     return { weakestSubjects: weakest, strongestSubject: strongest };
   }, [subjectInsights]);
 
-  const missions = useMemo<Mission[]>(() => [
-    {
-      id: `${today}-consolidation`,
-      title: 'Maîtrise & Confiance',
-      description: `Exercice sur ${strongestSubject}`,
-      objective: 'Valider tes acquis avec brio.',
-      points: 5,
-      subject: strongestSubject,
-      autonomyBonus: 2
-    },
-    {
-      id: `${today}-progression`,
-      title: 'Défi du Jour',
-      description: `Notion cible: ${weakestSubjects[0] || 'Maths'}`,
-      objective: 'Dépasser ta difficulté actuelle.',
-      points: 10,
-      subject: weakestSubjects[0] || 'Maths',
-      autonomyBonus: 5
-    },
-    {
-      id: `${today}-reactivation`,
-      title: 'Mémoire Flash',
-      description: `Rappel sur ${weakestSubjects[1] || 'Français'}`,
-      objective: 'Ne pas oublier ce que tu as appris hier.',
-      points: 7,
-      subject: weakestSubjects[1] || 'Français',
-      autonomyBonus: 3
-    }
-  ], [today, strongestSubject, weakestSubjects]);
 
   // 2. Data Loading
   useEffect(() => {
@@ -167,15 +149,13 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
       const day = now.getDay() || 7;
       const monday = new Date(now.setDate(now.getDate() - day + 1)).toISOString().split('T')[0];
 
-      const [missionRes, srsRes, milestoneRes, explanationRes, planRes] = await Promise.all([
-        supabase.from('pedagogical_daily_missions').select('completed_mission_ids').eq('child_id', childId).eq('date', today).maybeSingle(),
+      const [srsRes, milestoneRes, explanationRes, planRes] = await Promise.all([
         supabase.from('pedagogical_srs_cards').select('*').eq('child_id', childId).order('next_review_at', { ascending: true }).limit(5),
         supabase.from('pedagogical_milestones').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(3),
         supabase.from('pedagogical_explanations').select('*').eq('child_id', childId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('pedagogical_weekly_plans').select('*').eq('child_id', childId).eq('week_start_date', monday).maybeSingle()
       ]);
 
-      if (missionRes.data) setCompletedMissionIds(missionRes.data.completed_mission_ids);
       if (srsRes.data) setSrsCards(srsRes.data);
       if (milestoneRes.data) setMilestones(milestoneRes.data);
       if (explanationRes.data) setLatestExplanation(explanationRes.data);
@@ -212,30 +192,6 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
   }, [childId, today, weakestSubjects, strongestSubject]);
 
   // 3. Actions
-  const completeMission = async (mission: Mission) => {
-    if (completedMissionIds.includes(mission.id) || !childId) return;
-    setSavingMissionId(mission.id);
-
-    const nextIds = [...completedMissionIds, mission.id];
-    const { error } = await supabase.from('pedagogical_daily_missions').upsert({
-      child_id: childId, date: today, grade_level: gradeLevel,
-      generated_missions: missions, completed_mission_ids: nextIds
-    }, { onConflict: 'child_id,date' });
-
-    if (!error) {
-      setCompletedMissionIds(nextIds);
-      const totalPoints = mission.points + (mission.autonomyBonus || 0);
-      onEarnPoints(totalPoints, 'pedagogy_mission', mission.subject);
-
-      // Auto-milestone for completing all 3
-      if (nextIds.length === 3) {
-        await supabase.from('pedagogical_milestones').insert({
-          child_id: childId, title: 'Grand Chelem Quotidien', icon: '🔥', category: 'regularity'
-        });
-      }
-    }
-    setSavingMissionId(null);
-  };
 
   const submitExplanation = async () => {
     if (!childId || !explanationText.trim()) return;
@@ -260,179 +216,139 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
 
   return (
     <div className="space-y-8">
-      {/* 1. Daily Missions Section */}
-      <section className="premium-card p-8 border-none shadow-sm">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">
-              Missions du Jour ✨
-            </h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none outline-none">{gradeLevel} • Objectifs Quotidiens</p>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="flex gap-1.5">
-              {missions.map(m => (
-                <div key={m.id} className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${completedMissionIds.includes(m.id) ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-100'}`} />
-              ))}
-            </div>
-            <span className="text-[10px] font-black text-slate-300 mt-2 uppercase tracking-widest leading-none">{completedMissionIds.length}/3 EFFECTUÉES</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {missions.map((m, idx) => {
-            const isDone = completedMissionIds.includes(m.id);
-            return (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`relative group p-6 rounded-2xl border transition-all duration-300 ${isDone ? 'bg-emerald-50/30 border-emerald-100 shadow-inner' : 'bg-slate-50/50 border-white hover:border-indigo-100 hover:bg-white hover:shadow-xl hover:shadow-indigo-50/20'}`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">{m.subject}</span>
-                  {isDone && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                </div>
-                <h3 className="font-black text-slate-900 text-sm mb-1 tracking-tight">{m.title}</h3>
-                <p className="text-[10px] text-slate-500 font-bold mb-4 leading-relaxed line-clamp-2">{m.description}</p>
-                <div className="bg-white/50 rounded-xl p-3 mb-4 border border-white/50 italic text-[10px] text-slate-400">
-                  🎯 {m.objective}
-                </div>
-                <button
-                  onClick={() => completeMission(m)}
-                  disabled={isDone || savingMissionId === m.id}
-                  className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isDone
-                    ? 'bg-emerald-100/50 text-emerald-600 cursor-default'
-                    : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 active:scale-95'
-                    }`}
-                >
-                  {isDone ? 'Ménage Fait !' : savingMissionId === m.id ? '...' : `C'est Parti ! (+${m.points})`}
-                </button>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Stats Column */}
-        <div className="lg:col-span-12 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Mastery Table */}
-            <section className="premium-card p-6 border-none shadow-sm h-full">
-              <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 tracking-tight mb-6">
-                <Gauge className="h-4 w-4 text-indigo-500" /> Tableau de Maîtrise
-              </h3>
-              <div className="space-y-3">
-                {subjectInsights.slice(0, 4).map(item => {
-                  const m = masteryLabel(item.avg);
-                  return (
-                    <div key={item.subject} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-white shadow-inner">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${m.tone.split(' ')[1]}`}>
-                          <m.icon className={`h-4 w-4 ${m.tone.split(' ')[0]}`} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-900 leading-none mb-1 tracking-tight">{item.subject}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">{item.attempts} activités</p>
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase border ${m.tone}`}>{m.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
 
-            {/* SRS Section */}
-            <section className="premium-card p-6 border-none shadow-sm h-full">
-              <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 tracking-tight mb-6">
-                <RefreshCcw className="h-4 w-4 text-indigo-500" /> Révision Espacée
-              </h3>
-              <div className="space-y-3">
-                {srsCards.length > 0 ? srsCards.slice(0, 3).map(card => (
-                  <div key={card.id} className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-100 bg-white/50">
-                    <div>
-                      <p className="text-xs font-black text-slate-900 leading-none mb-1 tracking-tight">{card.notion}</p>
-                      <p className="text-[10px] font-bold text-indigo-500 uppercase leading-none">{card.subject}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[8px] font-black text-slate-300 uppercase leading-none mb-1 tracking-tighter">Prochain rappel</p>
-                      <p className="text-[10px] font-black text-slate-900 leading-none">{new Date(card.next_review_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-6">
-                    <Zap className="h-8 w-8 text-slate-100 mx-auto mb-2" />
-                    <p className="text-[10px] font-black text-slate-300 uppercase italic">Tes révisions arriveront ici !</p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Diagnostic */}
-            <section className="premium-card p-6 border-none shadow-sm h-full">
-              <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 tracking-tight mb-6">
-                <ShieldAlert className="h-4 w-4 text-amber-500" /> Diagnostic IA
-              </h3>
-              {subjectInsights.some(item => item.lowScoreCount > 0) ? (
-                <div className="space-y-3">
-                  {subjectInsights.filter(item => item.lowScoreCount > 0).slice(0, 1).map(item => (
-                    <div key={item.subject} className="p-4 rounded-xl bg-amber-50/50 border border-white shadow-inner">
-                      <h4 className="font-black text-slate-900 text-sm mb-1 tracking-tight">{item.subject}</h4>
-                      <p className="text-[10px] text-slate-400 font-bold mb-3 uppercase tracking-tighter">Point d'attention</p>
-                      <div className="bg-white/80 p-3 rounded-xl border border-amber-100/50 italic text-[10px] text-amber-600 leading-relaxed font-bold">
-                        "Reprends les bases via l'Atelier 'Explique avec tes mots'."
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                  </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">Parcours fluide !</p>
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
 
         {/* Workspace & Insights */}
         <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Explanation Workshop */}
-          <section className="md:col-span-2 premium-card p-8 border-none shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
-            <div className="flex items-center justify-between mb-6 relative z-10">
-              <h3 className="flex items-center gap-2 text-base font-black text-slate-900 tracking-tight">
-                <BookCheck className="h-5 w-5 text-indigo-500" /> Atelier "Explique avec tes mots"
-              </h3>
-              {latestExplanation && <span className="text-[10px] font-black text-emerald-500 bg-emerald-50/50 px-3 py-1 rounded-full uppercase tracking-widest">Score: {latestExplanation.understanding_score}/10</span>}
-            </div>
-            <p className="text-xs text-slate-500 font-bold mb-4 bg-indigo-50/30 p-4 rounded-2xl border border-white shadow-inner italic relative z-10">
-              <Sparkles className="h-3.5 w-3.5 inline mr-2 text-indigo-400" /> "{explanationPrompt}"
-            </p>
-            <textarea
-              value={explanationText}
-              onChange={(e) => setExplanationText(e.target.value)}
-              placeholder="Écris ton explication ici..."
-              className="w-full h-32 p-6 rounded-3xl bg-slate-50/50 border-2 border-transparent focus:border-indigo-100 focus:bg-white outline-none text-slate-800 font-bold text-xs leading-relaxed transition-all shadow-inner relative z-10"
-            />
-            <button
-              onClick={submitExplanation}
-              disabled={explanationSaving || !explanationText.trim()}
-              className="mt-4 w-full py-4 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all relative z-10"
-            >
-              {explanationSaving ? 'Analyse...' : 'Valider mon explication'}
-            </button>
-            {latestExplanation?.ai_feedback_summary && (
-              <div className="mt-6 flex gap-4 p-5 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 relative z-10">
-                <BrainCircuit className="h-6 w-6 shrink-0 opacity-80" />
-                <p className="text-xs font-black leading-relaxed">{latestExplanation.ai_feedback_summary}</p>
+          <section className="md:col-span-2 premium-card p-0 border-none shadow-xl relative overflow-hidden flex flex-col min-h-[500px]">
+            {/* Header with Gradient Background */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-8 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
+                    <BookCheck className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight leading-none mb-1">Atelier "Explique avec tes mots"</h3>
+                    <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest opacity-80">Développe ta pensée critique ✨</p>
+                  </div>
+                </div>
+                {latestExplanation && (
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-100 mb-1 opacity-70">Dernier score</span>
+                    <div className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 flex items-center gap-2">
+                      <Award className="h-4 w-4 text-amber-300" />
+                      <span className="text-sm font-black">{latestExplanation.understanding_score}/10</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+
+            <div className="p-8 flex-1 flex flex-col space-y-6 relative z-10">
+              {/* Question Bubble */}
+              <div className="relative">
+                <div className="absolute -left-2 top-0 bottom-0 w-1.5 bg-indigo-500 rounded-full" />
+                <div className="pl-6">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <Sparkles className="h-3 w-3 text-indigo-500" /> La question de l'IA
+                  </p>
+                  <p className="text-base font-bold text-slate-700 italic leading-relaxed">
+                    "{explanationPrompt}"
+                  </p>
+                  <button
+                    onClick={shufflePrompt}
+                    className="mt-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-700 transition-colors"
+                  >
+                    <RefreshCcw className="h-3 w-3" /> Changer de question
+                  </button>
+                </div>
+              </div>
+
+              {/* Text Area Container */}
+              <div className="relative group">
+                <textarea
+                  value={explanationText}
+                  onChange={(e) => setExplanationText(e.target.value)}
+                  placeholder="Explique ici comme si tu parlais à un ami..."
+                  className="w-full h-44 p-8 rounded-[2.5rem] bg-slate-50 border-2 border-slate-100 focus:border-indigo-500/30 focus:bg-white outline-none text-slate-800 font-bold text-sm leading-relaxed transition-all shadow-inner resize-none appearance-none"
+                />
+
+                {/* Floating controls in Textarea */}
+                <div className="absolute right-6 bottom-6 flex items-center gap-3">
+                  {explanationText.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-100"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-bold text-slate-500">{explanationText.length} caractères</span>
+                    </motion.div>
+                  )}
+                  <button
+                    className="p-3 bg-white hover:bg-slate-50 rounded-2xl shadow-sm border border-slate-100 text-slate-400 hover:text-indigo-600 transition-all active:scale-95"
+                    title="Utiliser la dictée vocale"
+                  >
+                    <Mic className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action area */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={submitExplanation}
+                  disabled={explanationSaving || !explanationText.trim()}
+                  className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${explanationSaving
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-100 active:scale-95'
+                    }`}
+                >
+                  {explanationSaving ? (
+                    <>
+                      <RefreshCcw className="h-4 w-4 animate-spin text-indigo-500" /> Analayse du raisonnement...
+                    </>
+                  ) : (
+                    <>
+                      Valider mon explication <Send className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Interactive AI Feedback */}
+              <AnimatePresence>
+                {latestExplanation?.ai_feedback_summary && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 shadow-sm relative overflow-hidden"
+                  >
+                    <div className="absolute -right-6 -bottom-6 opacity-10">
+                      <BrainCircuit className="h-24 w-24 text-indigo-600" />
+                    </div>
+                    <div className="flex gap-5 relative z-10">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
+                        <MessageSquare className="h-6 w-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Feedback de l'IA</p>
+                        <p className="text-sm font-bold text-indigo-900 leading-relaxed italic">
+                          <Quote className="h-3 w-3 inline-block -mt-2 mr-2 opacity-30" />
+                          {latestExplanation.ai_feedback_summary}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </section>
 
           {/* Portfolio Snapshot */}
