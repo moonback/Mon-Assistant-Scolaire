@@ -75,7 +75,6 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
           .from('progress')
           .select('*')
           .eq('child_id', selectedChild.id)
-          .order('created_at', { ascending: false })
           .limit(100),
       ]);
 
