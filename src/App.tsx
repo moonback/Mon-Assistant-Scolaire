@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -100,10 +100,13 @@ function AppContent() {
     setSystemModal({ show: true, type: 'bedtime', message });
   }, []);
 
-  // ─── Content Router ────────────────────────────────────
-  const renderContent = () => {
-    const commonProps = { onEarnPoints: addStars, gradeLevel: selectedChild?.grade_level };
+  const commonProps = useMemo(
+    () => ({ onEarnPoints: addStars, gradeLevel: selectedChild?.grade_level }),
+    [addStars, selectedChild?.grade_level]
+  );
 
+  // ─── Content Router ────────────────────────────────────
+  const renderContent = useCallback(() => {
     switch (activeTab) {
       case 'home': return <HomePage setActiveTab={setActiveTab} />;
       case 'dashboard': return <Dashboard onEarnPoints={addStars} />;
@@ -122,7 +125,12 @@ function AppContent() {
       case 'parental': return <ParentalSpace activeSubTab={parentalActiveTab} setActiveSubTab={setParentalActiveTab} onExit={() => setActiveTab('home')} />;
       default: return null;
     }
-  };
+  }, [activeTab, addStars, commonProps, parentalActiveTab, selectedChild?.grade_level, selectedChild?.id]);
+
+  // ─── Visible Tabs (respecting blocked topics) ──────────
+  const visibleTabs = useMemo(() => tabs.filter(t =>
+    !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id)
+  ), [selectedChild?.blocked_topics]);
 
   // ─── Auth Gate ─────────────────────────────────────────
   if (!session) return (
@@ -141,10 +149,6 @@ function AppContent() {
     );
   }
 
-  // ─── Visible Tabs (respecting blocked topics) ──────────
-  const visibleTabs = tabs.filter(t =>
-    !selectedChild?.blocked_topics?.includes(t.id) || ['home', 'dashboard', 'profile', 'parental'].includes(t.id)
-  );
 
   // ─── Main Layout ───────────────────────────────────────
   return (

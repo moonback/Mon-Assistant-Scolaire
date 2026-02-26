@@ -1,4 +1,5 @@
 import { Mode, SYSTEM_INSTRUCTIONS } from './prompts';
+import { logAiEvent } from './aiLogger';
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -67,6 +68,24 @@ function extractJSON(content: string): string {
 
 // ─── Main API Call ───────────────────────────────────────
 
+
+async function requestOpenRouter(messages: OpenRouterMessage[], mode: Mode, apiKey: string) {
+  return fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "Mon Assistant Scolaire",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: localStorage.getItem('openrouter_model') || "google/gemini-2.0-flash-lite-preview-02-05:free",
+      messages,
+      response_format: JSON_MODES.includes(mode) ? { type: "json_object" } : undefined
+    })
+  });
+}
+
 export async function askGemini(
   prompt: string,
   mode: Mode = 'assistant',
@@ -75,6 +94,7 @@ export async function askGemini(
   childContext?: string,
   weakPoints?: string[]
 ): Promise<string> {
+  const startedAt = performance.now();
   try {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
@@ -107,24 +127,43 @@ export async function askGemini(
       { role: 'user', content: userContent }
     ];
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Mon Assistant Scolaire",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: localStorage.getItem('openrouter_model') || "google/gemini-2.0-flash-lite-preview-02-05:free",
-        messages,
-        response_format: JSON_MODES.includes(mode) ? { type: "json_object" } : undefined
-      })
+    logAiEvent({
+      stage: 'request',
+      mode,
+      promptLength: prompt?.length || 0,
+      gradeLevel,
+      hasImage: Boolean(image),
     });
+
+    let response = await requestOpenRouter(messages, mode, apiKey);
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Erreur OpenRouter (${response.status}): ${errorText}`);
+      const noVisionEndpoint = image
+        && response.status === 404
+        && errorText.includes('No endpoints found that support image input');
+
+      if (noVisionEndpoint) {
+        const fallbackMessages: OpenRouterMessage[] = [
+          { role: 'system', content: systemInstruction },
+          {
+            role: 'user',
+            content: [{
+              type: 'text',
+              text: `${prompt}
+
+NOTE: Je n'ai pas pu traiter l'image avec le modèle actuel. Donne une aide générale, puis demande à l'élève de décrire ce qu'il voit sur la photo.`,
+            }],
+          },
+        ];
+
+        response = await requestOpenRouter(fallbackMessages, mode, apiKey);
+      }
+
+      if (!response.ok) {
+        const fallbackErrorText = await response.text();
+        throw new Error(`Erreur OpenRouter (${response.status}): ${fallbackErrorText}`);
+      }
     }
 
     const data = await response.json();
@@ -135,9 +174,26 @@ export async function askGemini(
       content = extractJSON(content);
     }
 
+    logAiEvent({
+      stage: 'response',
+      mode,
+      durationMs: Math.round(performance.now() - startedAt),
+      responseLength: content.length,
+      gradeLevel,
+      hasImage: Boolean(image),
+    });
+
     return content || (mode === 'quiz' ? "[]" : mode === 'wordOfTheDay' || mode === 'problemOfTheDay' ? "{}" : "Désolé, je n'ai pas pu générer de réponse.");
   } catch (error) {
     console.error("Erreur OpenRouter:", error);
+    logAiEvent({
+      stage: 'error',
+      mode,
+      durationMs: Math.round(performance.now() - startedAt),
+      gradeLevel,
+      hasImage: Boolean(image),
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    });
     if (mode === 'quiz') return "[]";
     if (mode === 'wordOfTheDay' || mode === 'problemOfTheDay') return "{}";
     return "Oups ! Une erreur s'est produite. Vérifie ta connexion et réessaie.";

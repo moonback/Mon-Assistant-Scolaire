@@ -17,12 +17,7 @@ export default function HomePage({ setActiveTab }: HomePageProps) {
 
   return (
     <div className="space-y-6 pb-10 max-w-8xl mx-auto">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Ton Bureau Magique ✨</h1>
-          <p className="text-slate-500 font-semibold text-sm">Choisis ton aventure du jour, {selectedChild?.name} !</p>
-        </div>
-      </header>
+
 
       <SiblingCompetition />
       <ParentalMissions />

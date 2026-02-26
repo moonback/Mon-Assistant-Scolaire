@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent, useRef, useMemo } from 'react';
+import React, { useState, useEffect, FormEvent, useRef, useMemo, useCallback } from 'react';
 import { askGemini, buildAssistantSystemPrompt } from '../services/gemini';
 import {
   Send, Sparkles, Eraser, History, Trash2, Clock, CheckCircle2,
@@ -8,6 +8,7 @@ import { useSpeechRecognition, useSpeechSynthesis } from '../hooks/useSpeech';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Progress } from '../lib/supabase';
+import { useChildLearningContext } from '../hooks/useChildLearningContext';
 import GeminiLiveModal from './GeminiLiveModal';
 import SectionHeader from './ui/SectionHeader';
 import AppCard from './ui/AppCard';
@@ -27,15 +28,6 @@ interface AssistantProps {
   gradeLevel?: string;
 }
 
-function normalizeSubject(stat: Progress): string {
-  if (stat.subject && stat.subject.toLowerCase() !== 'general') return stat.subject;
-  const map: Record<string, string> = {
-    quiz: 'Français', math: 'Maths', assistant: 'Compréhension',
-    homework: 'Résolution de problèmes', drawing: 'Expression',
-  };
-  return map[stat.activity_type] || 'Général';
-}
-
 export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: AssistantProps) {
   const { selectedChild } = useAuth();
   const [question, setQuestion] = useState('');
@@ -44,6 +36,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [childStats, setChildStats] = useState<Progress[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,59 +48,58 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechRecognition();
   const { isSpeaking, speak, stop: stopSpeaking } = useSpeechSynthesis();
 
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [selectedChild?.id]);
+
   // ── Load child data: history + progress stats ──
   useEffect(() => {
     async function fetchData() {
-      if (!selectedChild) return;
+      if (!selectedChild) {
+        setHistory([]);
+        setChildStats([]);
+        return;
+      }
+
+      const start = (historyPage - 1) * 20;
+      const end = start + 19;
       const [convRes, progressRes] = await Promise.all([
-        supabase.from('conversations').select('*').eq('child_id', selectedChild.id)
-          .order('created_at', { ascending: false }).limit(20),
-        supabase.from('progress').select('*').eq('child_id', selectedChild.id).limit(50),
+        supabase
+          .from('conversations')
+          .select('*')
+          .eq('child_id', selectedChild.id)
+          .order('created_at', { ascending: false })
+          .range(start, end),
+        supabase
+          .from('progress')
+          .select('*')
+          .eq('child_id', selectedChild.id)
+          .limit(100),
       ]);
+
       if (convRes.data) {
-        setHistory(convRes.data.map(item => ({
-          id: item.id, question: item.question, response: item.response,
-          date: item.created_at, image_url: item.image_url,
-        })));
+        const mapped = convRes.data.map((item) => ({
+          id: item.id,
+          question: item.question,
+          response: item.response,
+          date: item.created_at,
+          image_url: item.image_url,
+        }));
+        setHistory((prev) => (historyPage === 1 ? mapped : [...prev, ...mapped]));
       }
       if (progressRes.data) setChildStats(progressRes.data);
     }
+
     fetchData();
-  }, [selectedChild]);
+  }, [selectedChild, historyPage]);
 
-  // ── Build child context string for AI ──
-  const childContext = useMemo(() => {
-    if (!selectedChild) return undefined;
-
-    // Compute subject averages
-    const grouped = new Map<string, number[]>();
-    childStats.forEach(stat => {
-      const s = normalizeSubject(stat);
-      const arr = grouped.get(s) || [];
-      arr.push(Number(stat.score || 0));
-      grouped.set(s, arr);
-    });
-    const subjects = Array.from(grouped.entries()).map(([subject, scores]) => ({
-      subject,
-      avg: scores.reduce((a, b) => a + b, 0) / scores.length,
-    })).sort((a, b) => a.avg - b.avg);
-
-    const weakest = subjects.slice(0, 2).map(s => s.subject).join(', ') || 'non déterminé';
-    const strongest = subjects.at(-1)?.subject || 'non déterminé';
-    const totalActivities = childStats.length;
-    const totalStars = selectedChild.stars || 0;
-    const lastQ = history[0]?.question;
-
-    return `Prénom : ${selectedChild.name}
-Niveau scolaire : ${selectedChild.grade_level || gradeLevel}
-Étoiles accumulées : ${totalStars} ⭐
-Nombre d'activités réalisées : ${totalActivities}
-Matières les plus faibles : ${weakest}
-Matière la plus forte : ${strongest}
-${lastQ ? `Dernière question posée : "${lastQ}"` : ''}
-
-Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son prénom quand c'est naturel.`;
-  }, [selectedChild, childStats, history, gradeLevel]);
+  const { childContext, topSubjects } = useChildLearningContext(
+    selectedChild,
+    childStats,
+    history[0]?.question,
+    gradeLevel
+  );
 
   // ── System prompt for Gemini Live ──
   const liveSystemPrompt = useMemo(() =>
@@ -123,16 +115,16 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
     }
   }, [transcript, resetTranscript]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => setSelectedImage(reader.result as string);
       reader.readAsDataURL(file);
     }
-  };
+  }, []);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     if (!question.trim() && !selectedImage) {
       setError('Tu dois écrire une question ou envoyer une image !');
@@ -161,9 +153,9 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
       setLoading(false);
       setSelectedImage(null);
     }
-  };
+  }, [question, selectedImage, stopSpeaking, gradeLevel, childContext, selectedChild]);
 
-  const handleVerificationSubmit = async (e: FormEvent) => {
+  const handleVerificationSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     if (!verificationAnswer.trim()) return;
     setCheckingVerification(true);
@@ -176,39 +168,26 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
     } finally {
       setCheckingVerification(false);
     }
-  };
+  }, [verificationAnswer, question, response, gradeLevel, childContext, selectedChild, onEarnPoints]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setQuestion(''); setResponse(''); setError('');
     setVerificationAnswer(''); setVerificationFeedback('');
     setSelectedImage(null); stopSpeaking();
-  };
+  }, [stopSpeaking]);
 
-  const loadHistoryItem = (item: HistoryItem) => {
+  const loadHistoryItem = useCallback((item: HistoryItem) => {
     setQuestion(item.question); setResponse(item.response);
     setSelectedImage(item.image_url || null);
     setError(''); setVerificationAnswer(''); setVerificationFeedback('');
-  };
+  }, []);
 
-  const clearHistory = async () => {
+  const clearHistory = useCallback(async () => {
     if (confirm('Veux-tu vraiment tout effacer ?') && selectedChild) {
       await supabase.from('conversations').delete().eq('child_id', selectedChild.id);
       setHistory([]);
     }
-  };
-
-  // ── Context summary card for display ──
-  const grouped = new Map<string, number[]>();
-  childStats.forEach(stat => {
-    const s = normalizeSubject(stat);
-    const arr = grouped.get(s) || [];
-    arr.push(Number(stat.score || 0));
-    grouped.set(s, arr);
-  });
-  const topSubjects = Array.from(grouped.entries())
-    .map(([subject, scores]) => ({ subject, avg: scores.reduce((a, b) => a + b, 0) / scores.length }))
-    .sort((a, b) => b.avg - a.avg)
-    .slice(0, 3);
+  }, [selectedChild]);
 
   const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -420,6 +399,15 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
                   </p>
                 </button>
               ))}
+              {history.length >= historyPage * 20 && (
+                <button
+                  type="button"
+                  onClick={() => setHistoryPage((prev) => prev + 1)}
+                  className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Charger plus
+                </button>
+              )}
               {history.length === 0 && (
                 <EmptyStateKid
                   icon={<Sparkles className="h-5 w-5" />}
