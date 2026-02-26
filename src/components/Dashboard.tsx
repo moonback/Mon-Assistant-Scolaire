@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { supabase, Progress } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Trophy, Star, TrendingUp, Calendar, Target, Clock } from 'lucide-react';
+import { Trophy, Star, TrendingUp, Calendar, Target, Clock, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import DailyChallenges from './DailyChallenges';
 import PedagogicalHub from './PedagogicalHub';
 import SiblingCompetition from './SiblingCompetition';
 import ParentalMissions from './ParentalMissions';
+import AppCard from './ui/AppCard';
+import SectionHeader from './ui/SectionHeader';
+import EmptyStateKid from './ui/EmptyStateKid';
 
 interface DashboardProps {
   onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
@@ -55,20 +58,18 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
 
   return (
     <div className="space-y-8 pb-12">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Bonjour, {selectedChild?.name} ! 👋</h1>
-          <p className="text-slate-500 font-semibold text-sm mt-1">Voyons tes progrès d'aujourd'hui.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-indigo-500" />
-            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+      <SectionHeader
+        title={`Bonjour, ${selectedChild?.name} ! 👋`}
+        subtitle="Voici ton résumé d'apprentissage du jour."
+        action={
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+            <Calendar className="h-4 w-4 text-indigo-500" />
+            <span className="text-sm font-semibold capitalize text-slate-700">
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </span>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
@@ -76,12 +77,12 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
           { label: 'Activités terminées', value: stats.length, icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50' },
           { label: 'Niveau scolaire', value: selectedChild?.grade_level || 'N/A', icon: Trophy, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         ].map((item, i) => (
-          <motion.div
+          <AppCard as={motion.div}
             key={item.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.4 }}
-            className="premium-card p-6 flex items-center gap-5 border-none shadow-sm"
+            className="flex items-center gap-5"
           >
             <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${item.bg} ${item.color} shadow-inner`}>
               <item.icon className="h-7 w-7" />
@@ -90,7 +91,7 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
               <p className="text-xl font-black text-slate-900 tracking-tight">{item.value}</p>
             </div>
-          </motion.div>
+          </AppCard>
         ))}
       </div>
 
@@ -105,10 +106,11 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
       <ParentalMissions />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <motion.section
+        <AppCard
+          as={motion.section}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="premium-card p-6 border-none shadow-sm overflow-hidden relative"
+          className="overflow-hidden relative"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
 
@@ -159,13 +161,14 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </motion.section>
+        </AppCard>
 
-        <motion.section
+        <AppCard
+          as={motion.section}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="premium-card p-6 border-none shadow-sm"
+          className=""
         >
           <div className="mb-6">
             <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
@@ -202,15 +205,14 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
             ))}
 
             {stats.length === 0 && (
-              <div className="rounded-3xl border-2 border-dashed border-slate-100 p-12 text-center">
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                  Aucune aventure pour le moment !
-                </p>
-                <p className="text-xs text-slate-400 mt-2 font-medium">Commence une activité pour voir tes points ici.</p>
-              </div>
+              <EmptyStateKid
+                icon={<Sparkles className="h-6 w-6" />}
+                title="Aucune aventure pour le moment"
+                description="Commence une activité pour voir tes progrès apparaître ici."
+              />
             )}
           </div>
-        </motion.section>
+        </AppCard>
       </div>
     </div >
   );

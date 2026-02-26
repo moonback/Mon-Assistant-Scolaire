@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Brain, ChevronRight, CheckCircle2, Sparkles, Lightbulb, Palette, Globe, Rocket, Leaf, History, FlaskConical } from 'lucide-react';
 import { dailyChallengeService, DailyChallenges as DailyChallengesType } from '../services/dailyChallengeService';
 import { useAuth } from '../contexts/AuthContext';
+import SectionHeader from './ui/SectionHeader';
+import AppButton from './ui/AppButton';
+import AppCard from './ui/AppCard';
+import EmptyStateKid from './ui/EmptyStateKid';
 
 interface DailyChallengesProps {
     childId: string;
@@ -73,30 +77,25 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
     return (
         <div className="space-y-8">
             {/* Header section with Theme Selector */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                        Missions <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Magiques</span> ✨
-                    </h1>
-                    <p className="text-slate-500 font-semibold text-sm">Tes défis personnalisés générés par l'IA.</p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                    {filteredThemes.map((t) => (
-                        <button
-                            key={t.id}
-                            onClick={() => handleThemeChange(t.id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${theme === t.id
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                                : 'bg-white border border-slate-200 text-slate-400 hover:border-indigo-200 hover:text-indigo-600'
-                                }`}
-                        >
-                            <t.icon className={`w-3.5 h-3.5 ${theme === t.id ? 'text-white' : 'text-slate-300'}`} />
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
-            </header>
+            <SectionHeader
+                title="Missions Magiques ✨"
+                subtitle="Tes défis personnalisés générés par l'IA."
+                action={
+                    <div className="flex flex-wrap gap-2">
+                        {filteredThemes.map((t) => (
+                            <AppButton
+                                key={t.id}
+                                onClick={() => handleThemeChange(t.id)}
+                                variant={theme === t.id ? 'primary' : 'secondary'}
+                                className="px-3 text-xs uppercase tracking-widest"
+                                leftIcon={<t.icon className="h-3.5 w-3.5" />}
+                            >
+                                {t.label}
+                            </AppButton>
+                        ))}
+                    </div>
+                }
+            />
 
             {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -105,9 +104,11 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                     ))}
                 </div>
             ) : !challenges ? (
-                <div className="p-12 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
-                    <p className="text-slate-500 font-bold">Impossible de générer tes défis. Vérifie ta connexion !</p>
-                </div>
+                <EmptyStateKid
+                    icon={<Sparkles className="h-6 w-6" />}
+                    title="Impossible de générer tes défis"
+                    description="Vérifie ta connexion puis réessaie dans quelques instants."
+                />
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Word of the Day */}
@@ -117,7 +118,7 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                         className="group relative"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2.5rem] opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
-                        <div className="premium-card p-10 border-none shadow-sm h-full flex flex-col relative overflow-hidden">
+                        <AppCard className="h-full flex flex-col relative overflow-hidden rounded-[2.5rem] p-10">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4 relative z-10">
@@ -150,13 +151,13 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                             </div>
 
                             {!challenges.wordCompleted ? (
-                                <button
+                                <AppButton
                                     onClick={handleWordDone}
-                                    className="mt-8 w-full py-4 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-3 relative z-10"
+                                    className="relative z-10 mt-8 w-full text-xs uppercase tracking-widest"
+                                    rightIcon={<ChevronRight className="h-4 w-4" />}
                                 >
                                     C'est dans la poche !
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
+                                </AppButton>
                             ) : (
                                 <div className="mt-10 flex flex-wrap gap-2 pt-6 border-t border-slate-100">
                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2">Synonymes :</span>
@@ -165,7 +166,7 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </AppCard>
                     </motion.div>
 
                     {/* Problem of the Day */}
@@ -176,7 +177,7 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                         className="group relative"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-amber-600 rounded-[2.5rem] opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
-                        <div className="premium-card p-10 border-none shadow-sm h-full flex flex-col relative overflow-hidden">
+                        <AppCard className="h-full flex flex-col relative overflow-hidden rounded-[2.5rem] p-10">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50" />
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4 relative z-10">
@@ -234,22 +235,23 @@ export default function DailyChallenges({ childId, gradeLevel, onEarnPoints }: D
                             </div>
 
                             {!challenges.problemCompleted ? (
-                                <button
+                                <AppButton
                                     onClick={handleProblemDone}
-                                    className="mt-8 w-full py-4 rounded-xl bg-orange-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all active:scale-95 flex items-center justify-center gap-3 relative z-10"
+                                    className="relative z-10 mt-8 w-full bg-orange-500 text-xs uppercase tracking-widest hover:bg-orange-600"
+                                    rightIcon={<ChevronRight className="h-4 w-4" />}
                                 >
                                     Vérifier la réponse
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
+                                </AppButton>
                             ) : !revealProblem && (
-                                <button
+                                <AppButton
                                     onClick={() => setRevealProblem(true)}
-                                    className="mt-10 w-full py-5 rounded-2xl bg-slate-100 text-slate-600 font-black text-lg hover:bg-slate-200 transition-all"
+                                    variant="secondary"
+                                    className="mt-10 w-full text-base"
                                 >
                                     Afficher le corrigé
-                                </button>
+                                </AppButton>
                             )}
-                        </div>
+                        </AppCard>
                     </motion.div>
                 </div>
             )}
