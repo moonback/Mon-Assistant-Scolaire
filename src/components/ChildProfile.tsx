@@ -7,6 +7,7 @@ import BadgeCollection from './BadgeCollection';
 import SiblingCompetition from './SiblingCompetition';
 import LearningDNACard from './LearningDNACard';
 import LearningDiagnostic from './LearningDiagnostic';
+import ChildPortfolio from './ChildPortfolio';
 
 export default function ChildProfile() {
   const { selectedChild, refreshChildren } = useAuth();
@@ -206,6 +207,11 @@ export default function ChildProfile() {
 
           {/* Trophy Room & Badges */}
           <BadgeCollection earnedBadgeIds={selectedChild?.badges || []} />
+
+          {/* Story Portfolio Section */}
+          <div className="pt-8 mt-8 border-t border-slate-100">
+            <ChildPortfolio />
+          </div>
 
           {/* Social / Competitions Section */}
           <div className="pt-8 mt-8 border-t border-slate-100">

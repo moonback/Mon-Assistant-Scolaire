@@ -18,8 +18,10 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { askGemini } from '../services/gemini';
+import { storyService } from '../services/storyService';
 import { useAuth } from '../contexts/AuthContext';
 import { useSpeechSynthesis } from '../hooks/useSpeech';
+import confetti from 'canvas-confetti';
 import AppCard from './ui/AppCard';
 import AppButton from './ui/AppButton';
 
@@ -50,6 +52,7 @@ export default function CreativeWriting() {
     const [heroName, setHeroName] = useState('');
     const [creativePoints, setCreativePoints] = useState(0);
     const [lastMagicWords, setLastMagicWords] = useState<string[]>([]);
+    const [isSaved, setIsSaved] = useState(false);
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -144,6 +147,12 @@ export default function CreativeWriting() {
             setTitle(storyTitle.replace(/[*_#"]+/g, ''));
             setIsFinished(true);
             setCreativePoints(prev => prev + 200); // Completion bonus
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#6366f1', '#a855f7', '#ec4899']
+            });
         } catch (e) {
             console.error(e);
         } finally {
@@ -159,7 +168,34 @@ export default function CreativeWriting() {
         setSelectedGenre(null);
         setHeroName('');
         setLastMagicWords([]);
+        setIsSaved(false);
         stop();
+    };
+
+    const saveToPortfolio = async () => {
+        if (isSaved || !title || !selectedChild) return;
+
+        setLoading(true);
+        try {
+            await storyService.saveStory({
+                child_id: selectedChild.id,
+                title,
+                genre: selectedGenre?.label || 'Inconnu',
+                content: scenes,
+                points: creativePoints
+            });
+            setIsSaved(true);
+            confetti({
+                particleCount: 100,
+                spread: 50,
+                origin: { y: 0.8 },
+                colors: ['#10b981', '#34d399']
+            });
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // --- RENDER: Selection Screen ---
@@ -451,8 +487,15 @@ export default function CreativeWriting() {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <AppButton variant="secondary" className="bg-white/10 border-white/20 text-white hover:bg-white/20 px-8">
-                                Ajouter à mon portfolio
+                            <AppButton
+                                variant="secondary"
+                                onClick={saveToPortfolio}
+                                disabled={isSaved || loading}
+                                loading={loading && !isFinished} // Special case
+                                className={`px-8 ${isSaved ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                                leftIcon={isSaved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                            >
+                                {isSaved ? 'Enregistré !' : 'Ajouter à mon portfolio'}
                             </AppButton>
                             <AppButton onClick={resetStory} className="px-8 bg-indigo-500 hover:bg-indigo-600">
                                 Écrire une autre histoire
