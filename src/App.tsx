@@ -156,14 +156,14 @@ function AppContent() {
             <SiblingCompetition />
             <ParentalMissions />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
               {/* Mission du jour */}
               {!selectedChild?.blocked_topics?.includes('challenges') && (
                 <motion.button
                   whileHover={{ y: -4, scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab('challenges')}
-                  className="col-span-1 md:col-span-2 rounded-[2rem] bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 p-6 md:p-7 text-left shadow-xl shadow-indigo-200/40 flex items-center gap-6 relative overflow-hidden group"
+                  className="col-span-2 lg:col-span-4 rounded-[2rem] bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 p-6 md:p-7 text-left shadow-xl shadow-indigo-200/40 flex items-center gap-6 relative overflow-hidden group"
                 >
                   <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:bg-white/20 transition-colors" />
                   <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 shadow-inner border border-white/30 relative z-10">

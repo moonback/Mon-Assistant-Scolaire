@@ -15,11 +15,15 @@ interface Competition {
     winner_id: string | null;
 }
 
-export default function SiblingCompetition() {
+interface SiblingCompetitionProps {
+    standalone?: boolean;
+}
+
+export default function SiblingCompetition({ standalone = false }: SiblingCompetitionProps) {
     const { selectedChild, children } = useAuth();
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showDuelModal, setShowDuelModal] = useState(false);
+    const [showDuelModal, setShowDuelModal] = useState(standalone);
 
     // Duel form
     const [opponentId, setOpponentId] = useState('');
@@ -80,7 +84,7 @@ export default function SiblingCompetition() {
 
     const otherSiblings = children.filter(c => c.id !== selectedChild?.id);
 
-    if (otherSiblings.length === 0) return null;
+    if (otherSiblings.length === 0 || (!standalone && !loading && competitions.length === 0)) return null;
 
     return (
         <section className="space-y-4">

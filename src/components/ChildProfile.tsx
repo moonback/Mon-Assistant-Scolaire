@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Star, Trophy, GraduationCap, Camera, User, Heart, Shield, Sparkles, Award, Zap, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import BadgeCollection from './BadgeCollection';
+import SiblingCompetition from './SiblingCompetition';
 
 export default function ChildProfile() {
   const { selectedChild, refreshChildren } = useAuth();
@@ -196,6 +197,11 @@ export default function ChildProfile() {
 
           {/* Trophy Room & Badges */}
           <BadgeCollection earnedBadgeIds={selectedChild?.badges || []} />
+
+          {/* Social / Competitions Section */}
+          <div className="pt-8 mt-8 border-t border-slate-100">
+            <SiblingCompetition standalone={true} />
+          </div>
         </div>
       </div>
     </div>
