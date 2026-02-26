@@ -32,6 +32,7 @@ const ChildProfile = lazy(() => import('./components/ChildProfile'));
 const DailyChallenges = lazy(() => import('./components/DailyChallenges'));
 const Flashcards = lazy(() => import('./components/Flashcards'));
 const StarMarket = lazy(() => import('./components/StarMarket'));
+const CreativeWriting = lazy(() => import('./components/CreativeWriting'));
 
 // ─── Loading Fallback ────────────────────────────────────
 const PageLoader = () => (
@@ -119,6 +120,7 @@ function AppContent() {
       case 'drawing': return <DrawingBoard />;
       case 'homework': return <HomeworkHelper {...commonProps} />;
       case 'dictionary': return <Dictionary />;
+      case 'creative_writing': return <CreativeWriting />;
       case 'fact': return <DidYouKnow />;
       case 'profile': return <ChildProfile />;
       case 'market': return <StarMarket {...commonProps} childId={selectedChild?.id || ''} />;

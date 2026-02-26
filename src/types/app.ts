@@ -6,7 +6,7 @@ export type GradeLevel = 'CP' | 'CE1' | 'CE2' | 'CM1' | 'CM2' | '6ème';
 export const GRADE_LEVELS: GradeLevel[] = ['CP', 'CE1', 'CE2', 'CM1', 'CM2', '6ème'];
 
 // ─── Navigation ──────────────────────────────────────────
-export type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental' | 'profile' | 'challenges' | 'flashcards' | 'market';
+export type Tab = 'home' | 'assistant' | 'quiz' | 'story' | 'dictionary' | 'math' | 'fact' | 'dashboard' | 'drawing' | 'homework' | 'parental' | 'profile' | 'challenges' | 'flashcards' | 'market' | 'creative_writing';
 
 export type ParentalTab = 'overview' | 'children' | 'missions' | 'rewards' | 'security' | 'competitions' | 'accessibility';
 
