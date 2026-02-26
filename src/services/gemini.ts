@@ -1,4 +1,5 @@
 import { Mode, SYSTEM_INSTRUCTIONS } from './prompts';
+import { logAiEvent } from './aiLogger';
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ export async function askGemini(
   childContext?: string,
   weakPoints?: string[]
 ): Promise<string> {
+  const startedAt = performance.now();
   try {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
@@ -107,6 +109,14 @@ export async function askGemini(
       { role: 'user', content: userContent }
     ];
 
+    logAiEvent({
+      stage: 'request',
+      mode,
+      promptLength: prompt?.length || 0,
+      gradeLevel,
+      hasImage: Boolean(image),
+    });
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -135,9 +145,26 @@ export async function askGemini(
       content = extractJSON(content);
     }
 
+    logAiEvent({
+      stage: 'response',
+      mode,
+      durationMs: Math.round(performance.now() - startedAt),
+      responseLength: content.length,
+      gradeLevel,
+      hasImage: Boolean(image),
+    });
+
     return content || (mode === 'quiz' ? "[]" : mode === 'wordOfTheDay' || mode === 'problemOfTheDay' ? "{}" : "Désolé, je n'ai pas pu générer de réponse.");
   } catch (error) {
     console.error("Erreur OpenRouter:", error);
+    logAiEvent({
+      stage: 'error',
+      mode,
+      durationMs: Math.round(performance.now() - startedAt),
+      gradeLevel,
+      hasImage: Boolean(image),
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+    });
     if (mode === 'quiz') return "[]";
     if (mode === 'wordOfTheDay' || mode === 'problemOfTheDay') return "{}";
     return "Oups ! Une erreur s'est produite. Vérifie ta connexion et réessaie.";
