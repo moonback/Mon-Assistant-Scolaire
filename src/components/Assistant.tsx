@@ -39,6 +39,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const [historyPage, setHistoryPage] = useState(1);
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [childStats, setChildStats] = useState<Progress[]>([]);
+  const [timeSpentToday, setTimeSpentToday] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [verificationAnswer, setVerificationAnswer] = useState('');
@@ -64,7 +65,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
 
       const start = (historyPage - 1) * 20;
       const end = start + 19;
-      const [convRes, progressRes] = await Promise.all([
+      const [convRes, progressRes, timeRes] = await Promise.all([
         supabase
           .from('conversations')
           .select('*')
@@ -76,6 +77,12 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
           .select('*')
           .eq('child_id', selectedChild.id)
           .limit(100),
+        supabase
+          .from('daily_child_stats')
+          .select('time_spent_minutes')
+          .eq('child_id', selectedChild.id)
+          .eq('date', new Date().toISOString().split('T')[0])
+          .maybeSingle()
       ]);
 
       if (convRes.data) {
@@ -89,6 +96,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
         setHistory((prev) => (historyPage === 1 ? mapped : [...prev, ...mapped]));
       }
       if (progressRes.data) setChildStats(progressRes.data);
+      if (timeRes.data) setTimeSpentToday(timeRes.data.time_spent_minutes || 0);
     }
 
     fetchData();
@@ -97,14 +105,20 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
   const { childContext, topSubjects } = useChildLearningContext(
     selectedChild,
     childStats,
-    history[0]?.question,
+    history,
     gradeLevel
   );
 
+  // Ajout manuel du temps passé au contexte
+  const fullChildContext = useMemo(() => {
+    if (!childContext) return undefined;
+    return `${childContext}\nTemps passé aujourd'hui : ${timeSpentToday} minutes.`;
+  }, [childContext, timeSpentToday]);
+
   // ── System prompt for Gemini Live ──
   const liveSystemPrompt = useMemo(() =>
-    buildAssistantSystemPrompt(selectedChild?.grade_level || gradeLevel, childContext, selectedChild?.weak_points, selectedChild?.learning_profile),
-    [selectedChild?.grade_level, selectedChild?.weak_points, selectedChild?.learning_profile, gradeLevel, childContext]
+    buildAssistantSystemPrompt(selectedChild?.grade_level || gradeLevel, fullChildContext, selectedChild?.weak_points, selectedChild?.learning_profile),
+    [selectedChild?.grade_level, selectedChild?.weak_points, selectedChild?.learning_profile, gradeLevel, fullChildContext]
   );
 
   // ── Voice input → textarea ──
@@ -189,6 +203,25 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
     }
   }, [selectedChild]);
 
+  const handleSaveLiveConversation = useCallback(async (question: string, responseText: string) => {
+    if (!selectedChild || !question || !responseText) return;
+
+    try {
+      const { data: newItem, error: insertError } = await supabase.from('conversations')
+        .insert({ child_id: selectedChild.id, question, response: responseText })
+        .select().single();
+
+      if (!insertError && newItem) {
+        setHistory(prev => [{
+          id: newItem.id, question: newItem.question,
+          response: newItem.response, date: newItem.created_at, image_url: newItem.image_url,
+        }, ...prev]);
+      }
+    } catch (err) {
+      console.error('[Assistant] Error saving live conversation:', err);
+    }
+  }, [selectedChild]);
+
   const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
 
   return (
@@ -204,6 +237,7 @@ export default function Assistant({ onEarnPoints, gradeLevel = 'CM1' }: Assistan
         isOpen={showLiveModal}
         onClose={() => setShowLiveModal(false)}
         systemPrompt={liveSystemPrompt}
+        onSave={handleSaveLiveConversation}
       />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">

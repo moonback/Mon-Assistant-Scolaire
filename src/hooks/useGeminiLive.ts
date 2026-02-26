@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 
 export type LiveStatus = 'idle' | 'connecting' | 'listening' | 'speaking' | 'error';
@@ -16,6 +16,7 @@ interface UseGeminiLiveReturn {
     latency: number;
     connect: (systemPrompt: string) => void;
     disconnect: () => void;
+    setOnConversationFinished: (cb: (userText: string, modelText: string) => void) => void;
 }
 
 // Utilisation du modèle spécifié dans l'exemple
@@ -65,6 +66,11 @@ export function useGeminiLive(): UseGeminiLiveReturn {
     const nextPlayTimeRef = useRef(0);
     const lastUserAudioTimeRef = useRef<number>(0);
     const isAliveRef = useRef(false);
+
+    // Suivi de la conversation pour persistance
+    const currentUserTextRef = useRef('');
+    const currentModelTextRef = useRef('');
+    const onConversationFinishedRef = useRef<((u: string, m: string) => void) | null>(null);
 
     // ── Playback ──────────────────────────────────────────────────────────
     const schedulePlay = useCallback((audioBuffer: AudioBuffer, ctx: AudioContext) => {
@@ -260,6 +266,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                     // User transcription
                     const inputText = message.serverContent?.inputTranscription?.text;
                     if (inputText) {
+                        currentUserTextRef.current += inputText;
                         setMessages(prev => {
                             const last = prev[prev.length - 1];
                             if (last && last.role === 'user') {
@@ -273,6 +280,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                     const parts: any[] = message.serverContent?.modelTurn?.parts || [];
                     parts.forEach((part: any) => {
                         if (part.text) {
+                            currentModelTextRef.current += part.text;
                             setMessages(prev => {
                                 const last = prev[prev.length - 1];
                                 if (last && last.role === 'model' && last.isStreaming) {
@@ -289,6 +297,14 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                     // End of turn detection
                     if (message.serverContent?.turnComplete) {
                         setStatus('listening');
+
+                        // Déclenchement du callback de fin de tour
+                        if (currentUserTextRef.current && currentModelTextRef.current) {
+                            onConversationFinishedRef.current?.(currentUserTextRef.current.trim(), currentModelTextRef.current.trim());
+                        }
+                        currentUserTextRef.current = '';
+                        currentModelTextRef.current = '';
+
                         setMessages(prev => {
                             const last = prev[prev.length - 1];
                             if (last && last.role === 'model' && last.isStreaming) {
@@ -325,7 +341,19 @@ export function useGeminiLive(): UseGeminiLiveReturn {
 
     }, [cleanup, schedulePlay]);
 
+    const setOnConversationFinished = useCallback((cb: (userText: string, modelText: string) => void) => {
+        onConversationFinishedRef.current = cb;
+    }, []);
+
     useEffect(() => () => cleanup(), [cleanup]);
 
-    return { status, messages, errorMessage, latency, connect, disconnect };
+    return useMemo(() => ({
+        status,
+        messages,
+        errorMessage,
+        latency,
+        connect,
+        disconnect,
+        setOnConversationFinished
+    }), [status, messages, errorMessage, latency, connect, disconnect, setOnConversationFinished]);
 }

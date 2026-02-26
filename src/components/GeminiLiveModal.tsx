@@ -9,10 +9,12 @@ interface GeminiLiveModalProps {
     isOpen: boolean;
     onClose: () => void;
     systemPrompt: string;
+    onSave?: (question: string, response: string) => void;
 }
 
-export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: GeminiLiveModalProps) {
-    const { status, messages, errorMessage, latency, connect, disconnect } = useGeminiLive();
+export default function GeminiLiveModal({ isOpen, onClose, systemPrompt, onSave }: GeminiLiveModalProps) {
+    const geminiLive = useGeminiLive();
+    const { status, messages, errorMessage, latency, connect, disconnect, setOnConversationFinished } = geminiLive;
     const [showTranscription, setShowTranscription] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -24,6 +26,10 @@ export default function GeminiLiveModal({ isOpen, onClose, systemPrompt }: Gemin
             setShowTranscription(false);
         }
     }, [isOpen, systemPrompt, connect, disconnect]);
+
+    useEffect(() => {
+        if (onSave) setOnConversationFinished(onSave);
+    }, [onSave, setOnConversationFinished]);
 
     // Auto-scroll to bottom on new messages
     useEffect(() => {
