@@ -96,25 +96,45 @@ export default function MobileNav({
                                     })}
                                 </>
                             ) : (
-                                tabs.map((tab) => {
-                                    const isActive = activeTab === tab.id;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => {
-                                                setActiveTab(tab.id);
-                                                onClose();
-                                            }}
-                                            className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${isActive
-                                                ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                                                : 'border-slate-200 bg-white text-slate-700'
-                                                }`}
-                                        >
-                                            <tab.icon className="h-4 w-4" />
-                                            {tab.label}
-                                        </button>
-                                    );
-                                })
+                                <>
+                                    {[
+                                        { title: "Mon Espace", ids: ['home', 'dashboard', 'market'] },
+                                        { title: "Apprentissage", ids: ['assistant', 'homework', 'flashcards', 'dictionary', 'fact'] },
+                                        { title: "Entraînement & Jeux", ids: ['challenges', 'quiz', 'math', 'story', 'drawing'] }
+                                    ].map((group, gIdx) => {
+                                        const groupTabs = tabs.filter(t => group.ids.includes(t.id));
+                                        if (groupTabs.length === 0) return null;
+
+                                        return (
+                                            <React.Fragment key={group.title}>
+                                                <div className={`col-span-2 ${gIdx !== 0 ? 'mt-4' : ''}`}>
+                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                        {group.title}
+                                                    </h4>
+                                                </div>
+                                                {groupTabs.map((tab) => {
+                                                    const isActive = activeTab === tab.id;
+                                                    return (
+                                                        <button
+                                                            key={tab.id}
+                                                            onClick={() => {
+                                                                setActiveTab(tab.id);
+                                                                onClose();
+                                                            }}
+                                                            className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs transition-colors ${isActive
+                                                                ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                                                }`}
+                                                        >
+                                                            <tab.icon className="h-5 w-5" />
+                                                            <span className="font-semibold">{tab.label}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </>
                             )}
                         </div>
                     </motion.div>

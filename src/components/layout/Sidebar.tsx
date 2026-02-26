@@ -112,33 +112,53 @@ export default function Sidebar({
                         })}
                     </>
                 ) : (
-                    tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <motion.button
-                                key={tab.id}
-                                whileHover={{ x: 4 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-wide transition-all ${isActive
-                                    ? 'bg-white text-indigo-700 shadow-md ring-1 ring-indigo-100/50'
-                                    : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm shadow-transparent hover:shadow-slate-200/50'
-                                    } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                                title={isCollapsed ? tab.label : ''}
-                            >
-                                <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${isActive ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
-                                    <tab.icon className="h-4 w-4" />
+                    <div className="space-y-6">
+                        {[
+                            { title: "Mon Espace", ids: ['home', 'dashboard', 'market'] },
+                            { title: "Apprentissage", ids: ['assistant', 'homework', 'flashcards', 'dictionary', 'fact'] },
+                            { title: "Entraînement & Jeux", ids: ['challenges', 'quiz', 'math', 'story', 'drawing'] }
+                        ].map(group => {
+                            const groupTabs = tabs.filter(t => group.ids.includes(t.id));
+                            if (groupTabs.length === 0) return null;
+
+                            return (
+                                <div key={group.title} className="space-y-1">
+                                    {!isCollapsed && (
+                                        <h4 className="px-3 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                            {group.title}
+                                        </h4>
+                                    )}
+                                    {groupTabs.map((tab) => {
+                                        const isActive = activeTab === tab.id;
+                                        return (
+                                            <motion.button
+                                                key={tab.id}
+                                                whileHover={{ x: 4 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => setActiveTab(tab.id)}
+                                                className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-wide transition-all ${isActive
+                                                    ? 'bg-white text-indigo-700 shadow-md ring-1 ring-indigo-100/50'
+                                                    : 'text-slate-600 hover:bg-white border border-transparent hover:border-slate-100 shadow-sm shadow-transparent hover:shadow-slate-200/50'
+                                                    } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                                                title={isCollapsed ? tab.label : ''}
+                                            >
+                                                <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${isActive ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
+                                                    <tab.icon className="h-4 w-4" />
+                                                </div>
+                                                {!isCollapsed && <span>{tab.label}</span>}
+                                                {isActive && !isCollapsed && (
+                                                    <motion.div
+                                                        layoutId="activeTabIndicator"
+                                                        className="ml-auto h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.6)]"
+                                                    />
+                                                )}
+                                            </motion.button>
+                                        );
+                                    })}
                                 </div>
-                                {!isCollapsed && <span>{tab.label}</span>}
-                                {isActive && !isCollapsed && (
-                                    <motion.div
-                                        layoutId="activeTabIndicator"
-                                        className="ml-auto h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.6)]"
-                                    />
-                                )}
-                            </motion.button>
-                        );
-                    })
+                            );
+                        })}
+                    </div>
                 )}
             </nav>
 
