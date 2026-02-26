@@ -5,11 +5,14 @@ import { Star, Trophy, GraduationCap, Camera, User, Heart, Shield, Sparkles, Awa
 import { supabase } from '../lib/supabase';
 import BadgeCollection from './BadgeCollection';
 import SiblingCompetition from './SiblingCompetition';
+import LearningDNACard from './LearningDNACard';
+import LearningDiagnostic from './LearningDiagnostic';
 
 export default function ChildProfile() {
   const { selectedChild, refreshChildren } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
 
   const avatars = [
     { name: 'Explorateur', seed: selectedChild?.name || 'Explorer' },
@@ -108,7 +111,7 @@ export default function ChildProfile() {
           </motion.div>
 
           {/* Experience Progress */}
-          <div className="premium-card p-8 border-none shadow-sm h-full">
+          <div className="premium-card p-8 border-none shadow-sm">
             <header className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="flex items-center gap-2 text-sm font-black text-slate-900 uppercase tracking-widest">
@@ -131,6 +134,12 @@ export default function ChildProfile() {
               Encore {100 - progressToNextLevel} étoiles !
             </p>
           </div>
+
+          {/* Learning DNA Card */}
+          <LearningDNACard
+            profile={selectedChild?.learning_profile}
+            onStartDiagnostic={() => setShowDiagnostic(true)}
+          />
         </div>
 
         {/* Right Column: Avatar Selection & Achievements */}
@@ -204,6 +213,16 @@ export default function ChildProfile() {
           </div>
         </div>
       </div>
+
+      {/* Learning DNA Diagnostic Modal */}
+      <AnimatePresence>
+        {showDiagnostic && (
+          <LearningDiagnostic
+            onComplete={() => setShowDiagnostic(false)}
+            onClose={() => setShowDiagnostic(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

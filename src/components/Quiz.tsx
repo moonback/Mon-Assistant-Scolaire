@@ -53,7 +53,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     wrongTopicsRef.current = [];
 
     try {
-      const json = await askGemini(finalTopic, 'quiz', gradeLevel, undefined, undefined, selectedChild?.weak_points);
+      const json = await askGemini(finalTopic, 'quiz', gradeLevel, undefined, undefined, selectedChild?.weak_points, selectedChild?.learning_profile);
       const data = JSON.parse(json);
       const quizQuestions = data.questions || data;
 
@@ -121,7 +121,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       Réponse de l'enfant : ${openAnswer}
       Réponse attendue : ${questions[currentQuestion].correctAnswerText}`;
 
-      const resultJson = await askGemini(prompt, 'ai_evaluation', gradeLevel);
+      const resultJson = await askGemini(prompt, 'ai_evaluation', gradeLevel, undefined, undefined, undefined, selectedChild?.learning_profile);
       const result = JSON.parse(resultJson);
 
       setIsCorrect(result.isCorrect);

@@ -4,15 +4,17 @@ import { Lightbulb, RefreshCw, Sparkles, BookOpen, Microscope, Globe } from 'luc
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function DidYouKnow() {
+  const { selectedChild } = useAuth();
   const [fact, setFact] = useState('');
   const [loading, setLoading] = useState(false);
 
   const getFact = async () => {
     setLoading(true);
     try {
-      const result = await askGemini('', 'fact');
+      const result = await askGemini('', 'fact', selectedChild?.grade_level || 'CM1', undefined, undefined, undefined, selectedChild?.learning_profile);
       setFact(result);
     } catch (e) {
       console.error(e);

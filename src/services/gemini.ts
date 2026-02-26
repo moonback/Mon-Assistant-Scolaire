@@ -1,5 +1,7 @@
 import { Mode, SYSTEM_INSTRUCTIONS } from './prompts';
 import { logAiEvent } from './aiLogger';
+import { buildLearningProfileDirectives } from './learningProfilePrompt';
+import type { LearningProfile } from '../types/learningProfile';
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -19,7 +21,8 @@ const JSON_MODES: Mode[] = ['quiz', 'wordOfTheDay', 'problemOfTheDay'];
 export function buildAssistantSystemPrompt(
   gradeLevel: string,
   childContext?: string,
-  weakPoints?: string[]
+  weakPoints?: string[],
+  learningProfile?: LearningProfile
 ): string {
   let prompt = `${SYSTEM_INSTRUCTIONS['assistant']}
 
@@ -37,6 +40,12 @@ ${childContext ? `\n--- INFOS SUR L'ENFANT ---\n${childContext}\n---` : ''}`;
   if (weakPoints && weakPoints.length > 0) {
     prompt += `\n\n🎯 ATTENTION PARTICULIÈRE : L'élève a des difficultés avec ces notions : ${weakPoints.join(', ')}. Au fil de tes explications, adapte ta pédagogie pour l'aider à surmonter ces points faibles si l'occasion se présente.`;
   }
+
+  const profileDirectives = buildLearningProfileDirectives(learningProfile);
+  if (profileDirectives) {
+    prompt += '\n\n' + profileDirectives;
+  }
+
   return prompt;
 }
 
@@ -92,7 +101,8 @@ export async function askGemini(
   gradeLevel: string = 'CM1',
   image?: string,
   childContext?: string,
-  weakPoints?: string[]
+  weakPoints?: string[],
+  learningProfile?: LearningProfile
 ): Promise<string> {
   const startedAt = performance.now();
   try {
@@ -102,7 +112,7 @@ export async function askGemini(
     }
 
     let systemInstruction = mode === 'assistant' && childContext
-      ? buildAssistantSystemPrompt(gradeLevel, childContext, weakPoints)
+      ? buildAssistantSystemPrompt(gradeLevel, childContext, weakPoints, learningProfile)
       : `${SYSTEM_INSTRUCTIONS[mode]}
 
     IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
@@ -112,6 +122,10 @@ export async function askGemini(
 
     if (mode !== 'assistant' && weakPoints && weakPoints.length > 0) {
       systemInstruction += `\n\n🎯 ATTENTION PARTICULIÈRE : L'élève a des difficultés avec ces notions : ${weakPoints.join(', ')}. Au fil de tes explications, adapte ta pédagogie pour l'aider à surmonter ces points faibles si l'occasion se présente.`;
+    }
+
+    if (mode !== 'assistant' && learningProfile) {
+      systemInstruction += '\n\n' + buildLearningProfileDirectives(learningProfile);
     }
 
     const userContent: OpenRouterContentPart[] = [

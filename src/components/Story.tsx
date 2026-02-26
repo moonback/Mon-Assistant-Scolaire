@@ -3,8 +3,10 @@ import { askGemini } from '../services/gemini';
 import { Book, Wand2, RefreshCw, User, MapPin, Volume2, StopCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useSpeechSynthesis } from '../hooks/useSpeech';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Story() {
+  const { selectedChild } = useAuth();
   const [hero, setHero] = useState('');
   const [place, setPlace] = useState('');
   const [story, setStory] = useState('');
@@ -19,7 +21,7 @@ export default function Story() {
 
     const prompt = `Héros: ${hero}, Lieu: ${place || 'un endroit mystérieux'}`;
     try {
-      const result = await askGemini(prompt, 'story');
+      const result = await askGemini(prompt, 'story', selectedChild?.grade_level || 'CM1', undefined, undefined, undefined, selectedChild?.learning_profile);
       setStory(result);
     } catch (e) {
       console.error(e);

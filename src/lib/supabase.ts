@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js';
 import type { GradeLevel, RewardGoal, ParentalMission } from '../types/app';
+import type { LearningProfile } from '../types/learningProfile';
 
 // ─── Validation ──────────────────────────────────────────
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -41,6 +42,7 @@ export interface Child {
   allowed_subjects?: string[];
   weak_points?: string[];
   badges?: string[];
+  learning_profile?: LearningProfile;
   created_at: string;
 }
 
