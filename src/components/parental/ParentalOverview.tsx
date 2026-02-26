@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, BookOpen, History, Star } from 'lucide-react';
+import { Zap, BookOpen, History, Star, Brain, Camera, Palette, MessageCircle, Gamepad2, Sparkles } from 'lucide-react';
 import { Progress, Child } from '../../lib/supabase';
 import CompletedQuizzesList from '../CompletedQuizzesList';
 
@@ -7,6 +7,19 @@ interface ParentalOverviewProps {
     childrenContext: Child[];
     stats: Progress[];
 }
+
+const getActivityConfig = (type: string) => {
+    const t = type.toLowerCase();
+    if (t.includes('quiz')) return { icon: Brain, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100', label: 'Quiz' };
+    if (t.includes('homework')) return { icon: Camera, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', label: 'Devoirs Photo' };
+    if (t.includes('story')) return { icon: BookOpen, color: 'text-pink-500', bg: 'bg-pink-50', border: 'border-pink-100', label: 'Conte' };
+    if (t.includes('drawing')) return { icon: Palette, color: 'text-purple-500', bg: 'bg-purple-50', border: 'border-purple-100', label: 'Atelier' };
+    if (t.includes('math') || t.includes('calcul')) return { icon: Gamepad2, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100', label: 'Jeu Math' };
+    if (t.includes('assistant') || t.includes('chat')) return { icon: MessageCircle, color: 'text-indigo-500', bg: 'bg-indigo-50', border: 'border-indigo-100', label: 'IA' };
+    if (t.includes('fact')) return { icon: Sparkles, color: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-100', label: 'Curiosité' };
+
+    return { icon: Star, color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-100', label: type || 'Activité' };
+};
 
 export default function ParentalOverview({ childrenContext, stats }: ParentalOverviewProps) {
     return (
@@ -44,17 +57,19 @@ export default function ParentalOverview({ childrenContext, stats }: ParentalOve
                 <div className="space-y-4">
                     {stats.length > 0 ? stats.slice(0, 5).map(s => {
                         const childName = childrenContext.find(c => c.id === s.child_id)?.name || 'Anonyme';
-                        const isQuiz = s.activity_type?.toLowerCase().includes('quiz');
+                        const config = getActivityConfig(s.activity_type || '');
+                        const Icon = config.icon;
+
                         return (
-                            <div key={s.id} className="flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl border border-slate-100 shadow-sm transition-all group">
+                            <div key={s.id} className="flex items-center justify-between p-4 bg-white hover:bg-slate-50 rounded-2xl border border-slate-100 shadow-sm transition-all group cursor-default">
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 ${isQuiz ? 'bg-amber-50 border-amber-100 text-amber-500' : 'bg-indigo-50 border-indigo-100 text-indigo-500'}`}>
-                                        {isQuiz ? <Star className="w-6 h-6 fill-current" /> : <BookOpen className="w-6 h-6" />}
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 ${config.bg} ${config.border} ${config.color}`}>
+                                        <Icon className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-800 text-sm capitalize">{s.subject}</p>
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                                            {childName} • {s.activity_type || 'Activité'}
+                                            {childName} • {config.label}
                                         </p>
                                     </div>
                                 </div>
