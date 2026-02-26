@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase, Progress } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Trophy, Star, TrendingUp, Calendar, Target, Clock, Sparkles } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Trophy, Star, TrendingUp, Calendar, Target, Clock, Sparkles, Activity, Sword, BookOpen, Crown } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import DailyChallenges from './DailyChallenges';
 import PedagogicalHub from './PedagogicalHub';
 import SiblingCompetition from './SiblingCompetition';
@@ -16,10 +16,14 @@ interface DashboardProps {
   onEarnPoints: (amount: number, activityType: string, subject?: string) => void;
 }
 
+type TabId = 'overview' | 'missions' | 'pedagogy' | 'duels';
+
 export default function Dashboard({ onEarnPoints }: DashboardProps) {
   const { selectedChild } = useAuth();
   const [stats, setStats] = useState<Progress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+
   useEffect(() => {
     async function fetchStats() {
       if (!selectedChild) return;
@@ -47,6 +51,13 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
     { name: 'Assistant', score: stats.filter((s) => s.activity_type === 'assistant').reduce((acc, curr) => acc + curr.score, 0) },
   ];
 
+  const tabs = [
+    { id: 'overview', label: "Vue d'ensemble", icon: Activity, color: 'indigo' },
+    { id: 'missions', label: 'Missions & Défis', icon: Target, color: 'amber' },
+    { id: 'pedagogy', label: 'Tutorat IA', icon: BookOpen, color: 'emerald' },
+    { id: 'duels', label: 'Tournoi', icon: Sword, color: 'rose' },
+  ] as const;
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center space-y-3 p-16">
@@ -57,10 +68,10 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
   }
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 animate-in fade-in duration-500">
       <SectionHeader
         title={`Bonjour, ${selectedChild?.name} ! 👋`}
-        subtitle="Voici ton résumé d'apprentissage du jour."
+        subtitle="Qu'allons-nous découvrir aujourd'hui ?"
         action={
           <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
             <Calendar className="h-4 w-4 text-indigo-500" />
@@ -71,149 +82,225 @@ export default function Dashboard({ onEarnPoints }: DashboardProps) {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          { label: 'Total étoiles', value: selectedChild?.stars || 0, icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
-          { label: 'Activités terminées', value: stats.length, icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Niveau scolaire', value: selectedChild?.grade_level || 'N/A', icon: Trophy, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        ].map((item, i) => (
-          <AppCard as={motion.div}
-            key={item.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.4 }}
-            className="flex items-center gap-5"
-          >
-            <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${item.bg} ${item.color} shadow-inner`}>
-              <item.icon className="h-7 w-7" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
-              <p className="text-xl font-black text-slate-900 tracking-tight">{item.value}</p>
-            </div>
-          </AppCard>
-        ))}
+      {/* Tab Navigation */}
+      <div className="flex overflow-x-auto hide-scrollbar gap-2 p-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 sticky top-4 z-40">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabId)}
+              className={"relative flex items-center gap-2 px-6 py-4 rounded-3xl text-sm font-black uppercase tracking-widest transition-colors whitespace-nowrap outline-none " + (isActive ? "text-" + tab.color + "-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50")}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="active-dashboard-tab"
+                  className={"absolute inset-0 rounded-3xl bg-" + tab.color + "-50"}
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <tab.icon className={"w-5 h-5 relative z-10 " + (isActive ? "text-" + tab.color + "-600" : "")} />
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <PedagogicalHub
-        childId={selectedChild?.id || ''}
-        gradeLevel={selectedChild?.grade_level || 'CM1'}
-        stats={stats}
-        onEarnPoints={onEarnPoints}
-      />
+      <div className="min-h-[60vh]">
+        <AnimatePresence mode="wait">
 
-      <SiblingCompetition />
-      <ParentalMissions onEarnPoints={onEarnPoints} />
+          {/* TAB: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="space-y-8"
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {[
+                  { label: 'Total étoiles', value: selectedChild?.stars || 0, icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
+                  { label: 'Activités terminées', value: stats.length, icon: Crown, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                  { label: 'Niveau scolaire', value: selectedChild?.grade_level || 'N/A', icon: Trophy, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                ].map((item, i) => (
+                  <AppCard as={motion.div}
+                    key={item.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1, duration: 0.4 }}
+                    className="flex items-center gap-5"
+                  >
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl \${item.bg} \${item.color} shadow-inner`}>
+                      <item.icon className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
+                      <p className="text-xl font-black text-slate-900 tracking-tight">{item.value}</p>
+                    </div>
+                  </AppCard>
+                ))}
+              </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <AppCard
-          as={motion.section}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="overflow-hidden relative"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <AppCard
+                  as={motion.section}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="overflow-hidden relative"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
 
-          <div className="mb-8 relative z-10">
-            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
-              <TrendingUp className="h-5 w-5 text-indigo-600" />
-              Répartition des points
-            </h2>
-            <p className="text-xs font-semibold text-slate-400">Ton investissement par matière.</p>
-          </div>
-
-          <div className="h-[280px] w-full relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={chartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
-                />
-                <Tooltip
-                  cursor={{ fill: '#f8fafc', radius: 10 }}
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
-                />
-                <Bar
-                  dataKey="score"
-                  fill="url(#colorGradient)"
-                  radius={[8, 8, 0, 0]}
-                  barSize={45}
-                  isAnimationActive={true}
-                />
-                <defs>
-                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" />
-                    <stop offset="100%" stopColor="#818cf8" />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </AppCard>
-
-        <AppCard
-          as={motion.section}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className=""
-        >
-          <div className="mb-6">
-            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
-              <Clock className="h-5 w-5 text-indigo-600" />
-              Historique des sessions
-            </h2>
-            <p className="text-xs font-semibold text-slate-400">Tes 5 activités les plus récentes.</p>
-          </div>
-
-          <div className="space-y-3">
-            {stats.slice(0, 5).map((stat, i) => (
-              <motion.div
-                key={stat.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + (i * 0.05) }}
-                className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 border border-white hover:bg-white hover:border-slate-100 hover:shadow-sm transition-all group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                    <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <div className="mb-8 relative z-10">
+                    <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
+                      <TrendingUp className="h-5 w-5 text-indigo-600" />
+                      Répartition des points
+                    </h2>
+                    <p className="text-xs font-semibold text-slate-400">Ton investissement par matière.</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800 capitalize tracking-tight">{stat.subject}</p>
-                    <p className="flex items-center gap-1 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                      {new Date(stat.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-black text-indigo-600 tracking-widest">+{stat.score}</p>
-                </div>
-              </motion.div>
-            ))}
 
-            {stats.length === 0 && (
-              <EmptyStateKid
-                icon={<Sparkles className="h-6 w-6" />}
-                title="Aucune aventure pour le moment"
-                description="Commence une activité pour voir tes progrès apparaître ici."
+                  <div className="h-[280px] w-full relative z-10">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={chartData}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                          dy={10}
+                        />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                        />
+                        <Tooltip
+                          cursor={{ fill: '#f8fafc', radius: 10 }}
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+                        />
+                        <Bar
+                          dataKey="score"
+                          fill="url(#colorGradient)"
+                          radius={[8, 8, 0, 0]}
+                          barSize={45}
+                          isAnimationActive={true}
+                        />
+                        <defs>
+                          <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#6366f1" />
+                            <stop offset="100%" stopColor="#818cf8" />
+                          </linearGradient>
+                        </defs>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </AppCard>
+
+                <AppCard
+                  as={motion.section}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <div className="mb-6">
+                    <h2 className="flex items-center gap-2 text-xl font-black text-slate-900 tracking-tight">
+                      <Clock className="h-5 w-5 text-indigo-600" />
+                      Historique des sessions
+                    </h2>
+                    <p className="text-xs font-semibold text-slate-400">Tes 5 activités les plus récentes.</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {stats.slice(0, 5).map((stat, i) => (
+                      <motion.div
+                        key={stat.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 + (i * 0.05) }}
+                        className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 border border-white hover:bg-white hover:border-slate-100 hover:shadow-sm transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800 capitalize tracking-tight">{stat.subject}</p>
+                            <p className="flex items-center gap-1 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                              {new Date(stat.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-indigo-600 tracking-widest">+{stat.score}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+
+                    {stats.length === 0 && (
+                      <EmptyStateKid
+                        icon={<Sparkles className="h-6 w-6" />}
+                        title="Aucune aventure pour le moment"
+                        description="Commence une activité pour voir tes progrès apparaître ici."
+                      />
+                    )}
+                  </div>
+                </AppCard>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB: MISSIONS */}
+          {activeTab === 'missions' && (
+            <motion.div
+              key="missions"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="space-y-8"
+            >
+              <ParentalMissions onEarnPoints={onEarnPoints} />
+              {/* DailyChallenges could go here if you decide to activate it: 
+              <DailyChallenges onEarnPoints={onEarnPoints} />
+              */}
+            </motion.div>
+          )}
+
+          {/* TAB: PEDAGOGY */}
+          {activeTab === 'pedagogy' && (
+            <motion.div
+              key="pedagogy"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+            >
+              <PedagogicalHub
+                childId={selectedChild?.id || ''}
+                gradeLevel={selectedChild?.grade_level || 'CM1'}
+                stats={stats}
+                onEarnPoints={onEarnPoints}
               />
-            )}
-          </div>
-        </AppCard>
+            </motion.div>
+          )}
+
+          {/* TAB: DUELS */}
+          {activeTab === 'duels' && (
+            <motion.div
+              key="duels"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+            >
+              <SiblingCompetition />
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </div>
+
     </div >
   );
 }

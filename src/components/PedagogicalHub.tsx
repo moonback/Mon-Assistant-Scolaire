@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target, Award, TrendingUp, HelpCircle, ArrowRight, CheckCircle2, Zap, Mic, MessageSquare, Send, Quote } from 'lucide-react';
+import { BookCheck, BrainCircuit, CalendarCheck2, Gauge, RefreshCcw, ShieldAlert, Sparkles, Target, Award, TrendingUp, HelpCircle, ArrowRight, CheckCircle2, Zap, Mic, MessageSquare, Send, Quote, Lightbulb } from 'lucide-react';
 import { Progress, supabase } from '../lib/supabase';
+import { askGemini } from '../services/gemini';
 
 interface PedagogicalHubProps {
   childId: string;
@@ -92,15 +93,17 @@ interface WeeklyPlan {
 export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoints }: PedagogicalHubProps) {
   const { selectedChild, refreshChildren } = useAuth();
   const today = new Date().toISOString().split('T')[0];
+  const [explanationSubject, setExplanationSubject] = useState('');
   const [explanationText, setExplanationText] = useState('');
   const EXPLANATION_PROMPTS = [
-    "Comment expliquerais-tu cette notion à un ami ?",
-    "Qu'est-ce qui a été le plus facile à comprendre aujourd'hui ?",
-    "Si tu devais dessiner cette idée, que représenterais-tu ?",
-    "Quelle est la 'règle d'or' à retenir pour ce sujet ?",
-    "Pourquoi est-il important de connaître cette notion selon toi ?"
+    "Comment expliquerais-tu {sujet} à un ami ?",
+    "Qu'est-ce qui a été le plus facile à comprendre sur {sujet} ?",
+    "Si tu devais dessiner {sujet}, que représenterais-tu ?",
+    "Quelle est la 'règle d'or' à retenir pour {sujet} ?",
+    "Pourquoi est-il important de connaître {sujet} selon toi ?"
   ];
-  const [explanationPrompt, setExplanationPrompt] = useState(EXPLANATION_PROMPTS[0]);
+  const [explanationPromptTemplate, setExplanationPromptTemplate] = useState(EXPLANATION_PROMPTS[0]);
+  const explanationPrompt = explanationPromptTemplate.replace('{sujet}', explanationSubject ? `« ${explanationSubject} »` : 'ce sujet');
   const [explanationSaving, setExplanationSaving] = useState(false);
   const [latestExplanation, setLatestExplanation] = useState<ExplanationRecord | null>(null);
   const [srsCards, setSrsCards] = useState<SRSCard[]>([]);
@@ -109,9 +112,9 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
   const [showFullPlan, setShowFullPlan] = useState(false);
 
   const shufflePrompt = () => {
-    const currentIndex = EXPLANATION_PROMPTS.indexOf(explanationPrompt);
+    const currentIndex = EXPLANATION_PROMPTS.indexOf(explanationPromptTemplate);
     const nextIndex = (currentIndex + 1) % EXPLANATION_PROMPTS.length;
-    setExplanationPrompt(EXPLANATION_PROMPTS[nextIndex]);
+    setExplanationPromptTemplate(EXPLANATION_PROMPTS[nextIndex]);
   };
 
   // ... subjectInsights and missions definitions ...
@@ -194,23 +197,54 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
   // 3. Actions
 
   const submitExplanation = async () => {
-    if (!childId || !explanationText.trim()) return;
+    if (!childId || !explanationText.trim() || !explanationSubject.trim()) return;
     setExplanationSaving(true);
 
     const text = explanationText.trim();
-    const hasReasoning = /parce que|donc|pourquoi|car/i.test(text);
-    const score = Math.min(10, Math.floor(text.length / 15) + (hasReasoning ? 5 : 2));
+    const subject = explanationSubject.trim();
 
-    const { data, error } = await supabase.from('pedagogical_explanations').insert({
-      child_id: childId, prompt_text: explanationPrompt, child_text: text,
-      understanding_score: score, ai_feedback_summary: score >= 8 ? 'Explication brillante !' : 'Continue à détailler ton raisonnement.'
-    }).select().single();
+    try {
+      const evaluationPrompt = `L'enfant de niveau ${gradeLevel} a tenté d'expliquer la notion "${subject}".
+Voici la question posée : "${explanationPrompt}"
+Voici la réponse de l'enfant : "${text}"
 
-    if (data && !error) {
-      setLatestExplanation(data);
+Fais une évaluation pédagogique : 
+- isCorrect: true si l'idée est comprise (même partielle)
+- feedback: encourage et corrige gentiment si nécessaire.
+- score: sur 10.
+- explanation: courte note pour lui dire comment faire mieux.`;
+
+      const aiResponse = await askGemini(evaluationPrompt, 'ai_evaluation', gradeLevel, undefined, undefined, undefined, selectedChild?.learning_profile);
+      const parsedParams = JSON.parse(aiResponse);
+
+      const score = typeof parsedParams.score === 'number' ? parsedParams.score : parseInt(parsedParams.score) || 5;
+      const aiFeedback = parsedParams.feedback || "C'est un bon début ! Continue à réfléchir pour améliorer ton explication.";
+
+      const { data, error } = await supabase.from('pedagogical_explanations').insert({
+        child_id: childId, prompt_text: explanationPrompt, child_text: text,
+        understanding_score: score, ai_feedback_summary: aiFeedback
+      }).select().single();
+
+      if (data && !error) {
+        setLatestExplanation(data);
+        setExplanationText('');
+        setExplanationSubject('');
+        onEarnPoints(score >= 8 ? 10 : 5, 'pedagogy_explanation');
+      }
+    } catch (e) {
+      console.error(e);
+      // Fallback
+      const score = Math.min(10, Math.floor(text.length / 15) + 3);
+      const { data } = await supabase.from('pedagogical_explanations').insert({
+        child_id: childId, prompt_text: explanationPrompt, child_text: text,
+        understanding_score: score, ai_feedback_summary: "Très bel effort pour t'exprimer ! (L'IA est indisponible pour le moment)"
+      }).select().single();
+      if (data) setLatestExplanation(data);
       setExplanationText('');
+      setExplanationSubject('');
       onEarnPoints(5, 'pedagogy_explanation');
     }
+
     setExplanationSaving(false);
   };
 
@@ -251,27 +285,45 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
             </div>
 
             <div className="p-8 flex-1 flex flex-col space-y-6 relative z-10">
-              {/* Question Bubble */}
+              {/* Topic Input */}
               <div className="relative">
-                <div className="absolute -left-2 top-0 bottom-0 w-1.5 bg-indigo-500 rounded-full" />
-                <div className="pl-6">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <Sparkles className="h-3 w-3 text-indigo-500" /> La question de l'IA
-                  </p>
-                  <p className="text-base font-bold text-slate-700 italic leading-relaxed">
-                    "{explanationPrompt}"
-                  </p>
-                  <button
-                    onClick={shufflePrompt}
-                    className="mt-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-700 transition-colors"
-                  >
-                    <RefreshCcw className="h-3 w-3" /> Changer de question
-                  </button>
+                <div className="flex items-center gap-3 p-4 rounded-2xl bg-white border-2 border-slate-100 focus-within:border-indigo-300 focus-within:shadow-md transition-all">
+                  <Lightbulb className="w-5 h-5 text-amber-500" />
+                  <input
+                    type="text"
+                    value={explanationSubject}
+                    onChange={(e) => setExplanationSubject(e.target.value)}
+                    placeholder="De quoi veux-tu parler ? (ex: Les fractions)"
+                    className="flex-1 bg-transparent outline-none font-bold text-slate-700 text-sm placeholder:font-medium placeholder:text-slate-400"
+                  />
                 </div>
               </div>
 
+              {/* Question Bubble */}
+              <AnimatePresence>
+                {explanationSubject.length > 2 && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative overflow-hidden">
+                    <div className="absolute -left-2 top-0 bottom-0 w-1.5 bg-indigo-500 rounded-full" />
+                    <div className="pl-6 pt-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Sparkles className="h-3 w-3 text-indigo-500" /> La question de l'IA
+                      </p>
+                      <p className="text-base font-bold text-slate-700 italic leading-relaxed">
+                        "{explanationPrompt}"
+                      </p>
+                      <button
+                        onClick={shufflePrompt}
+                        className="mt-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1 hover:text-indigo-700 transition-colors"
+                      >
+                        <RefreshCcw className="h-3 w-3" /> Changer de question
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Text Area Container */}
-              <div className="relative group">
+              <div className={`relative group transition-all duration-300 ${explanationSubject.length <= 2 ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
                 <textarea
                   value={explanationText}
                   onChange={(e) => setExplanationText(e.target.value)}
@@ -304,15 +356,15 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={submitExplanation}
-                  disabled={explanationSaving || !explanationText.trim()}
-                  className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${explanationSaving
+                  disabled={explanationSaving || !explanationText.trim() || !explanationSubject.trim()}
+                  className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${explanationSaving || !explanationText.trim() || !explanationSubject.trim()
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     : 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-100 active:scale-95'
                     }`}
                 >
                   {explanationSaving ? (
                     <>
-                      <RefreshCcw className="h-4 w-4 animate-spin text-indigo-500" /> Analayse du raisonnement...
+                      <RefreshCcw className="h-4 w-4 animate-spin text-indigo-500" /> Analyse du raisonnement...
                     </>
                   ) : (
                     <>
