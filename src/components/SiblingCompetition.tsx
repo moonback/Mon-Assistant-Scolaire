@@ -34,6 +34,10 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
         if (selectedChild) {
             fetchMyCompetitions();
         }
+
+        const handleOpenModal = () => setShowDuelModal(true);
+        window.addEventListener('open-duel-modal', handleOpenModal);
+        return () => window.removeEventListener('open-duel-modal', handleOpenModal);
     }, [selectedChild]);
 
     const fetchMyCompetitions = async () => {
@@ -87,137 +91,143 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
 
     const otherSiblings = children.filter(c => c.id !== selectedChild?.id);
 
-    if (otherSiblings.length === 0 || (!standalone && !loading && competitions.length === 0)) return null;
+    if (otherSiblings.length === 0) return null;
+
+    const hasActiveCompetitions = competitions.length > 0;
 
     return (
-        <section className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-50 rounded-xl">
-                            <Swords className="h-6 w-6 text-indigo-600" />
-                        </div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                            Duels de Famille
-                        </h2>
-                    </div>
-                    <p className="text-slate-500 font-bold text-sm ml-11">
-                        Qui sera le prochain champion ? ✨
-                    </p>
-                </div>
-                <motion.button
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowDuelModal(true)}
-                    className="relative group p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-indigo-100/50"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x" />
-                    <div className="relative bg-white font-black text-[10px] uppercase tracking-[0.2em] px-6 py-3 rounded-[14px] flex items-center gap-2 group-hover:bg-transparent group-hover:text-white transition-all">
-                        <Plus className="h-4 w-4" /> Nouveau Duel
-                    </div>
-                </motion.button>
-            </header>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AnimatePresence mode="popLayout">
-                    {competitions.map((comp) => {
-                        const isIncoming = comp.opponent_id === selectedChild?.id && comp.status === 'pending_acceptance';
-                        const isActive = comp.status === 'active';
-                        const isPendingApproval = comp.status === 'pending_approval';
-                        const isWaitingForOpponent = comp.status === 'pending_acceptance' && !isIncoming;
-
-                        return (
-                            <motion.div
-                                key={comp.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                whileHover={{ y: -5 }}
-                                className={`group relative p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden transition-all ${isActive ? 'ring-2 ring-indigo-500/20' : ''}`}
-                            >
-                                {/* Decorative elements */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                {isActive && (
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
-                                )}
-
-                                <div className="flex items-center justify-between gap-4 mb-8">
-                                    <div className="flex items-center gap-6 flex-1">
-                                        <div className="flex -space-x-4 items-center">
-                                            <div className="relative z-10 w-16 h-16 rounded-2xl bg-slate-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center p-1">
-                                                <img src={getChildAvatar(comp.challenger_id)} alt="Challenger" className="w-full h-full object-cover" />
-                                            </div>
-                                            <div className="relative z-0 w-16 h-16 rounded-2xl bg-indigo-50 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center p-1">
-                                                <img src={getChildAvatar(comp.opponent_id)} alt="Opponent" className="w-full h-full object-cover" />
-                                                {!isActive && <div className="absolute inset-0 bg-slate-200/40 backdrop-blur-[2px] flex items-center justify-center">
-                                                    <span className="text-xl">⏳</span>
-                                                </div>}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="text-lg font-black text-slate-800 tracking-tight">
-                                                    {getChildName(comp.challenger_id)} vs {getChildName(comp.opponent_id)}
-                                                </h3>
-                                                {isActive && (
-                                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[8px] font-black uppercase tracking-widest border border-rose-100">
-                                                        <Flame className="h-3 w-3 fill-rose-600" /> Action
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                                                {comp.subject} • {comp.activity_type.replace('_', ' ')}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 text-2xl group-hover:rotate-12 transition-transform">
-                                        {isActive ? '⚡' : '🤝'}
-                                    </div>
+        <>
+            {hasActiveCompetitions && (
+                <section className="space-y-6">
+                    <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-50 rounded-xl">
+                                    <Swords className="h-6 w-6 text-indigo-600" />
                                 </div>
+                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                                    Duels de Famille
+                                </h2>
+                            </div>
+                            <p className="text-slate-500 font-bold text-sm ml-11">
+                                Qui sera le prochain champion ? ✨
+                            </p>
+                        </div>
+                        <motion.button
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowDuelModal(true)}
+                            className="relative group p-[2px] rounded-2xl overflow-hidden shadow-lg shadow-indigo-100/50"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x" />
+                            <div className="relative bg-white font-black text-[10px] uppercase tracking-[0.2em] px-6 py-3 rounded-[14px] flex items-center gap-2 group-hover:bg-transparent group-hover:text-white transition-all">
+                                <Plus className="h-4 w-4" /> Nouveau Duel
+                            </div>
+                        </motion.button>
+                    </header>
 
-                                <div className="flex items-center justify-between mt-auto">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Statut du duel</p>
-                                        <div className="flex items-center gap-2">
-                                            {isPendingApproval ? (
-                                                <span className="flex items-center gap-1.5 text-amber-600 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100">
-                                                    <ShieldCheck className="h-4 w-4" /> Validation des parents
-                                                </span>
-                                            ) : isIncoming ? (
-                                                <span className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
-                                                    <ArrowRight className="h-4 w-4" /> Prêt à relever le défi ?
-                                                </span>
-                                            ) : isWaitingForOpponent ? (
-                                                <span className="flex items-center gap-1.5 text-slate-500 font-bold text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                                                    <Clock className="h-4 w-4" /> En attente de réponse
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 animate-pulse">
-                                                    <Trophy className="h-4 w-4" /> Combat féroce !
-                                                </span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <AnimatePresence mode="popLayout">
+                            {competitions.map((comp) => {
+                                const isIncoming = comp.opponent_id === selectedChild?.id && comp.status === 'pending_acceptance';
+                                const isActive = comp.status === 'active';
+                                const isPendingApproval = comp.status === 'pending_approval';
+                                const isWaitingForOpponent = comp.status === 'pending_acceptance' && !isIncoming;
+
+                                return (
+                                    <motion.div
+                                        key={comp.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        whileHover={{ y: -5 }}
+                                        className={`group relative p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden transition-all ${isActive ? 'ring-2 ring-indigo-500/20' : ''}`}
+                                    >
+                                        {/* Decorative elements */}
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        {isActive && (
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
+                                        )}
+
+                                        <div className="flex items-center justify-between gap-4 mb-8">
+                                            <div className="flex items-center gap-6 flex-1">
+                                                <div className="flex -space-x-4 items-center">
+                                                    <div className="relative z-10 w-16 h-16 rounded-2xl bg-slate-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center p-1">
+                                                        <img src={getChildAvatar(comp.challenger_id)} alt="Challenger" className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <div className="relative z-0 w-16 h-16 rounded-2xl bg-indigo-50 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center p-1">
+                                                        <img src={getChildAvatar(comp.opponent_id)} alt="Opponent" className="w-full h-full object-cover" />
+                                                        {!isActive && <div className="absolute inset-0 bg-slate-200/40 backdrop-blur-[2px] flex items-center justify-center">
+                                                            <span className="text-xl">⏳</span>
+                                                        </div>}
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="text-lg font-black text-slate-800 tracking-tight">
+                                                            {getChildName(comp.challenger_id)} vs {getChildName(comp.opponent_id)}
+                                                        </h3>
+                                                        {isActive && (
+                                                            <span className="flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[8px] font-black uppercase tracking-widest border border-rose-100">
+                                                                <Flame className="h-3 w-3 fill-rose-600" /> Action
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                        {comp.subject} • {comp.activity_type.replace('_', ' ')}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 text-2xl group-hover:rotate-12 transition-transform">
+                                                {isActive ? '⚡' : '🤝'}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between mt-auto">
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Statut du duel</p>
+                                                <div className="flex items-center gap-2">
+                                                    {isPendingApproval ? (
+                                                        <span className="flex items-center gap-1.5 text-amber-600 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100">
+                                                            <ShieldCheck className="h-4 w-4" /> Validation des parents
+                                                        </span>
+                                                    ) : isIncoming ? (
+                                                        <span className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
+                                                            <ArrowRight className="h-4 w-4" /> Prêt à relever le défi ?
+                                                        </span>
+                                                    ) : isWaitingForOpponent ? (
+                                                        <span className="flex items-center gap-1.5 text-slate-500 font-bold text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                                                            <Clock className="h-4 w-4" /> En attente de réponse
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 animate-pulse">
+                                                            <Trophy className="h-4 w-4" /> Combat féroce !
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {isIncoming && (
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => acceptDuel(comp.id)}
+                                                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-200"
+                                                >
+                                                    J'ACCEPTE !
+                                                </motion.button>
                                             )}
                                         </div>
-                                    </div>
-
-                                    {isIncoming && (
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => acceptDuel(comp.id)}
-                                            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-200"
-                                        >
-                                            J'ACCEPTE !
-                                        </motion.button>
-                                    )}
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </AnimatePresence>
-            </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </div>
+                </section>
+            )}
 
             <AnimatePresence>
                 {showDuelModal && (
@@ -335,6 +345,6 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
                     </div>
                 )}
             </AnimatePresence>
-        </section>
+        </>
     );
 }

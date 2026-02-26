@@ -252,7 +252,30 @@ function AppContent() {
                   </div>
                   <div>
                     <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Calcul Mental</h3>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deviens un champion !</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deviens un pro !</p>
+                  </div>
+                </motion.button>
+              )}
+
+              {/* Duels de Famille - Nouveau Duel */}
+              {children.filter(c => c.id !== selectedChild?.id).length > 0 && (
+                <motion.button
+                  whileHover={{ y: -5 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    // We'll trigger the modal opening in SiblingCompetition
+                    const event = new CustomEvent('open-duel-modal');
+                    window.dispatchEvent(event);
+                  }}
+                  className="premium-card p-7 flex flex-col items-center text-center gap-5 border-none shadow-sm"
+                >
+                  <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-rose-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-3xl relative z-10">⚔️</span>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 mb-0.5 tracking-tight">Lancer un Duel</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Défie tes frères & sœurs !</p>
                   </div>
                 </motion.button>
               )}
