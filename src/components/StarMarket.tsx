@@ -21,7 +21,7 @@ export default function StarMarket({ childId }: StarMarketProps) {
     const availableGoals = child.reward_goals?.filter(g => !g.claimed) || [];
     const claimedGoals = child.reward_goals?.filter(g => g.claimed) || [];
 
-    const handleClaim = async (goal: any) => {
+    const handleClaim = async (goal: NonNullable<typeof child.reward_goals>[number]) => {
         if (child.stars < goal.target) {
             setErrorMsg("Tu n'as pas assez d'étoiles pour cette récompense !");
             setTimeout(() => setErrorMsg(''), 3000);
@@ -45,7 +45,7 @@ export default function StarMarket({ childId }: StarMarketProps) {
             setSuccessMsg(`Bravo ! Tu as débloqué : ${goal.label} ! 🎉`);
             setTimeout(() => setSuccessMsg(''), 5000);
             await refreshChildren();
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
             setErrorMsg("Oups, une erreur est survenue !");
             setTimeout(() => setErrorMsg(''), 3000);

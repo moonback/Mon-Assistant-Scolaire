@@ -15,6 +15,9 @@ export interface SRSCard {
     subject: string;
     mastery_level: number;
     next_review_at: string;
+    last_reviewed_at: string;
+    success_count: number;
+    failure_count: number;
     front?: string;
     back?: string;
     hint?: string;

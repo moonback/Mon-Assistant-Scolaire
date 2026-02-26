@@ -64,11 +64,17 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
   }, [children]);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
+
+    if (error) {
+      console.error('[Auth] Erreur chargement profil:', error.message);
+      return;
+    }
+
     if (data) {
       setProfile(data);
       if (data.ai_model) {
@@ -78,14 +84,19 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
   };
 
   const fetchChildren = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('children')
       .select('*')
       .eq('parent_id', userId);
 
+    if (error) {
+      console.error('[Auth] Erreur chargement enfants:', error.message);
+      setLoading(false);
+      return;
+    }
+
     if (data) {
       setChildren(data);
-      // Sync selected child if it exists, but only if data actually changed
       if (selectedChild) {
         const updated = data.find(c => c.id === selectedChild.id);
         if (updated && JSON.stringify(updated) !== JSON.stringify(selectedChild)) {
