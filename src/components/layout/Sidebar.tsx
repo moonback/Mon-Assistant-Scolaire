@@ -10,6 +10,7 @@ import {
     Settings as SettingsIcon,
     ShieldCheck,
     Swords,
+    Accessibility,
 } from 'lucide-react';
 import { TabItem, ParentalTab } from '../../types/app';
 import { Child } from '../../lib/supabase';
@@ -43,6 +44,7 @@ export default function Sidebar({
         { id: 'missions' as ParentalTab, label: 'Missions AI', icon: ShieldCheck },
         { id: 'competitions' as ParentalTab, label: 'Compétitions', icon: Swords },
         { id: 'rewards' as ParentalTab, label: 'Récompenses', icon: Gift },
+        { id: 'accessibility' as ParentalTab, label: 'Accessibilité', icon: Accessibility },
         { id: 'security' as ParentalTab, label: 'Sécurité', icon: SettingsIcon },
     ];
 

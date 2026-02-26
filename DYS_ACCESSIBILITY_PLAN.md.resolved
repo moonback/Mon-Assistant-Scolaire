@@ -1,0 +1,96 @@
+# ♿ Plan d'Accessibilité Universelle & DYS — Mon Assistant Scolaire
+
+**Objectif :** Transformer les troubles de l'apprentissage (DYS, TDAH) de barrières en simples paramètres de configuration. Ce plan positionne l'application comme l'outil EdTech le plus inclusif du marché européen.
+
+---
+
+## 🎯 1. Analyse des Besoins par Profil
+
+| Trouble | Besoins Spécifiques | Solutions Produits |
+| :--- | :--- | :--- |
+| **Dyslexie** | Difficulté de lecture, confusion de lettres. | Police OpenDyslexic, espacement accru, TTS (Text-to-Speech). |
+| **Dysorthographie**| Difficulté à écrire sans fautes. | IA à tolérance sémantique (comprend le sens malgré les fautes). |
+| **Dyscalculie** | Blocage sur les chiffres et symboles. | Aide visuelle via manipulation d'objets digitaux, énoncés audios. |
+| **Dyspraxie** | Difficulté de coordination (clics précis). | Cibles tactiles larges, navigation clavier/voix, interface épurée. |
+| **TDAH** | Difficulté de concentration, distractibilité. | Mode "Focus" sans animations parasites, micro-récompenses fréquentes. |
+
+---
+
+## 🛠️ 2. Fonctionnalités "DYS-First" (Product Specs)
+
+### 🧴 2.1 Confort Visuel & Lecture
+*   **Barre d'outils d'accessibilité** : Toujours disponible en un clic (icône ♿).
+    *   **Polices adaptées** : Switch immédiat vers *OpenDyslexic* ou *Lexend*.
+    *   **Contraste & Couleur** : Filtres de lecture (Overlay) pour réduire la fatigue visuelle (teintes sépia, bleu doux, jaune).
+    *   **Règle de lecture** : Une ligne horizontale qui suit le curseur ou le focus pour aider à ne pas perdre sa ligne.
+    *   **Interlignage dynamique** : Augmentation automatique de l'espace entre les lignes et les lettres.
+
+### 🎙️ 2.2 Multimodalité (Voix & Audio)
+*   **Lecteur Immersif** : Chaque consigne et chaque réponse de l'IA possède un bouton "Play".
+*   **Dictée Vocale** : L'enfant peut répondre à l'assistant par la voix pour éviter le blocage du clavier (Gemini Live est déjà un atout majeur ici).
+*   **Rythme de diction** : Possibilité pour le parent/enfant de régler la vitesse de l'IA (0.8x pour mieux assimiler).
+
+### 🧠 2.3 IA Adaptative & Bienveillante
+*   **Simplification au vol** : Bouton "Explique plus simplement" qui demande à Gemini de reformuler sans perdre le concept pédagogique.
+*   **Détection auto-DYS** : Si l'IA détecte des patterns de fautes spécifiques (ex: inversion de p/b, oubli de voyelles), elle suggère discrètement d'activer les outils d'aide.
+*   **Zéro Stress Temporel** : Par défaut, aucun exercice n'est chronométré pour les profils DYS. La réussite est basée sur la compréhension, pas la vitesse.
+
+---
+
+## 🗓️ 3. Roadmap d'Intégration (36 Mois)
+
+### 🟦 Phase 1 : Fondations Visuelles (0–3 Mois)
+*   [ ] Intégration de la police `OpenDyslexic` dans le thème Tailwind.
+*   [ ] Création du `AccessibilityProvider` dans React pour gérer les préférences globales.
+*   [ ] Ajout du bouton "Synthesize" sur les cartes de cours/missions.
+*   [ ] Désactivation optionnelle des animations "confettis" pour les profils TDAH sensibles.
+
+### 🟨 Phase 2 : IA & Audio Avancé (3–12 Mois)
+*   [ ] Déploiement de la **Dictée Vocale universelle** sur tous les champs de texte.
+*   [ ] Moteur de **Tolérance Sémantique** : L'algorithme valide la réponse si le concept est bon, même si l'orthographe est phonétique.
+*   [ ] Mise en place des **Overlays de couleur** personnalisables.
+
+### 🟩 Phase 3 : Écosystème Global (12–36 Mois)
+*   [ ] **Diagnostic IA Préventif** : Rapport détaillé pour les parents sur les types d'erreurs récurrentes (aide au pré-diagnostic pro).
+*   [ ] **Partenariat Orthophonistes** : Interface permettant à un professionnel de paramétrer des exercices spécifiques dans l'app.
+*   [ ] **Standard Web & Desktop** : Certification complète WCAG 2.2 (Niveau AAA).
+
+---
+
+## 💻 4. Directives Techniques (Engineering Skills)
+
+### 🟢 CSS & Tailwind
+Utilisation de tokens dédiés pour l'accessibilité :
+```css
+/* src/index.css */
+.font-dys {
+  font-family: 'OpenDyslexic', sans-serif !important;
+  letter-spacing: 0.15em;
+  word-spacing: 0.3em;
+  line-height: 2 !important;
+}
+```
+
+### 🟢 React State
+L'état d'accessibilité doit être persistant (Supabase/LocalStorage) :
+```typescript
+interface AccessibilityConfig {
+  fontSizeMult: number; // 1.0 to 1.5
+  dyslexicFont: boolean;
+  highContrast: boolean;
+  readingRuler: boolean;
+  speechRate: number; // 0.5 to 2.0
+  reduceMotion: boolean;
+}
+```
+
+---
+
+## 📊 KPIs d'Impact
+1.  **Taux d'activation** : % d'utilisateurs ayant activé au moins une option d'accessibilité.
+2.  **Churn DYS** : Comparaison de la rétention entre profils standards et profils identifiés DYS.
+3.  **Temps de complétion** : Réduction du temps de frustration (temps immobile sur un écran) grâce aux aides audios.
+
+---
+
+> **Note stratégique :** L'accessibilité n'est pas une "feature" additionnelle, c'est l'essence même de la personnalisation IA. Ce qui aide un enfant DYS améliore l'expérience de TOUS les enfants.

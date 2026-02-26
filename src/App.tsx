@@ -211,13 +211,17 @@ function AppContent() {
   );
 }
 
+import { AccessibilityProvider } from './contexts/AccessibilityContext';
+
 // ─── Root App ────────────────────────────────────────────
 export default function App() {
   return (
-    <AuthProvider>
-      <PointsProvider>
-        <AppContent />
-      </PointsProvider>
-    </AuthProvider>
+    <AccessibilityProvider>
+      <AuthProvider>
+        <PointsProvider>
+          <AppContent />
+        </PointsProvider>
+      </AuthProvider>
+    </AccessibilityProvider>
   );
 }

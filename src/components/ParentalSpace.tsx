@@ -10,6 +10,7 @@ import ParentalRewards from './parental/ParentalRewards';
 import ParentalMissionsManagement from './parental/ParentalMissionsManagement';
 import ParentalSecurity from './parental/ParentalSecurity';
 import ParentalCompetitions from './parental/ParentalCompetitions';
+import ParentalAccessibility from './parental/ParentalAccessibility';
 import AppCard from './ui/AppCard';
 import AppButton from './ui/AppButton';
 import SectionHeader from './ui/SectionHeader';
@@ -174,6 +175,10 @@ export default function ParentalSpace({ activeSubTab: activeTab, setActiveSubTab
 
                 {activeTab === 'competitions' && (
                     <ParentalCompetitions childrenContext={children} />
+                )}
+
+                {activeTab === 'accessibility' && (
+                    <ParentalAccessibility />
                 )}
 
                 {activeTab === 'security' && (

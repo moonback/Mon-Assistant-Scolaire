@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LayoutDashboard, Users, Gift, Settings as SettingsIcon, ChevronLeft, ShieldCheck, Swords } from 'lucide-react';
+import { X, LayoutDashboard, Users, Gift, Settings as SettingsIcon, ChevronLeft, ShieldCheck, Swords, Accessibility } from 'lucide-react';
 import { TabItem, Tab, ParentalTab } from '../../types/app';
 
 interface MobileNavProps {
@@ -30,6 +30,7 @@ export default function MobileNav({
         { id: 'missions' as ParentalTab, label: 'Missions AI', icon: ShieldCheck },
         { id: 'competitions' as ParentalTab, label: 'Compétitions', icon: Swords },
         { id: 'rewards' as ParentalTab, label: 'Récompenses', icon: Gift },
+        { id: 'accessibility' as ParentalTab, label: 'Accessibilité', icon: Accessibility },
         { id: 'security' as ParentalTab, label: 'Sécurité', icon: SettingsIcon },
     ];
 
@@ -84,8 +85,8 @@ export default function MobileNav({
                                                     onClose();
                                                 }}
                                                 className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${isActive
-                                                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                                                        : 'border-slate-200 bg-white text-slate-700'
+                                                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                                    : 'border-slate-200 bg-white text-slate-700'
                                                     }`}
                                             >
                                                 <item.icon className="h-4 w-4" />
@@ -105,8 +106,8 @@ export default function MobileNav({
                                                 onClose();
                                             }}
                                             className={`flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-xs ${isActive
-                                                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                                                    : 'border-slate-200 bg-white text-slate-700'
+                                                ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                                : 'border-slate-200 bg-white text-slate-700'
                                                 }`}
                                         >
                                             <tab.icon className="h-4 w-4" />
