@@ -1,6 +1,25 @@
 import { Mode, SYSTEM_INSTRUCTIONS } from './prompts';
 
-export function buildAssistantSystemPrompt(gradeLevel: string, childContext?: string, weakPoints?: string[]): string {
+// ─── Types ───────────────────────────────────────────────
+
+interface OpenRouterMessage {
+  role: 'system' | 'user';
+  content: string | OpenRouterContentPart[];
+}
+
+type OpenRouterContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
+const JSON_MODES: Mode[] = ['quiz', 'wordOfTheDay', 'problemOfTheDay'];
+
+// ─── System Prompt Builder ───────────────────────────────
+
+export function buildAssistantSystemPrompt(
+  gradeLevel: string,
+  childContext?: string,
+  weakPoints?: string[]
+): string {
   let prompt = `${SYSTEM_INSTRUCTIONS['assistant']}
 
 DIRECTIVES POUR LA VOIX (IMPORTANT) :
@@ -20,13 +39,41 @@ ${childContext ? `\n--- INFOS SUR L'ENFANT ---\n${childContext}\n---` : ''}`;
   return prompt;
 }
 
+// ─── JSON Extraction (robust) ────────────────────────────
+
+function extractJSON(content: string): string {
+  // Try to find a JSON block in markdown code fence first
+  const fenceMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    return fenceMatch[1].trim();
+  }
+
+  // Find the outermost JSON structure
+  const firstObj = content.indexOf('{');
+  const lastObj = content.lastIndexOf('}');
+  const firstArr = content.indexOf('[');
+  const lastArr = content.lastIndexOf(']');
+
+  // Determine if the outermost structure is an object or array
+  if (firstArr !== -1 && (firstObj === -1 || firstArr < firstObj)) {
+    if (lastArr !== -1) return content.substring(firstArr, lastArr + 1);
+  }
+  if (firstObj !== -1 && lastObj !== -1) {
+    return content.substring(firstObj, lastObj + 1);
+  }
+
+  return content;
+}
+
+// ─── Main API Call ───────────────────────────────────────
+
 export async function askGemini(
   prompt: string,
   mode: Mode = 'assistant',
   gradeLevel: string = 'CM1',
-  image?: string, // Base64 image string (data:image/jpeg;base64,...)
-  childContext?: string, // Optional child profile context
-  weakPoints?: string[] // Optional array of concepts the child struggles with
+  image?: string,
+  childContext?: string,
+  weakPoints?: string[]
 ): Promise<string> {
   try {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
@@ -37,7 +84,7 @@ export async function askGemini(
     let systemInstruction = mode === 'assistant' && childContext
       ? buildAssistantSystemPrompt(gradeLevel, childContext, weakPoints)
       : `${SYSTEM_INSTRUCTIONS[mode]}
-    
+
     IMPORTANT : Adapte ton langage et la complexité de tes réponses pour un élève de niveau ${gradeLevel}.
     ${gradeLevel === 'CP' || gradeLevel === 'CE1' ? 'Utilise des phrases très courtes et des mots très simples.' : ''}
     ${gradeLevel === 'CM2' || gradeLevel === '6ème' ? 'Tu peux aller un peu plus loin dans les explications, mais reste clair.' : ''}
@@ -47,30 +94,18 @@ export async function askGemini(
       systemInstruction += `\n\n🎯 ATTENTION PARTICULIÈRE : L'élève a des difficultés avec ces notions : ${weakPoints.join(', ')}. Au fil de tes explications, adapte ta pédagogie pour l'aider à surmonter ces points faibles si l'occasion se présente.`;
     }
 
-    const messages = [
-      {
-        role: "system",
-        content: systemInstruction
-      },
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: prompt || (image ? "Aide-moi à comprendre cet exercice." : "")
-          }
-        ]
-      }
+    const userContent: OpenRouterContentPart[] = [
+      { type: 'text', text: prompt || (image ? "Aide-moi à comprendre cet exercice." : "") }
     ];
 
     if (image) {
-      (messages[1].content as any).push({
-        type: "image_url",
-        image_url: {
-          url: image
-        }
-      });
+      userContent.push({ type: 'image_url', image_url: { url: image } });
     }
+
+    const messages: OpenRouterMessage[] = [
+      { role: 'system', content: systemInstruction },
+      { role: 'user', content: userContent }
+    ];
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -82,8 +117,8 @@ export async function askGemini(
       },
       body: JSON.stringify({
         model: localStorage.getItem('openrouter_model') || "google/gemini-2.0-flash-lite-preview-02-05:free",
-        messages: messages,
-        response_format: (mode === 'quiz' || mode === 'wordOfTheDay' || mode === 'problemOfTheDay') ? { type: "json_object" } : undefined
+        messages,
+        response_format: JSON_MODES.includes(mode) ? { type: "json_object" } : undefined
       })
     });
 
@@ -93,20 +128,11 @@ export async function askGemini(
     }
 
     const data = await response.json();
-    let content = data.choices[0]?.message?.content || "";
+    let content: string = data.choices?.[0]?.message?.content || "";
 
-    // Nettoyage du JSON si nécessaire
-    if (mode === 'quiz' || mode === 'wordOfTheDay' || mode === 'problemOfTheDay') {
-      const firstObj = content.indexOf('{');
-      const lastObj = content.lastIndexOf('}');
-      const firstArr = content.indexOf('[');
-      const lastArr = content.lastIndexOf(']');
-
-      if (firstObj !== -1 && lastObj !== -1 && (firstArr === -1 || firstObj < firstArr)) {
-        content = content.substring(firstObj, lastObj + 1);
-      } else if (firstArr !== -1 && lastArr !== -1) {
-        content = content.substring(firstArr, lastArr + 1);
-      }
+    // Clean JSON responses
+    if (JSON_MODES.includes(mode)) {
+      content = extractJSON(content);
     }
 
     return content || (mode === 'quiz' ? "[]" : mode === 'wordOfTheDay' || mode === 'problemOfTheDay' ? "{}" : "Désolé, je n'ai pas pu générer de réponse.");
@@ -114,6 +140,6 @@ export async function askGemini(
     console.error("Erreur OpenRouter:", error);
     if (mode === 'quiz') return "[]";
     if (mode === 'wordOfTheDay' || mode === 'problemOfTheDay') return "{}";
-    return "Oups ! Une erreur s'est produite. Vérifie ta connexion.";
+    return "Oups ! Une erreur s'est produite. Vérifie ta connexion et réessaie.";
   }
 }

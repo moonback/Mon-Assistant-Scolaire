@@ -72,11 +72,21 @@ function masteryLabel(score: number) {
   return { label: 'Découverte', tone: 'text-rose-700 bg-rose-50 border-rose-200', icon: Sparkles };
 }
 
+interface RecommendedActivity {
+  title: string;
+  desc: string;
+}
+
+interface ParentFeedbackScript {
+  tip: string;
+  context: string;
+}
+
 interface WeeklyPlan {
   id: string;
   objectives: string[];
-  recommended_activities: any[];
-  parent_feedback_scripts: any[];
+  recommended_activities: RecommendedActivity[];
+  parent_feedback_scripts: ParentFeedbackScript[];
 }
 
 export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoints }: PedagogicalHubProps) {
@@ -551,7 +561,7 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                       <HelpCircle className="h-5 w-5 text-indigo-600" /> Scripts & Retours Parents
                     </h3>
                     <div className="space-y-3">
-                      {weeklyPlan?.parent_feedback_scripts.map((script: any, i: number) => (
+                      {weeklyPlan?.parent_feedback_scripts.map((script, i) => (
                         <div key={i} className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
                           <p className="text-[10px] font-black text-indigo-500 uppercase mb-1">{script.context}</p>
                           <p className="text-sm italic font-medium text-slate-700">"{script.tip}"</p>
@@ -567,7 +577,7 @@ export default function PedagogicalHub({ childId, gradeLevel, stats, onEarnPoint
                       <Zap className="h-5 w-5 text-indigo-600" /> Activités Recommandées
                     </h3>
                     <div className="space-y-4">
-                      {weeklyPlan?.recommended_activities.map((act: any, i: number) => (
+                      {weeklyPlan?.recommended_activities.map((act, i) => (
                         <div key={i} className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 group hover:border-indigo-200 transition-all">
                           <h4 className="font-black text-slate-800 mb-2">{act.title}</h4>
                           <p className="text-xs text-slate-500 font-medium leading-relaxed">{act.desc}</p>
