@@ -9,6 +9,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Progress } from '../lib/supabase';
 import GeminiLiveModal from './GeminiLiveModal';
+import SectionHeader from './ui/SectionHeader';
+import AppCard from './ui/AppCard';
+import AppButton from './ui/AppButton';
+import EmptyStateKid from './ui/EmptyStateKid';
 
 interface HistoryItem {
   id: string;
@@ -210,12 +214,11 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Cerveau Magique 🤖</h1>
-          <p className="text-slate-500 font-semibold text-sm">Pose toutes tes questions à ton assistant intelligent !</p>
-        </div>
-      </header>
+      <SectionHeader
+        className="px-1"
+        title="Cerveau Magique 🤖"
+        subtitle="Pose tes questions, reçois une explication simple, puis vérifie ta compréhension."
+      />
 
       {/* Gemini Live Modal */}
       <GeminiLiveModal
@@ -280,7 +283,7 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
           )}
 
           {/* Question form */}
-          <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-slate-200 bg-white p-5">
+          <AppCard as={motion.section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -326,26 +329,33 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
               {error && <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600">
-                  <ImageIcon className="h-3.5 w-3.5" /> Photo
-                </button>
-                <button type="submit" disabled={loading} className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-black uppercase tracking-widest text-white disabled:opacity-60 shadow-lg shadow-indigo-100">
-                  {loading ? <Sparkles className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                <AppButton variant="secondary" type="button" onClick={() => fileInputRef.current?.click()} className="px-3 text-xs" leftIcon={<ImageIcon className="h-3.5 w-3.5" />}>
+                  Photo
+                </AppButton>
+                <AppButton type="submit" loading={loading} className="px-4 text-xs uppercase tracking-widest" leftIcon={!loading ? <Send className="h-3.5 w-3.5" /> : undefined}>
                   {loading ? 'Analyse...' : 'Envoyer'}
-                </button>
+                </AppButton>
                 {(question || selectedImage) && (
                   <button type="button" onClick={handleClear} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
                     <Eraser className="h-4 w-4" />
                   </button>
                 )}
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
             </form>
-          </motion.section>
+          </AppCard>
 
           {/* Response */}
           <AnimatePresence mode="wait">
             {response && (
-              <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+              <AppCard as={motion.section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-black text-slate-900 tracking-tight">Réponse Magique</h3>
                   <button
@@ -383,14 +393,14 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
                   </form>
                   {verificationFeedback && <p className="text-sm text-slate-700">{verificationFeedback}</p>}
                 </div>
-              </motion.section>
+              </AppCard>
             )}
           </AnimatePresence>
         </div>
 
         {/* Sidebar */}
         <aside>
-          <section className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-4">
+          <AppCard as="section" className="sticky top-24 p-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-xs font-black text-slate-900 uppercase tracking-widest">
                 <History className="h-3.5 w-3.5 text-indigo-600" /> Historique
@@ -410,9 +420,15 @@ Adapte tes explications et ton ton au profil de cet enfant. Appelle-le par son p
                   </p>
                 </button>
               ))}
-              {history.length === 0 && <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">Aucune question pour le moment.</p>}
+              {history.length === 0 && (
+                <EmptyStateKid
+                  icon={<Sparkles className="h-5 w-5" />}
+                  title="Aucune question pour le moment"
+                  description="Écris ta première question et ton historique apparaîtra ici."
+                />
+              )}
             </div>
-          </section>
+          </AppCard>
         </aside>
       </div>
     </div >

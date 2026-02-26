@@ -1,6 +1,8 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { ShieldCheck, LogOut, Plus, Star } from 'lucide-react';
+import AppButton from '../ui/AppButton';
+import AppCard from '../ui/AppCard';
 import { Child } from '../../lib/supabase';
 
 interface ChildSelectorProps {
@@ -26,7 +28,7 @@ export default function ChildSelector({ children, setSelectedChild, setActiveTab
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="bg-white/95 backdrop-blur-2xl p-8 md:p-12 rounded-[3rem] shadow-2xl w-full max-w-4xl text-center border border-white/40"
+                className="w-full max-w-5xl rounded-3xl border border-white/60 bg-white/95 p-8 text-center shadow-2xl backdrop-blur-2xl md:p-12"
             >
                 {/* Header */}
                 <motion.div
@@ -49,7 +51,7 @@ export default function ChildSelector({ children, setSelectedChild, setActiveTab
                     {children.map((child, index) => {
                         const colorClass = AVATAR_COLORS[index % AVATAR_COLORS.length];
                         return (
-                            <motion.button
+                            <AppCard as={motion.button}
                                 key={child.id}
                                 initial={{ opacity: 0, scale: 0.85, y: 16 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -57,7 +59,7 @@ export default function ChildSelector({ children, setSelectedChild, setActiveTab
                                 whileHover={{ y: -8, scale: 1.03 }}
                                 whileTap={{ scale: 0.96 }}
                                 onClick={() => setSelectedChild(child)}
-                                className="bg-white p-7 rounded-[2.5rem] border-2 border-slate-100 hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-100/60 transition-all group relative overflow-hidden text-left"
+                                className="group relative overflow-hidden rounded-[2rem] p-7 text-left"
                             >
                                 {/* Decorative bubble */}
                                 <div className="absolute top-0 right-0 w-28 h-28 bg-indigo-50 rounded-full -mr-14 -mt-14 group-hover:scale-150 transition-transform duration-700 opacity-60" />
@@ -95,7 +97,7 @@ export default function ChildSelector({ children, setSelectedChild, setActiveTab
                                 >
                                     →
                                 </motion.div>
-                            </motion.button>
+                            </AppCard>
                         );
                     })}
 
@@ -123,21 +125,23 @@ export default function ChildSelector({ children, setSelectedChild, setActiveTab
                     transition={{ delay: 0.6 }}
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
                 >
-                    <button
+                    <AppButton
+                        variant="secondary"
                         onClick={() => setActiveTab('parental')}
-                        className="flex items-center gap-3 px-7 py-4 bg-slate-100 rounded-2xl text-slate-600 font-black hover:bg-slate-200 transition-all text-sm uppercase tracking-widest"
+                        leftIcon={<ShieldCheck className="h-5 w-5" />}
+                        className="px-6 uppercase tracking-wide"
                     >
-                        <ShieldCheck className="w-5 h-5" />
                         Zone Parents
-                    </button>
+                    </AppButton>
 
-                    <button
+                    <AppButton
+                        variant="ghost"
                         onClick={signOut}
-                        className="text-slate-400 hover:text-red-500 font-black text-sm uppercase tracking-widest flex items-center gap-2.5 transition-all group px-5 py-3 rounded-2xl hover:bg-red-50"
+                        leftIcon={<LogOut className="h-4 w-4" />}
+                        className="px-4 uppercase tracking-wide text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                     >
-                        <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         Déconnecter la famille
-                    </button>
+                    </AppButton>
                 </motion.div>
             </motion.div>
         </div>
