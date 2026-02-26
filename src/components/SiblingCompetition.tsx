@@ -236,48 +236,48 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                             onClick={() => setShowDuelModal(false)}
                         />
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-white rounded-[3rem] w-full max-w-xl relative z-10 shadow-3xl overflow-hidden"
+                            className="bg-white rounded-3xl w-full max-w-md relative z-10 shadow-2xl overflow-hidden"
                         >
                             {/* Modal Header */}
-                            <div className="bg-slate-50 p-10 border-b border-slate-100 relative">
-                                <div className="absolute top-0 right-0 p-8 scale-150 opacity-10 rotate-12">
-                                    <Swords className="w-16 h-16" />
+                            <div className="bg-slate-50 p-6 border-b border-slate-100 relative">
+                                <div className="absolute top-0 right-0 p-4 scale-125 opacity-10 rotate-12">
+                                    <Swords className="w-12 h-12" />
                                 </div>
-                                <h3 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-4">
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                                     Lancer un Duel ⚔️
                                 </h3>
-                                <p className="text-slate-500 font-bold mt-2">Défie tes frères et sœurs pour la gloire !</p>
+                                <p className="text-slate-500 font-bold mt-1 text-sm">Défie tes frères et sœurs pour la gloire !</p>
                             </div>
 
-                            <div className="p-10 space-y-8">
+                            <div className="p-6 space-y-6">
                                 {/* Opponent Selection */}
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Choisis ton adversaire</label>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {otherSiblings.map(sib => (
                                             <button
                                                 key={sib.id}
                                                 onClick={() => setOpponentId(sib.id)}
-                                                className={`group relative p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-3 ${opponentId === sib.id ? 'border-indigo-600 bg-indigo-50 transform -translate-y-1' : 'border-slate-100 hover:border-indigo-200'}`}
+                                                className={`group relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${opponentId === sib.id ? 'border-indigo-600 bg-indigo-50 transform -translate-y-1' : 'border-slate-100 hover:border-indigo-200'}`}
                                             >
-                                                <div className={`w-20 h-20 rounded-2xl bg-white shadow-lg overflow-hidden p-1.5 border-4 transition-all ${opponentId === sib.id ? 'border-indigo-100' : 'border-white'}`}>
-                                                    <img src={sib.avatar_url} alt={sib.name} className="w-full h-full object-cover rounded-xl" />
+                                                <div className={`w-14 h-14 rounded-xl bg-white shadow-md overflow-hidden p-1 border-2 transition-all ${opponentId === sib.id ? 'border-indigo-100' : 'border-white'}`}>
+                                                    <img src={sib.avatar_url} alt={sib.name} className="w-full h-full object-cover rounded-lg" />
                                                 </div>
-                                                <span className={`text-sm font-black transition-colors ${opponentId === sib.id ? 'text-indigo-600' : 'text-slate-600'}`}>{sib.name}</span>
+                                                <span className={`text-xs font-black transition-colors ${opponentId === sib.id ? 'text-indigo-600' : 'text-slate-600'}`}>{sib.name}</span>
 
                                                 {opponentId === sib.id && (
                                                     <motion.div
                                                         layoutId="check-sib"
-                                                        className="absolute -top-3 -right-3 w-8 h-8 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg border-2 border-white"
+                                                        className="absolute -top-2 -right-2 w-6 h-6 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white"
                                                     >
-                                                        <Sparkles className="w-4 h-4" />
+                                                        <Sparkles className="w-3 h-3" />
                                                     </motion.div>
                                                 )}
                                             </button>
@@ -286,14 +286,14 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
                                 </div>
 
                                 {/* Subject Selection */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Domaine de Combat</label>
                                         <div className="relative group">
                                             <select
                                                 value={subject}
                                                 onChange={(e) => setSubject(e.target.value)}
-                                                className="w-full p-4 pl-6 rounded-2xl bg-slate-50 border-2 border-slate-100 font-black text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                                                className="w-full p-3 pl-4 rounded-xl bg-slate-50 border-2 border-slate-100 font-black text-sm text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none cursor-pointer"
                                             >
                                                 {(selectedChild?.allowed_subjects?.length
                                                     ? selectedChild.allowed_subjects
@@ -302,25 +302,25 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
                                                     <option key={s} value={s}>{s}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
                                                 ▼
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Type d'Épreuve</label>
                                         <div className="relative group">
                                             <select
                                                 value={type}
                                                 onChange={(e) => setType(e.target.value)}
-                                                className="w-full p-4 pl-6 rounded-2xl bg-slate-50 border-2 border-slate-100 font-black text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                                                className="w-full p-3 pl-4 rounded-xl bg-slate-50 border-2 border-slate-100 font-black text-sm text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none cursor-pointer"
                                             >
                                                 <option value="quiz_score">🎯 Meilleur Score Quiz</option>
                                                 <option value="stars_earned">⭐ Plus d'Étoiles</option>
                                                 <option value="activities_completed">🏆 Plus d'Activités</option>
                                             </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
                                                 ▼
                                             </div>
                                         </div>
@@ -332,13 +332,13 @@ export default function SiblingCompetition({ standalone = false }: SiblingCompet
                                     whileTap={{ scale: 0.98 }}
                                     onClick={proposeDuel}
                                     disabled={!opponentId}
-                                    className="w-full py-6 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:grayscale text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-indigo-200 transition-all flex items-center justify-center gap-4"
+                                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-30 disabled:grayscale text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-200 transition-all flex items-center justify-center gap-3"
                                 >
                                     LANCER LE DEFI ! 🔥
                                 </motion.button>
 
-                                <div className="flex items-center gap-3 justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 py-4 rounded-2xl border border-slate-100">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-500" /> Validation parentale automatique activée
+                                <div className="flex items-center gap-2 justify-center text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 py-3 rounded-xl border border-slate-100">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-500" /> Validation parentale automatique activée
                                 </div>
                             </div>
                         </motion.div>
