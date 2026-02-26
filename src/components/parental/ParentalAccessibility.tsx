@@ -55,7 +55,8 @@ export default function ParentalAccessibility() {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <AppCard title="Confort de Lecture (DYS)" className="space-y-4">
+                <AppCard className="space-y-4">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-2">Confort de Lecture (DYS)</h3>
                     <Toggle
                         checked={dyslexicFont}
                         onChange={setDyslexicFont}
@@ -96,7 +97,8 @@ export default function ParentalAccessibility() {
                     </div>
                 </AppCard>
 
-                <AppCard title="Paramètres Système" className="space-y-4">
+                <AppCard className="space-y-4">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-2">Paramètres Système</h3>
                     <Toggle
                         checked={highContrast}
                         onChange={setHighContrast}
