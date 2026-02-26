@@ -1,6 +1,7 @@
 import React from 'react';
-import { Zap, BookOpen, History } from 'lucide-react';
+import { Zap, BookOpen, History, Star } from 'lucide-react';
 import { Progress, Child } from '../../lib/supabase';
+import CompletedQuizzesList from '../CompletedQuizzesList';
 
 interface ParentalOverviewProps {
     childrenContext: Child[];
@@ -61,6 +62,15 @@ export default function ParentalOverview({ childrenContext, stats }: ParentalOve
                         <div className="py-10 text-center text-slate-400 font-bold italic">Aucune activité pour le moment...</div>
                     )}
                 </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-semibold text-slate-800 flex items-center gap-3">
+                        <Star className="w-6 h-6 text-amber-500 fill-amber-500" /> Historique des Quiz
+                    </h3>
+                </div>
+                <CompletedQuizzesList childId="all" limit={5} />
             </div>
         </div>
     );

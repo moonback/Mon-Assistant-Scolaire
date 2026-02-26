@@ -22,6 +22,8 @@ interface QuizContextType {
     setCurrentQuestion: React.Dispatch<React.SetStateAction<number>>;
     score: number;
     setScore: React.Dispatch<React.SetStateAction<number>>;
+    earnedStars: number;
+    setEarnedStars: React.Dispatch<React.SetStateAction<number>>;
     showResult: boolean;
     setShowResult: React.Dispatch<React.SetStateAction<boolean>>;
     selectedOption: number | null;
@@ -44,6 +46,12 @@ interface QuizContextType {
     resumeQuizContext: (quiz: any) => void;
     activeQuizId: string | null;
     setActiveQuizId: React.Dispatch<React.SetStateAction<string | null>>;
+    hasUsedHint: boolean;
+    setHasUsedHint: React.Dispatch<React.SetStateAction<boolean>>;
+    hintText: string | null;
+    setHintText: React.Dispatch<React.SetStateAction<string | null>>;
+    hintLoading: boolean;
+    setHintLoading: React.Dispatch<React.SetStateAction<boolean>>;
     resetQuizContext: () => void;
 }
 
@@ -55,6 +63,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [score, setScore] = useState(0);
+    const [earnedStars, setEarnedStars] = useState(0);
     const [showResult, setShowResult] = useState(false);
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -62,6 +71,9 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     const [aiLoading, setAiLoading] = useState(false);
     const [aiFeedback, setAiFeedback] = useState<string | null>(null);
     const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
+    const [hasUsedHint, setHasUsedHint] = useState(false);
+    const [hintText, setHintText] = useState<string | null>(null);
+    const [hintLoading, setHintLoading] = useState(false);
 
     const wrongTopicsRef = useRef<string[]>([]);
     const generationIdRef = useRef(0);
@@ -77,12 +89,16 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         setQuestions([]);
         setCurrentQuestion(0);
         setScore(0);
+        setEarnedStars(0);
         setShowResult(false);
         setSelectedOption(null);
         setIsCorrect(null);
         setOpenAnswer('');
         setAiFeedback(null);
         setActiveQuizId(null);
+        setHasUsedHint(false);
+        setHintText(null);
+        setHintLoading(false);
         wrongTopicsRef.current = [];
 
         try {
@@ -121,6 +137,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         setQuestions(quiz.questions);
         setCurrentQuestion(quiz.current_question || 0);
         setScore(quiz.score || 0);
+        setEarnedStars(quiz.stars_earned || (quiz.score || 0) * 10);
         wrongTopicsRef.current = quiz.wrong_topics || [];
         setActiveQuizId(quiz.id);
 
@@ -130,6 +147,9 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         setIsCorrect(null);
         setOpenAnswer('');
         setAiFeedback(null);
+        setHasUsedHint(false);
+        setHintText(null);
+        setHintLoading(false);
     };
 
     const resetQuizContext = () => {
@@ -139,12 +159,16 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         setShowResult(false);
         setScore(0);
+        setEarnedStars(0);
         setCurrentQuestion(0);
         setSelectedOption(null);
         setIsCorrect(null);
         setOpenAnswer('');
         setAiFeedback(null);
         setActiveQuizId(null);
+        setHasUsedHint(false);
+        setHintText(null);
+        setHintLoading(false);
     };
 
     return (
@@ -155,6 +179,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
                 loading,
                 currentQuestion, setCurrentQuestion,
                 score, setScore,
+                earnedStars, setEarnedStars,
                 showResult, setShowResult,
                 selectedOption, setSelectedOption,
                 isCorrect, setIsCorrect,
@@ -165,6 +190,9 @@ export function QuizProvider({ children }: { children: ReactNode }) {
                 startQuizContext,
                 resumeQuizContext,
                 activeQuizId, setActiveQuizId,
+                hasUsedHint, setHasUsedHint,
+                hintText, setHintText,
+                hintLoading, setHintLoading,
                 resetQuizContext
             }}
         >

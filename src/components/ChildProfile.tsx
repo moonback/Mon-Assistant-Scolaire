@@ -18,6 +18,7 @@ import BadgeCollection from './BadgeCollection';
 import SiblingCompetition from './SiblingCompetition';
 import LearningDNACard from './LearningDNACard';
 import LearningDiagnostic from './LearningDiagnostic';
+import CompletedQuizzesList from './CompletedQuizzesList';
 // import ChildPortfolio from './ChildPortfolio';
 
 type TabId = 'journey' | 'avatar' | 'success' | 'duels';
@@ -266,6 +267,14 @@ export default function ChildProfile() {
               className="space-y-12"
             >
               <BadgeCollection earnedBadgeIds={selectedChild?.badges || []} />
+
+              <div className="mt-12">
+                <h3 className="text-xl font-black text-slate-800 tracking-tight mb-6 flex items-center gap-3">
+                  <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
+                  Historique de Quiz
+                </h3>
+                <CompletedQuizzesList />
+              </div>
 
             </motion.div>
           )}

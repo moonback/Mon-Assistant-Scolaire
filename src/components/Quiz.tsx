@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { askGemini } from '../services/gemini';
-import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, ChevronRight, Star, Clock, Play } from 'lucide-react';
+import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, ChevronRight, Star, Clock, Play, HelpCircle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -23,6 +23,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     loading,
     currentQuestion, setCurrentQuestion,
     score, setScore,
+    earnedStars, setEarnedStars,
     showResult, setShowResult,
     selectedOption, setSelectedOption,
     isCorrect, setIsCorrect,
@@ -33,6 +34,9 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     startQuizContext,
     resumeQuizContext,
     activeQuizId,
+    hasUsedHint, setHasUsedHint,
+    hintText, setHintText,
+    hintLoading, setHintLoading,
     resetQuizContext
   } = useQuizContext();
 
@@ -48,6 +52,23 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
     }
   }, [selectedChild, questions, loading]);
 
+  useEffect(() => {
+    if (showResult && selectedChild && questions.length > 0) {
+      if (activeQuizId) {
+        supabase.from('saved_quizzes').delete().eq('id', activeQuizId).then();
+      }
+
+      supabase.from('completed_quizzes').insert({
+        child_id: selectedChild.id,
+        topic: topic || 'Culture générale',
+        grade_level: gradeLevel,
+        questions,
+        score,
+        stars_earned: earnedStars
+      }).then();
+    }
+  }, [showResult]);
+
   const saveQuizForLater = async () => {
     if (!selectedChild || !questions.length) return;
 
@@ -58,6 +79,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       questions,
       current_question: currentQuestion,
       score,
+      stars_earned: earnedStars,
       wrong_topics: wrongTopicsRef.current
     };
 
@@ -81,11 +103,11 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       setIsCorrect(null);
       setOpenAnswer('');
       setAiFeedback(null);
+      setHasUsedHint(false);
+      setHintText(null);
+      setHintLoading(false);
     } else {
       setShowResult(true);
-      if (activeQuizId) {
-        supabase.from('saved_quizzes').delete().eq('id', activeQuizId).then();
-      }
       if (selectedChild && wrongTopicsRef.current.length > 0) {
         const currentPoints = selectedChild.weak_points || [];
         const newPoints = wrongTopicsRef.current.filter((t: string) => !currentPoints.includes(t));
@@ -109,7 +131,9 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
 
     if (correct) {
       setScore((s) => s + 1);
-      onEarnPoints?.(10, 'quiz', topic || 'Général');
+      const points = hasUsedHint ? 5 : 10;
+      setEarnedStars((prev) => prev + points);
+      onEarnPoints?.(points, 'quiz', topic || 'Général');
     } else {
       const currentTopic = topic || 'Culture générale';
       if (!wrongTopicsRef.current.includes(currentTopic)) {
@@ -136,8 +160,10 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       setAiFeedback(result.feedback);
 
       if (result.isCorrect) {
-        const earned = Math.max(5, result.score);
+        const baseEarned = Math.max(5, result.score);
+        const earned = hasUsedHint ? Math.max(2, baseEarned / 2) : baseEarned;
         setScore((s) => s + (earned / 10)); // Simple calculation for score display
+        setEarnedStars((prev) => prev + Math.floor(earned));
         onEarnPoints?.(earned, 'ai_quiz', topic || 'Général');
       } else {
         const currentTopic = topic || 'Culture générale';
@@ -156,6 +182,23 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
   };
 
   const currentProgress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
+
+  const handleAskHint = async () => {
+    if (hintText || hintLoading) return;
+    setHasUsedHint(true);
+    setHintLoading(true);
+    try {
+      const prompt = `Donne un indice très court (une phrase maximum) pour aider un enfant de niveau ${gradeLevel} à répondre à cette question, sans jamais donner la réponse directe : "${questions[currentQuestion].question}"`;
+      const resultJson = await askGemini(prompt, 'ai_evaluation', gradeLevel, undefined, undefined, undefined, selectedChild?.learning_profile);
+      const result = JSON.parse(resultJson);
+      setHintText(result.feedback || result.explanation || "Essaie de procéder par élimination ou de penser à un exemple classique !");
+    } catch (e) {
+      console.error(e);
+      setHintText("Je n'ai pas pu trouver d'indice, mais je suis sûr que tu vas y arriver ! 🧠");
+    } finally {
+      setHintLoading(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-8">
@@ -280,7 +323,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 shadow-inner">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Étoiles</p>
                 <p className="flex items-center justify-center gap-1.5 text-xl font-black text-indigo-600 tracking-tight">
-                  <Star className="h-5 w-5 fill-amber-400 text-amber-400" /> +{score * 10}
+                  <Star className="h-5 w-5 fill-amber-400 text-amber-400" /> +{earnedStars}
                 </p>
               </div>
             </div>
@@ -302,7 +345,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 bg-indigo-50 px-3 py-1 rounded-full text-indigo-600">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <p className="text-xs font-black">{score * 10}</p>
+                  <p className="text-xs font-black">{earnedStars}</p>
                 </div>
                 <button
                   onClick={() => resetQuizContext()}
@@ -405,7 +448,26 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
             )}
 
             {isCorrect === null && selectedOption === null && (
-              <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center">
+              <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center gap-4">
+
+                {hintText ? (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full rounded-2xl bg-amber-50 p-6 border border-amber-100 relative">
+                    <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2">
+                      <Sparkles className="w-3.5 h-3.5" /> Indice de l'IA (Récompense -50%)
+                    </p>
+                    <p className="text-sm font-semibold text-amber-900 leading-relaxed italic">"{hintText}"</p>
+                  </motion.div>
+                ) : (
+                  <button
+                    onClick={handleAskHint}
+                    disabled={hintLoading}
+                    className="flex items-center gap-2 text-[10px] font-black text-amber-500 hover:text-amber-600 transition-colors uppercase tracking-widest px-4 py-2 rounded-full border border-amber-200 hover:bg-amber-50"
+                  >
+                    {hintLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <HelpCircle className="w-4 h-4" />}
+                    J'ai besoin d'un indice
+                  </button>
+                )}
+
                 <button
                   onClick={saveQuizForLater}
                   className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest px-4 py-2 rounded-full hover:bg-indigo-50"

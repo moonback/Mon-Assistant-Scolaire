@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS saved_quizzes (
   questions JSONB NOT NULL,
   current_question INTEGER NOT NULL DEFAULT 0,
   score INTEGER NOT NULL DEFAULT 0,
+  stars_earned INTEGER NOT NULL DEFAULT 0,
   wrong_topics TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
