@@ -7,16 +7,7 @@ import { supabase } from '../lib/supabase';
 import SectionHeader from './ui/SectionHeader';
 import AppCard from './ui/AppCard';
 import AppButton from './ui/AppButton';
-
-interface Question {
-  question: string;
-  type?: 'qcm' | 'open';
-  options: string[];
-  correctAnswer: number;
-  correctAnswerText?: string;
-  explanation: string;
-  funFact?: string;
-}
+import { useQuizContext } from '../contexts/QuizContext';
 
 interface QuizProps {
   onEarnPoints?: (amount: number, type: string, subject: string) => void;
@@ -25,48 +16,30 @@ interface QuizProps {
 
 export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
   const { selectedChild, refreshChildren } = useAuth();
-  const [topic, setTopic] = useState('');
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [score, setScore] = useState(0);
-  const [showResult, setShowResult] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [openAnswer, setOpenAnswer] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
 
-  const wrongTopicsRef = React.useRef<string[]>([]);
+  const {
+    topic, setTopic,
+    questions, setQuestions,
+    loading,
+    currentQuestion, setCurrentQuestion,
+    score, setScore,
+    showResult, setShowResult,
+    selectedOption, setSelectedOption,
+    isCorrect, setIsCorrect,
+    openAnswer, setOpenAnswer,
+    aiLoading, setAiLoading,
+    aiFeedback, setAiFeedback,
+    wrongTopicsRef,
+    startQuizContext,
+    resetQuizContext
+  } = useQuizContext();
+
+
 
   const startQuiz = async (selectedTopic?: string) => {
     const finalTopic = selectedTopic || topic || 'Culture générale';
-    setLoading(true);
-    setQuestions([]);
-    setCurrentQuestion(0);
-    setScore(0);
-    setShowResult(false);
-    setSelectedOption(null);
-    setIsCorrect(null);
-    setOpenAnswer('');
-    setAiFeedback(null);
-    wrongTopicsRef.current = [];
-
-    try {
-      const json = await askGemini(finalTopic, 'quiz', gradeLevel, undefined, undefined, selectedChild?.weak_points, selectedChild?.learning_profile);
-      const data = JSON.parse(json);
-      const quizQuestions = data.questions || data;
-
-      if (Array.isArray(quizQuestions) && quizQuestions.length > 0) {
-        setQuestions(quizQuestions);
-      } else {
-        throw new Error('Format de quiz invalide');
-      }
-    } catch (e) {
-      console.error('Erreur lors de la génération du quiz:', e);
-    } finally {
-      setLoading(false);
-    }
+    setTopic(finalTopic);
+    await startQuizContext(finalTopic, gradeLevel, selectedChild?.weak_points, selectedChild?.learning_profile);
   };
 
   const handleNext = () => {
@@ -80,7 +53,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
       setShowResult(true);
       if (selectedChild && wrongTopicsRef.current.length > 0) {
         const currentPoints = selectedChild.weak_points || [];
-        const newPoints = wrongTopicsRef.current.filter(t => !currentPoints.includes(t));
+        const newPoints = wrongTopicsRef.current.filter((t: string) => !currentPoints.includes(t));
         if (newPoints.length > 0) {
           const updatedPoints = [...currentPoints, ...newPoints];
           supabase.from('children')
@@ -197,7 +170,6 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
                   <button
                     key={t}
                     onClick={() => {
-                      setTopic(t);
                       startQuiz(t);
                     }}
                     className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-indigo-200 hover:text-indigo-600 transition-all shadow-sm"
@@ -209,9 +181,26 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
             </div>
           </AppCard>
         ) : loading ? (
-          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-indigo-600" />
-            <p className="text-sm text-slate-500">Préparation du quiz...</p>
+          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-slate-200 bg-white p-10 text-center relative overflow-hidden shadow-sm">
+            <RefreshCw className="mx-auto mb-5 h-10 w-10 animate-spin text-indigo-600" />
+            <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Préparation du quiz en cours...</h3>
+            <p className="text-sm font-semibold text-slate-500 mb-8 max-w-sm mx-auto">Notre intelligence artificielle recherche les meilleures questions 🚀</p>
+
+            <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/50">
+              <div className="flex items-center justify-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest">
+                <Star className="w-3.5 h-3.5 fill-indigo-600" />
+                <span>Tu peux naviguer sur un autre onglet, ton quiz t'attendra ici !</span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={() => resetQuizContext()}
+                className="rounded-full border border-slate-200 bg-white px-6 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-red-200 hover:text-red-500 transition-all shadow-sm flex items-center gap-1.5"
+              >
+                <XCircle className="w-4 h-4" /> Annuler
+              </button>
+            </div>
           </motion.div>
         ) : showResult ? (
           <motion.section
@@ -240,10 +229,7 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
             </div>
 
             <button
-              onClick={() => {
-                setQuestions([]);
-                setTopic('');
-              }}
+              onClick={() => resetQuizContext()}
               className="mt-6 w-full rounded-xl bg-indigo-50 px-4 py-4 text-xs font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-100 transition-colors"
             >
               Recommencer
@@ -256,9 +242,17 @@ export default function Quiz({ onEarnPoints, gradeLevel = 'CM1' }: QuizProps) {
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Question {currentQuestion + 1} / {questions.length}
               </p>
-              <div className="flex items-center gap-1.5 bg-indigo-50 px-3 py-1 rounded-full">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <p className="text-xs font-black text-indigo-600">{score * 10}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-indigo-50 px-3 py-1 rounded-full text-indigo-600">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <p className="text-xs font-black">{score * 10}</p>
+                </div>
+                <button
+                  onClick={() => resetQuizContext()}
+                  className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+                >
+                  <XCircle className="w-3.5 h-3.5" /> Quitter
+                </button>
               </div>
             </div>
 

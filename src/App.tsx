@@ -212,6 +212,7 @@ function AppContent() {
 }
 
 import { AccessibilityProvider } from './contexts/AccessibilityContext';
+import { QuizProvider } from './contexts/QuizContext';
 
 // ─── Root App ────────────────────────────────────────────
 export default function App() {
@@ -219,7 +220,9 @@ export default function App() {
     <AccessibilityProvider>
       <AuthProvider>
         <PointsProvider>
-          <AppContent />
+          <QuizProvider>
+            <AppContent />
+          </QuizProvider>
         </PointsProvider>
       </AuthProvider>
     </AccessibilityProvider>
