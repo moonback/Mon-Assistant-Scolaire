@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
 
-export type LiveStatus = 'idle' | 'connecting' | 'listening' | 'speaking' | 'error';
+export type LiveStatus = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking' | 'error';
 
 export type LiveMessage = {
     role: 'user' | 'model';
@@ -19,7 +19,6 @@ interface UseGeminiLiveReturn {
     setOnConversationFinished: (cb: (userText: string, modelText: string) => void) => void;
 }
 
-// Utilisation du modèle spécifié dans l'exemple
 const LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-09-2025';
 
 // ── Audio helpers ────────────────────────────────────────────────────────────
@@ -37,7 +36,12 @@ function float32ToPCM16Base64(floatArr: Float32Array): string {
     return btoa(binary);
 }
 
-function base64ToPCMFloat32(b64: string, sampleRate: number, onBuffer: (buf: AudioBuffer, ctx: AudioContext) => void, audioCtx: AudioContext) {
+function base64ToPCMFloat32(
+    b64: string,
+    sampleRate: number,
+    onBuffer: (buf: AudioBuffer, ctx: AudioContext) => void,
+    audioCtx: AudioContext,
+) {
     const binary = atob(b64);
     const buf = new ArrayBuffer(binary.length);
     const view = new Uint8Array(buf);
@@ -67,6 +71,11 @@ export function useGeminiLive(): UseGeminiLiveReturn {
     const lastUserAudioTimeRef = useRef<number>(0);
     const isAliveRef = useRef(false);
 
+    // FIX: éviter setStatus('speaking') sur chaque chunk PCM
+    const isSpeakingRef = useRef(false);
+    // FIX: attendre la fin du buffer audio avant de repasser en listening
+    const turnCompleteRef = useRef(false);
+
     // Suivi de la conversation pour persistance
     const currentUserTextRef = useRef('');
     const currentModelTextRef = useRef('');
@@ -75,12 +84,16 @@ export function useGeminiLive(): UseGeminiLiveReturn {
     // ── Playback ──────────────────────────────────────────────────────────
     const schedulePlay = useCallback((audioBuffer: AudioBuffer, ctx: AudioContext) => {
         if (!isAliveRef.current) return;
-        setStatus('speaking');
 
-        // Latency calculation inspired by user example
-        if (lastUserAudioTimeRef.current > 0) {
-            const currentLatency = Date.now() - lastUserAudioTimeRef.current;
-            if (currentLatency < 5000) setLatency(currentLatency);
+        // FIX: ne déclencher 'speaking' qu'une seule fois par tour, pas à chaque chunk
+        if (!isSpeakingRef.current) {
+            isSpeakingRef.current = true;
+            setStatus('speaking');
+            if (lastUserAudioTimeRef.current > 0) {
+                const currentLatency = Date.now() - lastUserAudioTimeRef.current;
+                if (currentLatency < 5000) setLatency(currentLatency);
+                lastUserAudioTimeRef.current = 0;
+            }
         }
 
         const now = ctx.currentTime;
@@ -90,14 +103,21 @@ export function useGeminiLive(): UseGeminiLiveReturn {
         source.connect(ctx.destination);
 
         audioSourcesRef.current.add(source);
-
         source.start(startAt);
         nextPlayTimeRef.current = startAt + audioBuffer.duration;
 
         source.onended = () => {
             audioSourcesRef.current.delete(source);
-            // Small buffer to detect end of speech
-            if (isAliveRef.current && nextPlayTimeRef.current <= ctx.currentTime + 0.1) {
+            // FIX: transition vers listening uniquement quand TOUT le buffer est drainé
+            // et que le serveur a confirmé la fin du tour
+            if (
+                isAliveRef.current &&
+                audioSourcesRef.current.size === 0 &&
+                nextPlayTimeRef.current <= ctx.currentTime + 0.15 &&
+                turnCompleteRef.current
+            ) {
+                isSpeakingRef.current = false;
+                turnCompleteRef.current = false;
                 setStatus('listening');
             }
         };
@@ -106,13 +126,11 @@ export function useGeminiLive(): UseGeminiLiveReturn {
     // ── Cleanup ───────────────────────────────────────────────────────────
     const cleanup = useCallback(() => {
         isAliveRef.current = false;
+        isSpeakingRef.current = false;
+        turnCompleteRef.current = false;
 
-        // Stop all active audio sources
         audioSourcesRef.current.forEach(source => {
-            try {
-                source.stop();
-                source.disconnect();
-            } catch (e) { }
+            try { source.stop(); source.disconnect(); } catch { }
         });
         audioSourcesRef.current.clear();
 
@@ -188,42 +206,42 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                         outputAudioCtxRef.current = outputAudioCtx;
 
                         const WORKLET = `
-                class MicCapture extends AudioWorkletProcessor {
-                  constructor() {
-                    super();
-                    // Buffer réduit à 1024 pour diviser la latence par 2 (~64ms)
-                    this.buffer = new Float32Array(1024);
-                    this.pos = 0;
-                  }
-                  process(inputs) {
-                    const ch = inputs[0]?.[0];
-                    if (ch && ch.length > 0) {
-                      for (let i = 0; i < ch.length; i++) {
-                        this.buffer[this.pos++] = ch[i];
-                        if (this.pos >= this.buffer.length) {
-                          this.port.postMessage(this.buffer.slice());
-                          this.pos = 0;
-                        }
+              class MicCapture extends AudioWorkletProcessor {
+                constructor() {
+                  super();
+                  this.buffer = new Float32Array(1024);
+                  this.pos = 0;
+                }
+                process(inputs) {
+                  const ch = inputs[0]?.[0];
+                  if (ch && ch.length > 0) {
+                    for (let i = 0; i < ch.length; i++) {
+                      this.buffer[this.pos++] = ch[i];
+                      if (this.pos >= this.buffer.length) {
+                        this.port.postMessage(this.buffer.slice());
+                        this.pos = 0;
                       }
                     }
-                    return true;
                   }
+                  return true;
                 }
-                registerProcessor('mic-capture', MicCapture);
-              `;
+              }
+              registerProcessor('mic-capture', MicCapture);
+            `;
                         const blob = new Blob([WORKLET], { type: 'application/javascript' });
                         const workletUrl = URL.createObjectURL(blob);
 
                         inputAudioCtx.audioWorklet.addModule(workletUrl).then(() => {
                             URL.revokeObjectURL(workletUrl);
                             if (!isAliveRef.current) return;
+
                             const source = inputAudioCtx.createMediaStreamSource(stream);
                             const worklet = new AudioWorkletNode(inputAudioCtx, 'mic-capture');
                             workletNodeRef.current = worklet;
+
                             worklet.port.onmessage = (e: MessageEvent<Float32Array>) => {
                                 if (!isAliveRef.current || !sessionRef.current) return;
 
-                                // RMS detection for activity tracking (inspiration from example)
                                 const inputData = e.data;
                                 let sum = 0;
                                 for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
@@ -235,17 +253,18 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                                     audio: { data: b64, mimeType: 'audio/pcm;rate=16000' }
                                 });
                             };
+
                             source.connect(worklet);
                             setStatus('listening');
                         }).catch(err => {
                             console.error('[GeminiLive] Worklet error:', err);
                             setStatus('error');
-                            setErrorMessage('Erreur lors de l’initialisation audio.');
+                            setErrorMessage("Le micro n'a pas pu démarrer. Vérifie les permissions.");
                         });
                     } catch (err) {
                         console.error('[GeminiLive] Media access error:', err);
                         setStatus('error');
-                        setErrorMessage('Accès micro refusé ou erreur audio.');
+                        setErrorMessage("Je n'arrive pas à accéder au micro. Vérifie les permissions.");
                         cleanup();
                     }
                 },
@@ -253,20 +272,22 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                 onmessage: (message: any) => {
                     if (!isAliveRef.current) return;
 
+                    // Interruption — arrêt immédiat de la lecture en cours
                     if (message.serverContent?.interrupted) {
+                        isSpeakingRef.current = false;
+                        turnCompleteRef.current = false;
                         nextPlayTimeRef.current = 0;
-                        // Interrupt active playback instantly
-                        audioSourcesRef.current.forEach(s => {
-                            try { s.stop(); } catch (e) { }
-                        });
+                        audioSourcesRef.current.forEach(s => { try { s.stop(); } catch { } });
                         audioSourcesRef.current.clear();
                         setStatus('listening');
                     }
 
-                    // User transcription
+                    // Transcription utilisateur reçue → l'IA va répondre
                     const inputText = message.serverContent?.inputTranscription?.text;
                     if (inputText) {
                         currentUserTextRef.current += inputText;
+                        // Passer en "processing" : l'IA réfléchit, feedback immédiat pour l'enfant
+                        setStatus('processing');
                         setMessages(prev => {
                             const last = prev[prev.length - 1];
                             if (last && last.role === 'user') {
@@ -276,7 +297,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                         });
                     }
 
-                    // Model Turn
+                    // Réponse du modèle (texte + chunks audio)
                     const parts: any[] = message.serverContent?.modelTurn?.parts || [];
                     parts.forEach((part: any) => {
                         if (part.text) {
@@ -290,21 +311,20 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                             });
                         }
                         if (part.inlineData?.data && outputAudioCtxRef.current) {
-                            base64ToPCMFloat32(part.inlineData.data, 24000, schedulePlay, outputAudioCtxRef.current);
+                            base64ToPCMFloat32(
+                                part.inlineData.data,
+                                24000,
+                                schedulePlay,
+                                outputAudioCtxRef.current,
+                            );
                         }
                     });
 
-                    // End of turn detection
+                    // Fin du tour serveur
                     if (message.serverContent?.turnComplete) {
-                        setStatus('listening');
+                        turnCompleteRef.current = true;
 
-                        // Déclenchement du callback de fin de tour
-                        if (currentUserTextRef.current && currentModelTextRef.current) {
-                            onConversationFinishedRef.current?.(currentUserTextRef.current.trim(), currentModelTextRef.current.trim());
-                        }
-                        currentUserTextRef.current = '';
-                        currentModelTextRef.current = '';
-
+                        // Marquer le dernier message comme non-streaming
                         setMessages(prev => {
                             const last = prev[prev.length - 1];
                             if (last && last.role === 'model' && last.isStreaming) {
@@ -312,13 +332,30 @@ export function useGeminiLive(): UseGeminiLiveReturn {
                             }
                             return prev;
                         });
+
+                        // Persistance de la conversation
+                        if (currentUserTextRef.current && currentModelTextRef.current) {
+                            onConversationFinishedRef.current?.(
+                                currentUserTextRef.current.trim(),
+                                currentModelTextRef.current.trim(),
+                            );
+                        }
+                        currentUserTextRef.current = '';
+                        currentModelTextRef.current = '';
+
+                        // FIX: Si aucun audio n'est en cours de lecture → transition immédiate
+                        // Sinon, source.onended gère la transition une fois tout le buffer drainé
+                        if (audioSourcesRef.current.size === 0 && !isSpeakingRef.current) {
+                            turnCompleteRef.current = false;
+                            setStatus('listening');
+                        }
                     }
                 },
 
                 onerror: (e: any) => {
                     console.error('[GeminiLive] Websocket error:', e);
                     setStatus('error');
-                    setErrorMessage(`Erreur Gemini Live : ${e?.message || 'connexion échouée'}`);
+                    setErrorMessage("Oups ! La connexion a été interrompue.");
                     cleanup();
                 },
 
@@ -335,7 +372,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
         }).catch(err => {
             console.error('[GeminiLive] Connection error:', err);
             setStatus('error');
-            setErrorMessage(`Erreur de connexion : ${err?.message || 'inconnue'}`);
+            setErrorMessage(`Connexion impossible. Vérifie ta connexion internet.`);
             cleanup();
         });
 
